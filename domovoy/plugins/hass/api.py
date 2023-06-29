@@ -1,0 +1,585 @@
+from __future__ import annotations
+import websockets.frames
+
+
+import asyncio
+from enum import StrEnum
+from websockets.client import WebSocketClientProtocol, connect
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError
+
+from typing import Awaitable, Callable, Tuple
+from collections import deque
+
+from domovoy.core.logging import get_logger
+from .parsing import encode_message, parse_message
+from .exceptions import (
+    HassApiCommandError,
+    HassApiAuthenticationError,
+    HassApiConnectionError,
+    HassApiParseError,
+)
+from .types import HassApiDataDict
+
+# Horrible hack to not have to encode the json output of orjson into unicode only
+# to have it decoded again.
+# Home assistant only accepts text frames and websockets doesn't offer the capability
+# to pass a text frame as bytes yet
+websockets.frames.OP_BINARY = websockets.frames.OP_TEXT
+
+_logcore = get_logger(__name__)
+_messages_logcore = get_logger(f"{__name__}.messages")
+
+EventListenerCallable = Callable[[str, HassApiDataDict], Awaitable[None]]
+TriggerListenerCallable = Callable[[int, HassApiDataDict], Awaitable[None]]
+
+
+class HassApiConnectionState(StrEnum):
+    CONNECTING = "CONNECTING"
+    CONNECTED = "CONNECTED"
+    DISCONNECTED = "DISCONNECTED"
+
+
+class HassWebsocketApi:
+    __cmd_queue: deque[HassApiDataDict]
+    __in_flight_ops: dict[
+        int, Tuple[HassApiDataDict, asyncio.Future[HassApiDataDict]]
+    ] = {}
+    __event_callbacks: dict[int, EventListenerCallable | TriggerListenerCallable] = {}
+    __current_op_id = 2
+    __msg_receive_task: asyncio.Task[None]
+    __msg_send_task: asyncio.Task[None]
+    __is_running: bool = False
+    __uri: str = ""
+    __access_token: str
+    __parse_datetimes: bool
+    __connection_state_callback: Callable[[HassApiConnectionState], Awaitable[None]]
+    __connection_state_task: list[asyncio.Task[None]] = []
+
+    async def __dummy_callback(*args, **kwargs) -> None:
+        ...
+
+    def __init__(
+        self,
+        uri: str,
+        access_token: str,
+        connection_state_callback: Callable[[HassApiConnectionState], Awaitable[None]]
+        | None = None,
+        parse_datetimes: bool = True,
+    ) -> None:
+        self.__cmd_queue = deque([])
+        self.__uri = uri
+        self.__access_token = access_token
+        self.__connection_state_callback = (
+            connection_state_callback or self.__dummy_callback
+        )
+        self.__parse_datetimes = parse_datetimes
+
+    def start(self) -> asyncio.Future[None]:
+        _logcore.info("Starting Home Assistant API")
+        future: asyncio.Future[None] = asyncio.get_event_loop().create_future()
+        asyncio.get_event_loop().create_task(
+            self.__connect_and_listen(future), name="hass_api_connect_and_listen"
+        )
+        return future
+
+    def __notify_connection_state_update(
+        self, connection_state: HassApiConnectionState
+    ) -> None:
+        _logcore.debug(
+            "Notifying connection state update: `{state}`", state=connection_state
+        )
+        task = asyncio.get_event_loop().create_task(
+            self.__connection_state_callback(connection_state),  # type: ignore
+            name="hass_api_connection_state_callback",
+        )
+        self.__connection_state_task.append(task)
+        task.add_done_callback(self.__connection_state_task.remove)
+
+    async def __connect_and_listen(self, future: asyncio.Future[None]) -> None:
+        self.__is_running = True
+
+        while True:
+            try:
+                websocket = await self.__connect_to_ha()
+                break
+            except Exception:
+                await asyncio.sleep(1)
+
+        try:
+            self.__notify_connection_state_update(HassApiConnectionState.CONNECTING)
+            self.__prep_for_connection()
+
+            await self.__authenticate(
+                websocket=websocket, access_token=self.__access_token
+            )
+
+            future.set_result(None)
+
+            self.__msg_receive_task = asyncio.create_task(
+                self.hass_message_receiver(websocket),
+                name="hass_websocket_message_receiver",
+            )
+            self.__msg_send_task = asyncio.create_task(
+                self.producer_handler(websocket),
+                name="hass_websocket_message_sender",
+            )
+
+            self.__notify_connection_state_update(HassApiConnectionState.CONNECTED)
+
+            completed, pending = await asyncio.wait(
+                [self.__msg_receive_task, self.__msg_send_task],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            for task in completed:
+                _logcore.debug("Task `{task}` completed", task=task)
+
+            for task in pending:
+                task.cancel()
+                _logcore.debug("Task `{task}` is cancelled", task=task)
+
+            _logcore.debug("Hass API Tasks have been cancelled.")
+
+            for op_id in list(self.__in_flight_ops.keys()):
+                _logcore.debug("Cancelling Pending Future with ID `{id}`", id=op_id)
+
+                _, in_flight_future = self.__in_flight_ops[op_id]
+
+                self.__in_flight_ops.pop(op_id)
+                if not in_flight_future.done():
+                    in_flight_future.set_exception(HassApiConnectionError())
+
+        except HassApiAuthenticationError as e:
+            _logcore.info("Authentication to Home Assistant Failed")
+
+            self.__is_running = False
+
+            if not future.done():
+                future.set_exception(e)
+
+        except ConnectionClosed as e:
+            _logcore.info("Disconnected from Home Assistant Websocket API")
+
+            if not self.__is_running:
+                if not future.done():
+                    future.set_result(None)
+
+            else:
+                if not future.done():
+                    future.set_exception(e)
+
+        except Exception as e:
+            _logcore.exception("Unhandled Exception in HassAPI Connection Loop")
+
+            if not self.__is_running:
+                if not future.done():
+                    future.set_result(None)
+
+            else:
+                if not future.done():
+                    future.set_exception(e)
+
+        finally:
+            self.__notify_connection_state_update(HassApiConnectionState.DISCONNECTED)
+
+    def stop(self):
+        if not self.__is_running:
+            return
+
+        _logcore.info("Stopping Home Assistant API")
+
+        self.__is_running = False
+        if not self.__msg_receive_task.cancelled():
+            self.__msg_receive_task.cancel()
+
+        if not self.__msg_send_task.cancelled():
+            self.__msg_send_task.cancel()
+
+    async def hass_message_receiver(self, websocket: WebSocketClientProtocol):
+        try:
+            async for message_raw in websocket:
+                message = parse_message(message_raw, self.__parse_datetimes)
+
+                id: int = message["id"]  # type: ignore
+                type = message["type"]
+                _messages_logcore.debug(
+                    "Received Message from Hass. ID: {id} Type: {type}: Message: {message}",
+                    id=id,
+                    type=type,
+                    message=message_raw,
+                )
+
+                if type == "event":
+                    if id not in self.__event_callbacks:
+                        _logcore.debug(
+                            "Received an Event without a registered Callback. Callback ID: `{id}`",
+                            id=id,
+                        )
+                        continue
+
+                    event_callback = self.__event_callbacks[id]
+
+                    event: HassApiDataDict = message["event"]  # type: ignore
+
+                    if "event_type" in event:
+                        event_type_or_subscription_id: str = event["event_type"]  # type: ignore
+                        data: HassApiDataDict = event["data"]  # type: ignore
+
+                        _messages_logcore.debug(
+                            "Calling Callback for event {event_type} with data {event_data}",
+                            event_type=event_type_or_subscription_id,
+                            event_data=data,
+                        )
+
+                        entity_id = data.get("entity_id", None)
+
+                        _messages_logcore.debug(
+                            f"Received from listener with id: {id} "
+                            + f"a `{event_type_or_subscription_id}` event for {entity_id}. {data}"
+                        )
+
+                    elif "variables" in event:
+                        event_type_or_subscription_id: int = id
+                        data = event["variables"].get("trigger", {})  # type: ignore
+
+                        _messages_logcore.debug(
+                            "Calling Callback for trigger with data {trigger_data}",
+                            trigger_data=data,
+                        )
+
+                    try:
+                        await asyncio.wait_for(
+                            event_callback(event_type_or_subscription_id, data),  # type: ignore
+                            timeout=5,
+                        )
+                    except asyncio.exceptions.CancelledError:
+                        _logcore.debug(
+                            "Cancelled Error for callback to Message ID: `{id}`",
+                            id=id,
+                        )
+
+                    except TimeoutError:
+                        _logcore.debug(
+                            "Timeout Error for callback to Message ID: `{id}`",
+                            id=id,
+                        )
+
+                    except Exception as e:
+                        _logcore.exception(
+                            f"{event_callback.__name__} {event_callback.__class__}",
+                            e,
+                        )
+                        raise
+
+                    continue
+
+                if id not in self.__in_flight_ops:
+                    _logcore.debug(
+                        "Received a response for ID {id} that does not have an in-flight command. Ignoring...",
+                        id=id,
+                    )
+                    continue
+
+                (cmd, future) = self.__in_flight_ops[id]
+                self.__in_flight_ops.pop(id)
+
+                if future.done():
+                    if self.__is_running:
+                        _logcore.warning(
+                            "Received a response for a finished future. ID: `{id}`. Future: `{future}`",
+                            id=id,
+                            future=future,
+                        )
+
+                    continue
+
+                if "error" in message:
+                    error = message["error"]
+                    future.set_exception(
+                        HassApiCommandError(
+                            command_id=message["id"],  # type: ignore
+                            code=error["code"],  # type: ignore
+                            message=error["message"],  # type: ignore
+                            full_response=message,
+                            original_command=cmd,
+                        )
+                    )
+                    continue
+
+                elif "success" in message and message["success"] is False:
+                    future.set_exception(
+                        HassApiCommandError(
+                            command_id=message["id"],  # type: ignore
+                            code=-1,
+                            message="Command Failed but Home Assistant did not send an specific error message",
+                            full_response=message,
+                            original_command=cmd,
+                        )
+                    )
+
+                future.set_result(message)
+
+        except asyncio.CancelledError:
+            _logcore.debug("hass_message_receiver() was cancelled")
+            return
+
+        except Exception as e:
+            _logcore.exception("Failure on Hass API Receiver:", e)
+            return
+
+    async def producer_handler(self, websocket: WebSocketClientProtocol) -> None:
+        try:
+            while True:
+                while len(self.__cmd_queue) > 0:
+                    message = self.__cmd_queue.popleft()
+                    id: int = message["id"]  # type: ignore
+                    try:
+                        encoded_message = encode_message(message)
+                        _logcore.debug("Sending message to hass")
+                        await websocket.send(encoded_message)
+                    except HassApiParseError as e:
+                        (cmd, future) = self.__in_flight_ops[id]
+                        self.__in_flight_ops.pop(id)
+                        future.set_exception(e)
+
+                # We do this to make sure this function yields
+                # the event loop after it attemps to send messages.
+                # If not, the code will get stuck on the while True:
+                # loop until websocket.send yields.
+                await asyncio.sleep(0.25)
+
+        except asyncio.CancelledError:
+            return
+
+        except ConnectionClosedError as e:
+            _logcore.debug("Failure on Hass API Sender:", e)
+            return
+
+        except Exception as e:
+            _logcore.exception("Failure on Hass API Sender:", e)
+            return
+
+    async def __authenticate(
+        self, websocket: WebSocketClientProtocol, access_token: str
+    ):
+        _logcore.info("Authenticating with Home Assistant")
+        initial_message = await websocket.recv()
+        initial_message = parse_message(initial_message, self.__parse_datetimes)
+
+        if initial_message["type"] != "auth_required":
+            raise HassApiCommandError(
+                command_id=0,
+                code=-1,
+                message="Did not receive auth_required_message from Home Assistant API",
+                full_response=initial_message,
+                original_command={},
+            )
+
+        await websocket.send(
+            encode_message({"type": "auth", "access_token": access_token})
+        )
+
+        auth_response = await websocket.recv()
+        auth_response = parse_message(auth_response, self.__parse_datetimes)
+
+        if auth_response["type"] == "auth_ok":
+            _logcore.info("Authenticated with Home Assistant")
+        else:
+            raise HassApiAuthenticationError()
+
+    def __connect_to_ha(
+        self,
+    ) -> connect:
+        uri = f"{self.__uri.removesuffix('/')}/api/websocket"
+        _logcore.info("Connecting to Home Assistant Websocket API {uri}", uri=uri)
+        return connect(
+            uri=uri,
+            max_size=1_000_000_000,
+            ping_timeout=None,
+        )
+
+    def __prep_for_connection(self):
+        self.__cmd_queue = deque()
+        self.__in_flight_ops = {}
+        self.__event_callbacks = {}
+
+    # Home Assistant API Below
+
+    def __send_command(
+        self, command: HassApiDataDict
+    ) -> asyncio.Future[HassApiDataDict]:
+        _logcore.debug("Queueing Command to HA: {command}", command=command)
+
+        # create Future
+        future = asyncio.get_event_loop().create_future()
+
+        # this might need a lock to make the operation atomic
+        command["id"] = self.__current_op_id
+        self.__in_flight_ops[command["id"]] = (command, future)
+        self.__current_op_id += 1
+
+        self.__cmd_queue.append(command)
+
+        return future
+
+    async def ping(self) -> bool:
+        response = await self.__send_command({"type": "ping"})
+        return response["type"] == "pong"
+
+    async def subscribe_events(
+        self,
+        callback: Callable[[str, HassApiDataDict], Awaitable[None]],
+        event_type: str | None = None,
+    ) -> int:
+        _logcore.debug(
+            "Calling subscribe_event with event: {event_type}",
+            event_type=event_type,
+        )
+
+        cmd: HassApiDataDict = {"type": "subscribe_events"}
+
+        if event_type is not None:
+            cmd["event_type"] = event_type
+
+        response = await self.__send_command(cmd)
+
+        subscription_id: int = response["id"]  # type: ignore
+
+        self.__event_callbacks[subscription_id] = callback
+
+        _logcore.debug(
+            "Received Response for subscribe_event call for event: {event_type}. Response: {response}",
+            event_type=event_type,
+            response=response,
+        )
+        return response["id"]  # type: ignore
+
+    async def subscribe_trigger(
+        self,
+        callback: Callable[[int, HassApiDataDict], Awaitable[None]],
+        trigger: HassApiDataDict,
+    ) -> int:
+        _logcore.debug(
+            "Calling subscribe_trigger with trigger: {trigger}",
+            trigger=trigger,
+        )
+
+        cmd: HassApiDataDict = {"type": "subscribe_trigger", "trigger": trigger}
+
+        response = await self.__send_command(cmd)
+
+        subscription_id: int = response["id"]  # type: ignore
+
+        self.__event_callbacks[subscription_id] = callback
+
+        _logcore.debug(
+            "Received Response for subscribe_trigger call for event: {trigger}. Response: {response}",
+            trigger=trigger,
+            response=response,
+        )
+        return response["id"]  # type: ignore
+
+    async def unsubscribe_events(self, subscription_id: int) -> bool:
+        _logcore.debug(
+            "Calling unsubscribe_events with subscription_id: {subscription_id}",
+            subscription_id=subscription_id,
+        )
+        response = await self.__send_command(
+            {"type": "unsubscribe_events", "subscription": subscription_id}
+        )
+
+        _logcore.debug(
+            "Received Response for unsubscribe_events call for subscription_id: {subscription_id}."
+            + " Response: {response}",
+            subscription_id=subscription_id,
+            response=response,
+        )
+
+        if response["success"] is True:
+            self.__event_callbacks.pop(subscription_id, None)
+            return True
+
+        return False
+
+    async def fire_event(
+        self, event_type: str, event_data: HassApiDataDict | None = None
+    ) -> HassApiDataDict:
+        _logcore.debug(
+            "Calling fire_event with event: {event_type} and data: {event_data}",
+            event_type=event_type,
+            event_data=event_data,
+        )
+
+        cmd: HassApiDataDict = {"type": "fire_event", "event_type": event_type}
+
+        if event_data is not None:
+            cmd["event_data"] = event_data
+
+        response = await self.__send_command(cmd)
+
+        _logcore.debug(
+            "Received Response for fire_event call for event: {event_type} and data: {event_data}."
+            + " Response: {response}",
+            event_type=event_type,
+            event_data=event_data,
+            response=response,
+        )
+
+        return response["result"]  # type: ignore
+
+    async def call_service(
+        self,
+        domain: str,
+        service: str,
+        service_data: HassApiDataDict | None = None,
+        entity_id: str | list[str] | None = None,
+    ) -> HassApiDataDict | None:
+        _logcore.debug(
+            f"Calling call_service for {domain}.{service}",
+            domain=domain,
+            service=service,
+        )
+
+        cmd: HassApiDataDict = {
+            "type": "call_service",
+            "domain": domain,
+            "service": service,
+        }
+
+        if service_data is not None:
+            cmd["service_data"] = service_data
+
+        if entity_id is not None:
+            cmd["target"] = {"entity_id": entity_id}  # type: ignore
+
+        response = await self.__send_command(cmd)
+
+        _logcore.debug(
+            "Received Response for call_service call for {domain}.{service}: {response}",
+            domain=domain,
+            service=service,
+            response=response,
+        )
+        return response["result"]  # type: ignore
+
+    async def get_states(
+        self,
+    ) -> list[HassApiDataDict]:
+        response = await self.__send_command(
+            {
+                "type": "get_states",
+            }
+        )
+
+        return response["result"]  # type: ignore
+
+    async def get_services(
+        self,
+    ) -> HassApiDataDict:
+        response = await self.__send_command(
+            {
+                "type": "get_services",
+            }
+        )
+
+        return response["result"]  # type: ignore

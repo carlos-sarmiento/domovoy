@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+from typing import Generic, TypeVar, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from domovoy.plugins.callbacks import CallbacksPlugin
+    from domovoy.plugins.hass import HassPlugin
+    from domovoy.plugins.servents import ServentsPlugin
+    from domovoy.plugins.logger import LoggerPlugin
+    from domovoy.plugins.meta import MetaPlugin
+    from domovoy.plugins.utils import UtilsPlugin
+
+
+class AppConfigBase:
+    """The base implementation for App configuration classes"""
+
+    ...
+
+
+class EmptyAppConfig(AppConfigBase):
+    """A configuration class with no fields. Used when an app doesn't need config"""
+
+    ...
+
+
+TConfig = TypeVar("TConfig", bound=AppConfigBase)  # , contravariant=True)
+
+
+class AppBaseWithoutConfig:
+    meta: "MetaPlugin"
+    hass: "HassPlugin"
+    callbacks: "CallbacksPlugin"
+    servents: "ServentsPlugin"
+    log: "LoggerPlugin"
+    utils: "UtilsPlugin"
+
+    def __init__(
+        self,
+        meta: "MetaPlugin",
+        log: "LoggerPlugin",
+        scheduler: "CallbacksPlugin",
+        hass: "HassPlugin",
+        servents: "ServentsPlugin",
+        utils: "UtilsPlugin",
+    ):
+        self.hass = hass
+        self.callbacks = scheduler
+        self.servents = servents
+        self.meta = meta
+        self.log = log
+        self.utils = utils
+
+    async def initialize(self) -> None:
+        """The initialize function is called when an app is first started. It can be used to
+        setup listeners and other parameters needed during operations
+        """
+        pass
+
+    async def finalize(self) -> None:
+        """This function is called when the app is being terminated. It can be used to cleanup
+        any resources created or used by the app which are not handled by Domovoy
+        """
+        pass
+
+
+class AppBase(Generic[TConfig], AppBaseWithoutConfig):
+    config: TConfig
+
+    def __init__(
+        self,
+        config: TConfig,
+        meta: MetaPlugin,
+        log: LoggerPlugin,
+        scheduler: "CallbacksPlugin",
+        hass: "HassPlugin",
+        servents: ServentsPlugin,
+        utils: UtilsPlugin,
+    ):
+        super().__init__(meta, log, scheduler, hass, servents, utils)
+        self.config = config
+
+    async def initialize(self) -> None:
+        await super().initialize()
+
+    async def finalize(self) -> None:
+        await super().finalize()

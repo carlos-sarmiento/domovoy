@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "domovoy"
+version = "0.1.0"
+description = ""
+authors = ["cargsl"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+importlab = "^0.8"
+watchdog = "^3.0.0"
+coloredlogs = "^15.0.1"
+apscheduler = "^3.10.1"
+websockets = "^11.0.3"
+dataclass-wizard = "^0.22.2"
+pyyaml = "^6.0"
+python-dateutil = "^2.8.2"
+astral = "^3.2"
+aiohttp = "^3.8.5"
+strawberry-graphql = "^0.205.0"
+cron-converter = "^1.0.2"
+orjson = "^3.9.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+stubPath = "typings"

@@ -1,0 +1,115 @@
+{
+	"Create Domovoy App with Config": {
+		"scope": "python",
+		"prefix": "app",
+		"body": [
+			"from dataclasses import dataclass",
+			"from domovoy.applications import AppBase, AppConfigBase",
+			"",
+			"",
+			"@dataclass(kw_only=True)",
+			"class ${1:AppName}Config(AppConfigBase):",
+			"    ...",
+			"",
+			"",
+			"class ${1:AppName}(AppBase[${1:AppName}Config]):",
+			"    async def initialize(self) -> None:",
+			"        ..."
+		],
+		"description": "Create an app definition"
+	},
+	"Create Domovoy App without Config": {
+		"scope": "python",
+		"prefix": "app_no_config",
+		"body": [
+			"from domovoy.applications import AppBase, EmptyAppConfig",
+			"",
+			"",
+			"class ${1:AppName}(AppBase[EmptyAppConfig]):",
+			"    async def initialize(self) -> None:",
+			"        ...",
+			""
+		],
+		"description": "Create an app definition without a config"
+	},
+	"Register Domovoy App": {
+		"scope": "python",
+		"prefix": "register",
+		"body": [
+			"from domovoy.applications.registration import register_app",
+			"",
+			"",
+			"register_app(",
+			"    app_class=${1:AppName},",
+			"    app_name=\"${2:name}\",",
+			"    config=${1:AppName}Config(",
+			"        ",
+			"    )",
+			")"
+		],
+		"description": "Register an app"
+	},
+	// Servent Templates
+	"Create a Servent Sensor": {
+		"scope": "python",
+		"prefix": "servent_sensor_full",
+		"body": [
+			"self.${1:sensor_id} = await self.servents.create_sensor(",
+			"    ServEntSensorConfig(",
+			"        servent_id=\"${1:sensor_id}\",",
+			"        name=\"${2:Sensor Name}\",",
+			"        device_class=SensorDeviceClass.${3},",
+			"        unit_of_measurement=\"${4}\",",
+			"        options=${5:[]},",
+			"        default_state=${6:None},",
+			"        fixed_attributes=${7},",
+			"        entity_category=EntityCategory.${8},",
+			"        disabled_by_default=${9:False},",
+			"    )",
+			")",
+		],
+		"description": "Create a servent sensor with full configuration"
+	},
+	"Create a Servent Sensor with Options": {
+		"scope": "python",
+		"prefix": "servent_sensor_with_options",
+		"body": [
+			"self.${1:sensor_id} = await self.servents.create_sensor(",
+			"    ServEntSensorConfig(",
+			"        servent_id=\"${1:sensor_id}\",",
+			"        name=\"${2:Sensor Name}\",",
+			"        options=[${3}],",
+			"        default_state=${4:None},",
+			"    )",
+			")",
+		],
+		"description": "Create a servent sensor which uses options"
+	},
+	"Create a Servent Switch": {
+		"scope": "python",
+		"prefix": "servent_switch",
+		"body": [
+			"self.${1:switch_id} = await self.servents.create_switch(",
+			"    ServEntSwitchConfig(",
+			"        servent_id=\"${1:switch_id}\",",
+			"        name=\"${2:Switch Name}\",",
+			"        device_class=SwitchDeviceClass.${3:SWITCH},",
+			"        default_state=${6:None},",
+			"        fixed_attributes=${7},",
+			"        entity_category=EntityCategory.${8},",
+			"        disabled_by_default=${9:False},",
+			"    )",
+			")",
+		],
+		"description": "Create a servent switch"
+	},
+	"Create a state/attribute Listener Function": {
+		"scope": "python",
+		"prefix": "state_listener",
+		"body": [
+			"async def ${1:function_name}(self, entity: str, attribute: str, old: HassApiValue | None, new: HassApiValue | None) -> None:",
+			"    ${2:...}"
+		],
+		"description": "Create a state/attribute Listener Function"
+	},
+}

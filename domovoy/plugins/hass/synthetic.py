@@ -1,0 +1,175 @@
+import datetime
+from typing import TYPE_CHECKING, Protocol
+import re
+from typing import Any
+from domovoy.core.configuration import get_main_config
+
+from domovoy.plugins.hass.parsing import encode_message
+
+
+if TYPE_CHECKING:
+    from domovoy.plugins.hass import HassPlugin
+
+
+class HassServiceCall(Protocol):
+    async def __call__(self, **kwargs) -> None:
+        ...
+
+
+class HassSyntheticServiceCall:
+    __domain: str
+    __hass: "HassPlugin"
+
+    def __init__(self, hass_plugin: "HassPlugin", domain: str) -> None:
+        self.__domain = domain
+        self.__hass = hass_plugin
+
+    def __getattr__(self, service: str) -> HassServiceCall:
+        async def synthetic_service_call(**kwargs) -> None:
+            await self.__hass.call_service(f"{self.__domain}.{service}", **kwargs)
+
+        return synthetic_service_call
+
+
+class HassSyntheticDomainsServiceCalls:
+    __hass: "HassPlugin"
+    __defined_domains: dict[str, HassSyntheticServiceCall] = {}
+
+    def __init__(self, hass_pluging: "HassPlugin") -> None:
+        self.__hass = hass_pluging
+
+    def __getattr__(self, name: str) -> HassSyntheticServiceCall:
+        if name not in self.__defined_domains:
+            self.__defined_domains[name] = HassSyntheticServiceCall(
+                hass_plugin=self.__hass, domain=name
+            )
+
+        return self.__defined_domains[name]
+
+
+def generate_stub_file_for_synthetic_services(
+    domains: dict[str, Any], destination: str, save_domains_as_json: bool = False
+) -> None:
+    def __to_camel_case(snake_str):
+        return "".join(x.capitalize() for x in snake_str.lower().split("_"))
+
+    def __clean_function_name(name: str, domain: str) -> str:
+        if name == "import":
+            return f"import_{domain}"
+
+        return re.sub(r"[^a-zA-Z0-9]+", "_", name)
+
+    domain_to_class: dict[str, str] = {}
+
+    if save_domains_as_json:
+        with open(f"{destination}.json", "w") as services_file:
+            asd = encode_message(domains)
+            services_file.write(asd)
+
+    with open(destination, "w") as text_file:
+        now = datetime.datetime.now(get_main_config().get_timezone())
+        text_file.write(f"# Generated on {now.isoformat()}\n\n")
+
+        text_file.write("from __future__ import annotations\n")
+        text_file.write("from typing import Any\n")
+        text_file.write("from datetime import datetime\n")
+        text_file.write("from domovoy.plugins.hass import HassPlugin\n")
+        text_file.write("\n\n")
+
+        text_file.write("class HassSyntheticDomainsServiceCalls:\n")
+        text_file.write(
+            "    def __init__(self, hass_pluging: HassPlugin) -> None: ...\n\n"
+        )
+
+        for domain, services in sorted(domains.items()):
+            class_name = f"HassSyntheticService{__to_camel_case(domain)}Domain"
+            domain_to_class[domain] = class_name
+            text_file.write(f"    {domain}: {class_name}\n")
+
+        text_file.write("\n\n")
+
+        for domain, services in sorted(domains.items()):
+            text_file.write(
+                f"class HassSyntheticService{__to_camel_case(domain)}Domain:\n"
+            )
+
+            for service, details in sorted(services.items()):
+                args = ""
+
+                arguments: dict[str, str] = {}
+
+                if "target" in details and "entity" in details["target"]:
+                    arguments["entity_id"] = "str | list[str]"
+
+                if "fields" in details:
+                    for field, field_params in details["fields"].items():
+                        typing = "Any"
+
+                        if field == "entity_id":
+                            field = "service_data_entity_id"
+
+                        if "selector" in field_params:
+                            if "boolean" in field_params["selector"]:
+                                typing += " | bool"
+                            if "text" in field_params["selector"]:
+                                typing += " | str"
+                            if "number" in field_params["selector"]:
+                                if (
+                                    field_params["selector"]["number"]
+                                    and "step" in field_params["selector"]["number"]
+                                ):
+                                    step = field_params["selector"]["number"]["step"]
+                                    if step == "any":
+                                        typing += " | str | int | float"
+
+                                    elif isinstance(step, int) or (
+                                        isinstance(step, float)
+                                        and float.is_integer(step)
+                                    ):
+                                        typing += " | int"
+                                    else:
+                                        typing += " | float"
+                                else:
+                                    typing += " | int | float"
+
+                            if "datetime" in field_params["selector"]:
+                                typing += " | datetime"
+                            if "entity" in field_params["selector"]:
+                                typing += " | str | list[str]"
+                            if "select" in field_params["selector"]:
+                                typing += " | str"
+
+                        elif field.endswith("_id"):
+                            typing = "str | list[str]"
+
+                        if (
+                            "required" not in field_params
+                            or not field_params["required"]
+                        ):
+                            typing += " | None = None"
+
+                        arguments[field] = typing.replace("Any | None", "Any").replace(
+                            "Any | ", ""
+                        )
+
+                for arg, typing in sorted(arguments.items()):
+                    if arg == "in":
+                        arg = "in_"
+                    args += f"{arg}: {typing}, "
+
+                if len(args) > 0:
+                    args = "*, " + args
+
+                if "response" not in details:
+                    return_type = "None"
+                else:
+                    return_type = "dict[str, Any]"
+                    if details["response"].get("optional", True):
+                        return_type += " | None"
+
+                text_file.write(
+                    "    async def "
+                    + f"{__clean_function_name(service, domain)}(self, {args}**kwargs) -> {return_type}: ...\n"
+                )
+
+            text_file.write("\n\n")

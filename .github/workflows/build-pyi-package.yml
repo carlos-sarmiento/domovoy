@@ -1,0 +1,30 @@
+name: Build pyi files for Domovoy
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+env:
+  IMAGE_NAME: domovoy
+
+jobs:
+
+  build:
+    permissions:
+      packages: write
+      contents: read
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install poetry
+      run: pipx install poetry
+    - name: Install mypy
+      run: pipx install mypy
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'poetry'
+    - run: stubgen -p domovoy
