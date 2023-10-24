@@ -170,3 +170,5 @@ test_apps
 domovoy/plugins/hass/synthetic.pyi
 logs
 storage
+remote
+connect.sh
