@@ -21,6 +21,9 @@ strawberry-graphql = "^0.205.0"
 cron-converter = "^1.0.2"
 orjson = "^3.9.7"
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.6"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
