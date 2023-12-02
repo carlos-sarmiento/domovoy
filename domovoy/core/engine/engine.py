@@ -9,7 +9,7 @@ from domovoy.core.services.service import DomovoyServiceResources
 from domovoy.plugins.callbacks import (
     CallbacksPlugin,
 )
-from domovoy.core.services.webapi import DomovoyWebApi
+# from domovoy.core.services.webapi import DomovoyWebApi
 
 from domovoy.applications import (
     AppBase,
@@ -58,7 +58,7 @@ class AppEngine:
 
     __event_listener: EventListener
     __hass_core: HassCore
-    __webapi: DomovoyWebApi
+    # __webapi: DomovoyWebApi
 
     def __init__(self):
         self.__event_listener = EventListener(
@@ -90,26 +90,26 @@ class AppEngine:
             ),
             self.__event_listener,
         )
-        self.__webapi = DomovoyWebApi(
-            DomovoyServiceResources(
-                start_dependent_apps_callback=self.__build_start_apps_using_service_callback(),
-                stop_dependent_apps_callback=self.__build_terminate_apps_using_service_callback(),
-                get_all_apps_by_name=self.__get_all_apps_by_name,
-                config={"address": "0.0.0.0", "port": 8080},
-            ),
-        )
+        # self.__webapi = DomovoyWebApi(
+        #     DomovoyServiceResources(
+        #         start_dependent_apps_callback=self.__build_start_apps_using_service_callback(),
+        #         stop_dependent_apps_callback=self.__build_terminate_apps_using_service_callback(),
+        #         get_all_apps_by_name=self.__get_all_apps_by_name,
+        #         config={"address": "0.0.0.0", "port": 8080},
+        #     ),
+        # )
 
     async def start(self):
         """Starts the App Engine and its dependent services."""
         _logcore.info("Starting Scheduling Engine")
         self.__event_listener.start()
         self.__callback_register.start()
-        self.__webapi.start()
+        # self.__webapi.start()
         await self.__hass_core.start()
 
     async def stop(self):
         await self.terminate_all_apps_before_engine_stop()
-        await self.__webapi.stop()
+        # await self.__webapi.stop()
         self.__callback_register.stop()
         self.__event_listener.stop()
         await self.__hass_core.stop()
