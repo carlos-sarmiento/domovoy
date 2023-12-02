@@ -1,14 +1,16 @@
 from __future__ import annotations
+
 import asyncio
-from dataclasses import dataclass, field
 import datetime
+from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Literal, ParamSpec
 
-from domovoy.core.services.event_listener import EventListener
 from domovoy.applications.types import Interval
 from domovoy.core.logging import get_logger
+from domovoy.core.services.event_listener import EventListener
 from domovoy.core.services.service import DomovoyService, DomovoyServiceResources
 from domovoy.core.task_utils import run_and_forget_task
+
 from .api import HassApiConnectionState, HassWebsocketApi
 from .types import HassApiDataDict
 
@@ -110,7 +112,7 @@ class HassCore(DomovoyService):
         self.__resources = resources
 
     async def __connection_state_updated(
-        self, connection_state: HassApiConnectionState
+        self, connection_state: HassApiConnectionState,
     ) -> None:
         if connection_state == HassApiConnectionState.CONNECTED:
             _logcore.info("Subscribing to all events from Home Assistant")
@@ -176,7 +178,7 @@ class HassCore(DomovoyService):
             try:
                 async with asyncio.timeout(10):
                     await self.__hass_api.unsubscribe_events(
-                        self.__state_subscription_id
+                        self.__state_subscription_id,
                     )
 
             except TimeoutError:
@@ -185,21 +187,21 @@ class HassCore(DomovoyService):
         self.__hass_api.stop()
 
     async def __all_events_callback(
-        self, event_type: str, event_data: dict[str, Any]
+        self, event_type: str, event_data: dict[str, Any],
     ) -> None:
         if (
             event_type == "homeassistant_started"
             and self.__reload_reason == "hass_restart"
         ):
             _logcore.warning(
-                "Received Homeassistant started event. Starting any stopped app that use Hass API"
+                "Received Homeassistant started event. Starting any stopped app that use Hass API",
             )
             self.__reload_reason = None
             run_and_forget_task(self.start_apps())
 
         if event_type == "homeassistant_stop" and self.__reload_reason is None:
             _logcore.warning(
-                "Received Homeassistant Stop event. Stopping all apps that use Hass API"
+                "Received Homeassistant Stop event. Stopping all apps that use Hass API",
             )
             self.__reload_reason = "hass_restart"
             await self.__resources.stop_dependent_apps_callback()
@@ -208,12 +210,12 @@ class HassCore(DomovoyService):
             try:
                 await self.__process_state_changed(event_data)
                 await self.__event_publisher.publish_event(
-                    f"{event_type}={event_data['entity_id']}", event_data
+                    f"{event_type}={event_data['entity_id']}", event_data,
                 )
 
             except Exception as e:
                 _logcore.exception(
-                    "Error when processing {event_data}", e, event_data=event_data
+                    "Error when processing {event_data}", e, event_data=event_data,
                 )
         await self.__event_publisher.publish_event(event_type, event_data)
 
@@ -244,7 +246,7 @@ class HassCore(DomovoyService):
                 + f"Original State Date: {self.__entity_state_cache[entity_id].last_updated.isoformat()} "
                 + f"Updated State Date: {new_entity_data.last_updated.isoformat()} "
                 + f"Original State: {self.__entity_state_cache[entity_id]}. "
-                + f"Updated State: {new_entity_data}"
+                + f"Updated State: {new_entity_data}",
             )
             return
         elif (
@@ -266,7 +268,7 @@ class HassCore(DomovoyService):
         ]
 
     async def fire_event(
-        self, event_type: str, event_data: HassApiDataDict | None = None
+        self, event_type: str, event_data: HassApiDataDict | None = None,
     ) -> None:
         await self.__hass_api.fire_event(event_type, event_data)
 

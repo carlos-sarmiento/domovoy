@@ -1,15 +1,12 @@
 import asyncio
 from dataclasses import asdict
 from typing import Any, Awaitable, Callable, Concatenate, ParamSpec
+
 from domovoy.core.app_infra import AppWrapper
+from domovoy.core.utils import stripNoneAndEnums
+from domovoy.plugins import callbacks, hass, meta
 from domovoy.plugins.plugins import AppPlugin
 
-import domovoy.plugins.callbacks as callbacks
-import domovoy.plugins.meta as meta
-import domovoy.plugins.hass as hass
-
-from domovoy.core.utils import stripNoneAndEnums
-from .enums import ButtonDeviceClass, EntityCategory, EntityType
 from .entities import (
     ServEntBinarySensor,
     ServEntButton,
@@ -30,7 +27,7 @@ from .entity_configs import (
     ServEntSwitchConfig,
     ServEntThresholdBinarySensorConfig,
 )
-
+from .enums import ButtonDeviceClass, EntityCategory, EntityType
 
 P = ParamSpec("P")
 
@@ -124,14 +121,14 @@ class ServentsPlugin(AppPlugin):
 
         if wait_for_creation:
             entities = self.__hass.get_entity_id_by_attribute(
-                "servent_id", entity_config.servent_id
+                "servent_id", entity_config.servent_id,
             )
 
             count = 0
             while not any(entities) and count < 10:
                 await asyncio.sleep(0.5)
                 entities = self.__hass.get_entity_id_by_attribute(
-                    "servent_id", entity_config.servent_id
+                    "servent_id", entity_config.servent_id,
                 )
                 count += 1
 
@@ -150,7 +147,7 @@ class ServentsPlugin(AppPlugin):
             wait_for_creation,
         )
         return ServEntSensor(
-            self.__hass, entity_config.servent_id, entity_config, device_config
+            self.__hass, entity_config.servent_id, entity_config, device_config,
         )
 
     async def create_threshold_binary_sensor(
@@ -168,7 +165,7 @@ class ServentsPlugin(AppPlugin):
             wait_for_creation,
         )
         return ServEntThresholdBinarySensor(
-            self.__hass, entity_config.servent_id, entity_config, device_config
+            self.__hass, entity_config.servent_id, entity_config, device_config,
         )
 
     async def create_binary_sensor(
@@ -186,7 +183,7 @@ class ServentsPlugin(AppPlugin):
             wait_for_creation,
         )
         return ServEntBinarySensor(
-            self.__hass, entity_config.servent_id, entity_config, device_config
+            self.__hass, entity_config.servent_id, entity_config, device_config,
         )
 
     async def create_number(
@@ -204,7 +201,7 @@ class ServentsPlugin(AppPlugin):
             wait_for_creation,
         )
         return ServEntNumber(
-            self.__hass, entity_config.servent_id, entity_config, device_config
+            self.__hass, entity_config.servent_id, entity_config, device_config,
         )
 
     async def create_select(
@@ -243,7 +240,7 @@ class ServentsPlugin(AppPlugin):
             wait_for_creation,
         )
         return ServEntButton(
-            self.__hass, entity_config.servent_id, entity_config, device_config
+            self.__hass, entity_config.servent_id, entity_config, device_config,
         )
 
     async def create_switch(
@@ -261,7 +258,7 @@ class ServentsPlugin(AppPlugin):
             wait_for_creation,
         )
         return ServEntSwitch(
-            self.__hass, entity_config.servent_id, entity_config, device_config
+            self.__hass, entity_config.servent_id, entity_config, device_config,
         )
 
     _SERVENT_EXTENDED_BUTTON_PRESS_EVENT = "servent_extended_button_press"

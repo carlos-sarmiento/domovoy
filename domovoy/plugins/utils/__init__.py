@@ -1,15 +1,15 @@
 import asyncio
 import datetime
-import pytz
-
 from typing import Any, Awaitable, Callable, ParamSpec, TypeVar, Union
+
+import pytz
+from dateutil.parser import parse
+
 from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppWrapper
-from domovoy.plugins.plugins import AppPlugin
-from domovoy.core.utils import asFloat, asInt, get_callback_name
-from dateutil.parser import parse
 from domovoy.core.configuration import get_main_config
-from astral.location import Location
+from domovoy.core.utils import asFloat, asInt, get_callback_name
+from domovoy.plugins.plugins import AppPlugin
 
 TFloat = TypeVar("TFloat", bound=Union[float, None])
 TInt = TypeVar("TInt", bound=Union[float, None])
@@ -42,7 +42,7 @@ class UtilsPlugin(AppPlugin):
         await asyncio.sleep(interval.total_seconds())
 
     def timedelta_from_now(
-        self, date: datetime.datetime | str, target_tz: pytz.BaseTzInfo | None = None
+        self, date: datetime.datetime | str, target_tz: pytz.BaseTzInfo | None = None,
     ) -> datetime.timedelta:
         if target_tz is None:
             target_tz = get_main_config().get_timezone()
@@ -59,7 +59,7 @@ class UtilsPlugin(AppPlugin):
         if not has_tz_info:
             if target_tz is None:
                 raise ValueError(
-                    "Date provided does not have timezone and a target timezone was not provided"
+                    "Date provided does not have timezone and a target timezone was not provided",
                 )
             date = target_tz.localize(date)
 
@@ -72,17 +72,17 @@ class UtilsPlugin(AppPlugin):
         return dt.astimezone(get_main_config().get_timezone())
 
     def run_async(
-        self, callback: Callable[P, Awaitable[Any]], *args: P.args, **kwargs: P.kwargs
+        self, callback: Callable[P, Awaitable[Any]], *args: P.args, **kwargs: P.kwargs,
     ) -> asyncio.Task[Any]:
         async def callback_wrapper():
             await callback(*args, **kwargs)
 
         return asyncio.get_event_loop().create_task(
-            callback_wrapper(), name=get_callback_name(callback)
+            callback_wrapper(), name=get_callback_name(callback),
         )
 
     def run_in_executor(
-        self, callback: Callable[P, Any], *args: P.args, **kwargs: P.kwargs
+        self, callback: Callable[P, Any], *args: P.args, **kwargs: P.kwargs,
     ) -> None:
         def callback_wrapper():
             callback(*args, **kwargs)
@@ -91,7 +91,7 @@ class UtilsPlugin(AppPlugin):
 
     def is_now_between_dawn_and_dusk(self) -> bool:
         return self.is_between_dawn_and_dusk(
-            datetime.datetime.now(tz=get_main_config().get_timezone())
+            datetime.datetime.now(tz=get_main_config().get_timezone()),
         )
 
     def is_between_dawn_and_dusk(self, dt: datetime.datetime) -> bool:

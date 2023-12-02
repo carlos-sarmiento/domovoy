@@ -1,11 +1,9 @@
 import datetime
-from typing import TYPE_CHECKING, Protocol
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any, Protocol
+
 from domovoy.core.configuration import get_main_config
-
 from domovoy.plugins.hass.parsing import encode_message
-
 
 if TYPE_CHECKING:
     from domovoy.plugins.hass import HassPlugin
@@ -41,14 +39,14 @@ class HassSyntheticDomainsServiceCalls:
     def __getattr__(self, name: str) -> HassSyntheticServiceCall:
         if name not in self.__defined_domains:
             self.__defined_domains[name] = HassSyntheticServiceCall(
-                hass_plugin=self.__hass, domain=name
+                hass_plugin=self.__hass, domain=name,
             )
 
         return self.__defined_domains[name]
 
 
 def generate_stub_file_for_synthetic_services(
-    domains: dict[str, Any], destination: str, save_domains_as_json: bool = False
+    domains: dict[str, Any], destination: str, save_domains_as_json: bool = False,
 ) -> None:
     def __to_camel_case(snake_str):
         return "".join(x.capitalize() for x in snake_str.lower().split("_"))
@@ -78,7 +76,7 @@ def generate_stub_file_for_synthetic_services(
 
         text_file.write("class HassSyntheticDomainsServiceCalls:\n")
         text_file.write(
-            "    def __init__(self, hass_pluging: HassPlugin) -> None: ...\n\n"
+            "    def __init__(self, hass_pluging: HassPlugin) -> None: ...\n\n",
         )
 
         for domain, services in sorted(domains.items()):
@@ -90,7 +88,7 @@ def generate_stub_file_for_synthetic_services(
 
         for domain, services in sorted(domains.items()):
             text_file.write(
-                f"class HassSyntheticService{__to_camel_case(domain)}Domain:\n"
+                f"class HassSyntheticService{__to_camel_case(domain)}Domain:\n",
             )
 
             for service, details in sorted(services.items()):
@@ -149,7 +147,7 @@ def generate_stub_file_for_synthetic_services(
                             typing += " | None = None"
 
                         arguments[field] = typing.replace("Any | None", "Any").replace(
-                            "Any | ", ""
+                            "Any | ", "",
                         )
 
                 for arg, typing in sorted(arguments.items()):
@@ -169,7 +167,7 @@ def generate_stub_file_for_synthetic_services(
 
                 text_file.write(
                     "    async def "
-                    + f"{__clean_function_name(service, domain)}(self, {args}**kwargs) -> {return_type}: ...\n"
+                    + f"{__clean_function_name(service, domain)}(self, {args}**kwargs) -> {return_type}: ...\n",
                 )
 
             text_file.write("\n\n")

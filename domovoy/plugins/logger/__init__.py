@@ -1,12 +1,11 @@
 import asyncio
+import uuid
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Mapping, ParamSpec, Set
-import uuid
 
 from domovoy.core.app_infra import AppPlugin
 from domovoy.core.context import inside_log_callback
-
 
 if TYPE_CHECKING:
     from domovoy.core.app_infra import AppWrapper
@@ -65,7 +64,7 @@ class LoggerPlugin(AppPlugin):
                 )
 
                 await instrumented_callback(
-                    callback_id, *callback_args, **callback_kwargs
+                    callback_id, *callback_args, **callback_kwargs,
                 )
 
             except Exception:
@@ -76,7 +75,7 @@ class LoggerPlugin(AppPlugin):
         callback_id = f"logs-{uuid.uuid4().hex}"
 
         self.__log_callbacks[callback_id] = LoggerCallbackRegistration(
-            id=callback_id, callback=log_callback, minimum_log_level=minimim_log_level
+            id=callback_id, callback=log_callback, minimum_log_level=minimim_log_level,
         )
 
         return callback_id
@@ -97,7 +96,7 @@ class LoggerPlugin(AppPlugin):
                 continue
 
             task = asyncio.create_task(
-                callback_registration.callback(callback_registration.id)  # type: ignore
+                callback_registration.callback(callback_registration.id),  # type: ignore
             )
             self.__running_callbacks.add(task)
             task.add_done_callback(lambda t: self.__running_callbacks.remove(t))

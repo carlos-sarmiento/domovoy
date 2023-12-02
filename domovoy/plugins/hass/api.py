@@ -1,23 +1,23 @@
 from __future__ import annotations
-import websockets.frames
-
 
 import asyncio
+from collections import deque
 from enum import StrEnum
+from typing import Awaitable, Callable
+
+import websockets.frames
 from websockets.client import WebSocketClientProtocol, connect
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
-from typing import Awaitable, Callable, Tuple
-from collections import deque
-
 from domovoy.core.logging import get_logger
-from .parsing import encode_message, parse_message
+
 from .exceptions import (
-    HassApiCommandError,
     HassApiAuthenticationError,
+    HassApiCommandError,
     HassApiConnectionError,
     HassApiParseError,
 )
+from .parsing import encode_message, parse_message
 from .types import HassApiDataDict
 
 # Horrible hack to not have to encode the json output of orjson into unicode only
@@ -42,7 +42,7 @@ class HassApiConnectionState(StrEnum):
 class HassWebsocketApi:
     __cmd_queue: deque[HassApiDataDict]
     __in_flight_ops: dict[
-        int, Tuple[HassApiDataDict, asyncio.Future[HassApiDataDict]]
+        int, tuple[HassApiDataDict, asyncio.Future[HassApiDataDict]],
     ] = {}
     __event_callbacks: dict[int, EventListenerCallable | TriggerListenerCallable] = {}
     __current_op_id = 2
@@ -78,15 +78,15 @@ class HassWebsocketApi:
         _logcore.info("Starting Home Assistant API")
         future: asyncio.Future[None] = asyncio.get_event_loop().create_future()
         asyncio.get_event_loop().create_task(
-            self.__connect_and_listen(future), name="hass_api_connect_and_listen"
+            self.__connect_and_listen(future), name="hass_api_connect_and_listen",
         )
         return future
 
     def __notify_connection_state_update(
-        self, connection_state: HassApiConnectionState
+        self, connection_state: HassApiConnectionState,
     ) -> None:
         _logcore.debug(
-            "Notifying connection state update: `{state}`", state=connection_state
+            "Notifying connection state update: `{state}`", state=connection_state,
         )
         task = asyncio.get_event_loop().create_task(
             self.__connection_state_callback(connection_state),  # type: ignore
@@ -110,7 +110,7 @@ class HassWebsocketApi:
             self.__prep_for_connection()
 
             await self.__authenticate(
-                websocket=websocket, access_token=self.__access_token
+                websocket=websocket, access_token=self.__access_token,
             )
 
             future.set_result(None)
@@ -235,7 +235,7 @@ class HassWebsocketApi:
 
                         _messages_logcore.debug(
                             f"Received from listener with id: {id} "
-                            + f"a `{event_type_or_subscription_id}` event for {entity_id}. {data}"
+                            + f"a `{event_type_or_subscription_id}` event for {entity_id}. {data}",
                         )
 
                     elif "variables" in event:
@@ -302,7 +302,7 @@ class HassWebsocketApi:
                             message=error["message"],  # type: ignore
                             full_response=message,
                             original_command=cmd,
-                        )
+                        ),
                     )
                     continue
 
@@ -314,7 +314,7 @@ class HassWebsocketApi:
                             message="Command Failed but Home Assistant did not send an specific error message",
                             full_response=message,
                             original_command=cmd,
-                        )
+                        ),
                     )
 
                 future.set_result(message)
@@ -360,7 +360,7 @@ class HassWebsocketApi:
             return
 
     async def __authenticate(
-        self, websocket: WebSocketClientProtocol, access_token: str
+        self, websocket: WebSocketClientProtocol, access_token: str,
     ):
         _logcore.info("Authenticating with Home Assistant")
         initial_message = await websocket.recv()
@@ -376,7 +376,7 @@ class HassWebsocketApi:
             )
 
         await websocket.send(
-            encode_message({"type": "auth", "access_token": access_token})
+            encode_message({"type": "auth", "access_token": access_token}),
         )
 
         auth_response = await websocket.recv()
@@ -406,7 +406,7 @@ class HassWebsocketApi:
     # Home Assistant API Below
 
     def __send_command(
-        self, command: HassApiDataDict
+        self, command: HassApiDataDict,
     ) -> asyncio.Future[HassApiDataDict]:
         _logcore.debug("Queueing Command to HA: {command}", command=command)
 
@@ -485,7 +485,7 @@ class HassWebsocketApi:
             subscription_id=subscription_id,
         )
         response = await self.__send_command(
-            {"type": "unsubscribe_events", "subscription": subscription_id}
+            {"type": "unsubscribe_events", "subscription": subscription_id},
         )
 
         _logcore.debug(
@@ -502,7 +502,7 @@ class HassWebsocketApi:
         return False
 
     async def fire_event(
-        self, event_type: str, event_data: HassApiDataDict | None = None
+        self, event_type: str, event_data: HassApiDataDict | None = None,
     ) -> HassApiDataDict:
         _logcore.debug(
             "Calling fire_event with event: {event_type} and data: {event_data}",
@@ -568,7 +568,7 @@ class HassWebsocketApi:
         response = await self.__send_command(
             {
                 "type": "get_states",
-            }
+            },
         )
 
         return response["result"]  # type: ignore
@@ -579,7 +579,7 @@ class HassWebsocketApi:
         response = await self.__send_command(
             {
                 "type": "get_services",
-            }
+            },
         )
 
         return response["result"]  # type: ignore

@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import logging
 import sys
-import pytz
-
 from dataclasses import dataclass, field
-
 from typing import TextIO
-from dataclass_wizard import YAMLWizard
-from domovoy.core.errors import DomovoyException
+
+import pytz
 from astral import LocationInfo
 from astral.location import Location
+from dataclass_wizard import YAMLWizard
+
+from domovoy.core.errors import DomovoyException
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class MainConfig(YAMLWizard):
     install_pip_dependencies: bool
     astral: AstralConfig | None = None
 
-    logs: dict[str, "LoggingConfig"] = field(default_factory=dict)
+    logs: dict[str, LoggingConfig] = field(default_factory=dict)
     # plugins: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def get_timezone(self):
@@ -40,7 +40,7 @@ class MainConfig(YAMLWizard):
                 self.astral.timezone,
                 self.astral.latitude,
                 self.astral.longitude,
-            )
+            ),
         )
 
 
@@ -120,7 +120,7 @@ def load_main_config_from_yaml(config: str, source: str) -> None:
     from domovoy.core.logging import get_logger
 
     get_logger(__name__).info(
-        "Loading Configuration for Domovoy from: {source}", source=source
+        "Loading Configuration for Domovoy from: {source}", source=source,
     )
 
     main_config = MainConfig.from_yaml(config)
@@ -145,7 +145,7 @@ def set_main_config(config: MainConfig) -> None:
 
     if _main_config is not None:
         e = DomovoyException(
-            "Main Config is already set. It cannot be set to a new value"
+            "Main Config is already set. It cannot be set to a new value",
         )
         get_logger(__name__).exception(e)
         raise e

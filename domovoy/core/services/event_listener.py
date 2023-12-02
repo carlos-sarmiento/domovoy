@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import asyncio
-from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Set
 import uuid
+from dataclasses import dataclass, field
+from typing import Any, Awaitable, Callable
+
 from domovoy.core.logging import get_logger
 from domovoy.core.services.service import DomovoyService, DomovoyServiceResources
-
 
 _logcore = get_logger(__name__)
 
@@ -15,7 +16,7 @@ class ListenerRegistration:
     id: str
     events: list[str] = field(compare=False)
     callable: Callable[[str, str, dict[str, Any]], Awaitable[None]] = field(
-        compare=False
+        compare=False,
     )
 
 
@@ -23,7 +24,7 @@ class EventListener(DomovoyService):
     __registered_callbacks_by_event: dict[str, dict[str, ListenerRegistration]] = {}
     __registered_callbacks_by_id: dict[str, ListenerRegistration] = {}
     __is_running: bool = False
-    __running_callbacks: Set[asyncio.Future[Any]] = set()
+    __running_callbacks: set[asyncio.Future[Any]] = set()
 
     def __init__(self, resources: DomovoyServiceResources) -> None:
         super().__init__(resources)
@@ -45,7 +46,7 @@ class EventListener(DomovoyService):
 
         if not self.__is_running:
             _logcore.debug(
-                "Attempted to publish an event, but the EventListener is not running"
+                "Attempted to publish an event, but the EventListener is not running",
             )
             return
 

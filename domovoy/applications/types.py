@@ -13,7 +13,8 @@ class Interval:
     def is_valid(self) -> bool:
         """Checks if an interval has a non-zero duration.
 
-        Returns:
+        Returns
+        -------
             bool: True if at least one of the fields of the interval is non-zero.
         """
         return (
@@ -27,7 +28,8 @@ class Interval:
     def to_timedelta(self) -> datetime.timedelta:
         """Converts the interval to a datetime.timedelta.
 
-        Returns:
+        Returns
+        -------
             datetime.timedelta: The equivalent datetime.timedelta for the interval.
         """
         return datetime.timedelta(
@@ -41,7 +43,8 @@ class Interval:
     def total_seconds(self) -> float:
         """The total duration of the interval in fractional seconds.
 
-        Returns:
+        Returns
+        -------
             float: The total duration of the interval.
         """
         return (

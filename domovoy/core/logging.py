@@ -1,22 +1,21 @@
 import datetime
 import inspect
-
 import logging
-
+import os
 from inspect import getfullargspec
 from logging.handlers import RotatingFileHandler
-import os
+from pathlib import Path
 from typing import Any, Type
+
 import coloredlogs
 import pytz
+
 from domovoy.core.configuration import LoggingConfig, get_main_config
 from domovoy.core.context import context_logger
 from domovoy.core.errors import DomovoyException
 
-from pathlib import Path
 
-
-class BraceMessage(object):
+class BraceMessage:
     def __init__(self, fmt: str, args, kwargs):
         self.fmt = fmt
         self.args = args
@@ -102,7 +101,7 @@ def __get_extended_formatter(formatter: Type[logging.Formatter]):
 
 
 def __build_logger(
-    logger_name: str, include_app_name: bool, use_app_logger_default: bool
+    logger_name: str, include_app_name: bool, use_app_logger_default: bool,
 ) -> logging.LoggerAdapter[Any]:
     config = __get_log_config(logger_name, use_app_logger_default)
     logger = logging.getLogger(logger_name)
@@ -118,7 +117,7 @@ def __build_logger(
     if config.write_to_stdout:
         handler = logging.StreamHandler(config.get_actual_output_stream())
         handler.setFormatter(
-            __get_extended_formatter(coloredlogs.ColoredFormatter)(formatter)
+            __get_extended_formatter(coloredlogs.ColoredFormatter)(formatter),
         )
         logger.addHandler(handler)
 
@@ -127,7 +126,7 @@ def __build_logger(
 
         Path(os.path.dirname(output_filename)).mkdir(parents=True, exist_ok=True)
         handler = RotatingFileHandler(
-            output_filename, backupCount=5, maxBytes=5_000_000
+            output_filename, backupCount=5, maxBytes=5_000_000,
         )
         handler.setFormatter(__get_extended_formatter(logging.Formatter)(formatter))
         logger.addHandler(handler)
@@ -163,14 +162,14 @@ def get_context_logger() -> logging.LoggerAdapter[Any]:
 
         if mod is None:
             logger = get_logger("__main__")
-            logger.warn(
-                "Couldn't generate the calling module name in get_context_logger"
+            logger.warning(
+                "Couldn't generate the calling module name in get_context_logger",
             )
         else:
             logger = get_logger(mod.__name__)
 
-        logger.warn(
-            "Tried to get a context_logger which wasn't set. Used closest default (module or __main__)"
+        logger.warning(
+            "Tried to get a context_logger which wasn't set. Used closest default (module or __main__)",
         )
 
     return logger

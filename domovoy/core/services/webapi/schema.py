@@ -1,20 +1,21 @@
 import datetime
-import strawberry
-
 from typing import Awaitable, Callable
+
+import strawberry
+from apscheduler.job import Job
+
 from domovoy.core.app_infra import (
     AppWrapper,
-    SchedulerCallbackRegistration,
     EventCallbackRegistration,
+    SchedulerCallbackRegistration,
 )
 from domovoy.core.utils import get_callback_name
-from apscheduler.job import Job
 
 
 @strawberry.interface
 class AppCallback:
     def __init__(
-        self, registration: SchedulerCallbackRegistration | EventCallbackRegistration
+        self, registration: SchedulerCallbackRegistration | EventCallbackRegistration,
     ) -> None:
         self.id = registration.id
         self.callback = get_callback_name(registration.callback)
@@ -115,7 +116,7 @@ class Application:
 
 
 def build_schema(
-    get_all_apps_by_name: Callable[[], Awaitable[dict[str, AppWrapper]]]
+    get_all_apps_by_name: Callable[[], Awaitable[dict[str, AppWrapper]]],
 ) -> strawberry.Schema:
     @strawberry.type
     class RootQuery:

@@ -10,7 +10,7 @@ class HassError(Exception):
 class HassApiAuthenticationError(HassError):
     def __init__(self) -> None:
         super().__init__(
-            "Failed to authenticate to Home Assistant Websocket API. Please check your access_token"
+            "Failed to authenticate to Home Assistant Websocket API. Please check your access_token",
         )
 
 
@@ -47,7 +47,7 @@ class HassApiCommandError(HassError):
         super().__init__(
             "Received Error from HASS:"
             + f"{message}. Code: {code}. Command ID: {command_id}. "
-            + f"Full response: {full_response}. Original Command: {original_command}"
+            + f"Full response: {full_response}. Original Command: {original_command}",
         )
 
         self.command_id = command_id

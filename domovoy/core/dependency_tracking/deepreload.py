@@ -1,3 +1,5 @@
+# ruff: noqa
+
 # Taken from https://github.com/ipython/ipython/blob/main/IPython/lib/deepreload.py
 # BSD License is compatible with GPL3
 

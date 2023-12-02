@@ -1,17 +1,17 @@
 from __future__ import annotations
+
+import datetime
 import logging
 import uuid
-import datetime
 from typing import Awaitable, Callable, Concatenate, ParamSpec
 
 import apscheduler
 from apscheduler.events import EVENT_ALL, JobExecutionEvent, SchedulerEvent
-from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 
 from domovoy.applications.types import Interval
-
 from domovoy.core.app_infra import (
     AppStatus,
     AppWrapper,
@@ -19,14 +19,15 @@ from domovoy.core.app_infra import (
     SchedulerCallbackRegistration,
 )
 from domovoy.core.configuration import get_main_config
-from domovoy.core.services.event_listener import EventListener
 from domovoy.core.logging import (
-    get_logger,
     get_context_logger as c_logger,
 )
+from domovoy.core.logging import (
+    get_logger,
+)
+from domovoy.core.services.event_listener import EventListener
 from domovoy.core.services.service import DomovoyService, DomovoyServiceResources
 from domovoy.core.utils import get_callback_true_class, get_callback_true_name
-
 
 P = ParamSpec("P")
 _logcore = get_logger(__name__)
@@ -38,14 +39,14 @@ class CallbackRegister(DomovoyService):
     __callback_to_wrapper_mappings: dict[str, AppWrapper]
 
     def __init__(
-        self, resources: DomovoyServiceResources, event_listener: EventListener
+        self, resources: DomovoyServiceResources, event_listener: EventListener,
     ) -> None:
         super().__init__(resources)
         self.__event_listener = event_listener
         self.__callback_to_wrapper_mappings = {}
         self.__scheduling_engine = AsyncIOScheduler(timezone=get_main_config().timezone)
         self.__scheduling_engine.add_listener(
-            self.scheduler_event_logger, mask=EVENT_ALL
+            self.scheduler_event_logger, mask=EVENT_ALL,
         )
         logging.getLogger("apscheduler").setLevel(logging.CRITICAL)
 
@@ -102,7 +103,7 @@ class CallbackRegister(DomovoyService):
                 self.__register_single_event_callback(app_wrapper, registration)
 
     def __register_single_scheduler_callback(
-        self, app_wrapper: AppWrapper, registration: SchedulerCallbackRegistration
+        self, app_wrapper: AppWrapper, registration: SchedulerCallbackRegistration,
     ) -> None:
         if registration.is_registered:
             _logcore.error(
@@ -133,7 +134,7 @@ class CallbackRegister(DomovoyService):
         registration.is_registered = True
 
     def __register_single_event_callback(
-        self, app_wrapper: AppWrapper, registration: EventCallbackRegistration
+        self, app_wrapper: AppWrapper, registration: EventCallbackRegistration,
     ) -> None:
         if registration.is_registered:
             _logcore.error(
@@ -145,17 +146,17 @@ class CallbackRegister(DomovoyService):
             return  # should throw
 
         c_logger().debug(
-            f"Adding Callback for {app_wrapper.app_name} with ID: {registration.id}"
+            f"Adding Callback for {app_wrapper.app_name} with ID: {registration.id}",
         )
 
         self.__event_listener.add_listener(
-            registration.events, registration.callback, registration.id
+            registration.events, registration.callback, registration.id,
         )
 
         registration.is_registered = True
 
     def __cancel_single_scheduler_callback(
-        self, app_wrapper: AppWrapper, callback_id: str
+        self, app_wrapper: AppWrapper, callback_id: str,
     ) -> None:
         c_logger().debug(
             "Cancelling callback with id {callback_id} for app {app_name}",
@@ -195,7 +196,7 @@ class CallbackRegister(DomovoyService):
         registration.is_registered = False
 
     def __cancel_single_event_callback(
-        self, app_wrapper: AppWrapper, callback_id: str
+        self, app_wrapper: AppWrapper, callback_id: str,
     ) -> None:
         c_logger().debug(
             "Cancelling callback with id {callback_id} for app {app_name}",
@@ -282,7 +283,7 @@ class CallbackRegister(DomovoyService):
         else:
             if reuse_callback_id not in app_wrapper.scheduler_callbacks:
                 raise ValueError(
-                    f"Provided callback_id {reuse_callback_id} is not registered to this app"
+                    f"Provided callback_id {reuse_callback_id} is not registered to this app",
                 )
             callback_id = reuse_callback_id
 

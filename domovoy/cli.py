@@ -4,15 +4,13 @@ import asyncio
 import logging
 import os
 
-
 from domovoy.core.configuration import load_main_config_from_yaml
-
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        prog="Domovoy", description="Powerful asyncio automation platform."
+        prog="Domovoy", description="Powerful asyncio automation platform.",
     )
     parser.add_argument(
         "--config",

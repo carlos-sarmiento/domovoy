@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from .enums import (
     BinarySensorDeviceClass,
     ButtonDeviceClass,
@@ -38,7 +39,7 @@ class ServEntSensorConfig(ServEntEntityConfig):
 
         elif self.options is not None and self.device_class != SensorDeviceClass.ENUM:
             raise ValueError(
-                "If providing Options for a sensor, the device class should be ENUM"
+                "If providing Options for a sensor, the device class should be ENUM",
             )
         else:
             self.device_class = self.device_class
@@ -73,7 +74,7 @@ class ServEntThresholdBinarySensorConfig(ServEntEntityConfig):
     def __post_init__(self):
         if self.lower is None and self.upper is None:
             raise ValueError(
-                "Threshold sensor must have at least a lower or an upper value set."
+                "Threshold sensor must have at least a lower or an upper value set.",
             )
 
 

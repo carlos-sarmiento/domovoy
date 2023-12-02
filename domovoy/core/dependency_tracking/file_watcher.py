@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 import threading
 from typing import Callable
+
 from watchdog.events import FileSystemEventHandler
+
 from domovoy.core.logging import get_logger
 
 _logcore = get_logger(__name__)

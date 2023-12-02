@@ -1,7 +1,6 @@
-from asyncio import Task
 import asyncio
-from typing import Generator, Set, Coroutine, Any
-
+from asyncio import Task
+from typing import Any, Coroutine, Generator, Set
 
 _running_tasks: Set[Task[None]] = set()
 

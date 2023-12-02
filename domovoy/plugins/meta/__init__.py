@@ -3,9 +3,8 @@ from typing import TYPE_CHECKING, Awaitable, Callable, TypeVar
 from domovoy.core.app_infra import AppPlugin
 from domovoy.core.configuration import get_main_config
 
-
 if TYPE_CHECKING:
-    from domovoy.core.app_infra import AppWrapper, AppStatus
+    from domovoy.core.app_infra import AppStatus, AppWrapper
 
 T = TypeVar("T", bound=AppPlugin)
 

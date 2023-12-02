@@ -5,12 +5,11 @@ import os
 import sys
 
 from domovoy.core.configuration import get_main_config
-from domovoy.core.engine.active_engine import set_active_engine_for_app_registration
 from domovoy.core.dependency_tracking.dependency_tracker import DependencyTracker
+from domovoy.core.engine.active_engine import set_active_engine_for_app_registration
 from domovoy.core.engine.engine import AppEngine
 from domovoy.core.logging import get_logger
 from domovoy.core.services.pip_dependencies import install_requirements
-
 
 _logcore = get_logger(__name__)
 

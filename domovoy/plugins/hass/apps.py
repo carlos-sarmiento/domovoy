@@ -1,11 +1,12 @@
-from dataclasses import dataclass
 import os
-from typing import Any
+from dataclasses import dataclass
 from pathlib import Path
-from domovoy.app import stop_domovoy
+from typing import Any
 
+from domovoy.app import stop_domovoy
 from domovoy.applications import AppBase, AppConfigBase, EmptyAppConfig
 from domovoy.plugins.servents.enums import ButtonDeviceClass, EntityCategory
+
 from .synthetic import (
     generate_stub_file_for_synthetic_services,
 )
@@ -27,7 +28,7 @@ class HassSyntheticServiceStubUpdater(AppBase[HassSyntheticServiceStubUpdaterCon
         await self.update_stubs()
 
     async def homeassistant_started_event_handler(
-        self, event_name: str, event_data: dict[str, Any]
+        self, event_name: str, event_data: dict[str, Any],
     ) -> None:
         self.log.info("Home Assistant Started")
         await self.update_stubs()
@@ -55,6 +56,6 @@ class HassTerminateDomovoy(AppBase[EmptyAppConfig]):
         )
 
     async def homeassistant_started_event_handler(
-        self, event_name: str, event_data: dict[str, Any]
+        self, event_name: str, event_data: dict[str, Any],
     ) -> None:
         stop_domovoy()

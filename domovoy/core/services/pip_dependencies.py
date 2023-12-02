@@ -1,6 +1,7 @@
 import glob
 import subprocess
 import sys
+
 from domovoy.core.configuration import get_main_config
 from domovoy.core.logging import get_logger
 

@@ -1,17 +1,18 @@
 from __future__ import annotations
+
 import asyncio
 from typing import Awaitable, Callable, Concatenate, ParamSpec
+
 from domovoy.applications.types import Interval
-
 from domovoy.core.app_infra import AppWrapper
-from domovoy.plugins.plugins import AppPlugin
+from domovoy.core.context import context_callback_id, context_logger
+from domovoy.plugins import callbacks
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
-from .core import EntityState, HassCore
-from .types import HassApiDataDict, HassApiValue
-from .synthetic import HassSyntheticDomainsServiceCalls
+from domovoy.plugins.plugins import AppPlugin
 
-import domovoy.plugins.callbacks as callbacks
-from domovoy.core.context import context_logger, context_callback_id
+from .core import EntityState, HassCore
+from .synthetic import HassSyntheticDomainsServiceCalls
+from .types import HassApiDataDict, HassApiValue
 
 P = ParamSpec("P")
 
@@ -48,12 +49,12 @@ class HassPlugin(AppPlugin):
         return entity_state
 
     def get_entity_id_by_attribute(
-        self, attribute: str, value: str | None
+        self, attribute: str, value: str | None,
     ) -> list[str]:
         return self.__hass.get_entity_id_by_attribute(attribute, value)
 
     async def fire_event(
-        self, event_type: str, event_data: HassApiDataDict | None = None
+        self, event_type: str, event_data: HassApiDataDict | None = None,
     ) -> None:
         await self.__hass.fire_event(event_type, event_data)
 
@@ -74,7 +75,7 @@ class HassPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def listen_trigger_callback(
-            subscription_id: int, trigger_vars: HassApiDataDict
+            subscription_id: int, trigger_vars: HassApiDataDict,
         ) -> None:
             self._wrapper.logger.debug(
                 "Calling Listen Trigger Callback: {cls_name}.{func_name} from callback_id: {subscription_id}",
@@ -87,18 +88,18 @@ class HassPlugin(AppPlugin):
                 await self.__hass.unsubscribe_trigger(subscription_id)
 
             await instrumented_callback(
-                subscription_id, trigger_vars, *callback_args, **callback_kwargs
+                subscription_id, trigger_vars, *callback_args, **callback_kwargs,
             )
 
         return str(
             await self.__hass.subscribe_trigger(
                 listen_trigger_callback,
                 trigger,
-            )
+            ),
         )
 
     async def call_service(
-        self, service_name: str, **kwargs: HassApiValue
+        self, service_name: str, **kwargs: HassApiValue,
     ) -> HassApiDataDict | None:
         service_name_segments = service_name.split(".")
 
@@ -146,7 +147,7 @@ class HassPlugin(AppPlugin):
             kwargs["entity_id"] = val
 
         return await self.__hass.call_service(
-            domain=domain, service=service, service_data=kwargs, entity_id=entity_id
+            domain=domain, service=service, service_data=kwargs, entity_id=entity_id,
         )
 
     async def wait_for_state_to_be(
@@ -158,12 +159,12 @@ class HassPlugin(AppPlugin):
     ) -> None:
         if timeout is None:
             await self.__wait_for_state_to_be_implementation(
-                entity_id, states, duration
+                entity_id, states, duration,
             )
         else:
             async with asyncio.timeout(timeout.total_seconds()):
                 await self.__wait_for_state_to_be_implementation(
-                    entity_id, states, duration
+                    entity_id, states, duration,
                 )
 
     def __wait_for_state_to_be_implementation(
@@ -185,7 +186,7 @@ class HassPlugin(AppPlugin):
                 if (
                     duration is not None
                     and not entity_full_state.has_been_in_current_state_for_at_least(
-                        duration
+                        duration,
                     )
                 ):
                     await asyncio.sleep(
@@ -193,11 +194,11 @@ class HassPlugin(AppPlugin):
                             duration.to_timedelta()
                             - entity_full_state.get_time_in_current_state()
                         ).total_seconds()
-                        + 0.5
+                        + 0.5,
                     )
 
                     if not self.get_full_state(
-                        entity
+                        entity,
                     ).has_been_in_current_state_for_at_least(duration):
                         return
 

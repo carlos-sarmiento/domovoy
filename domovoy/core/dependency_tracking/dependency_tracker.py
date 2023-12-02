@@ -1,27 +1,25 @@
 from __future__ import annotations
 
 import asyncio
-import logging
-import os
 import importlib
 import importlib.util
+import logging
+import os
 import sys
-
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Tuple
 
 from importlab import environment
 from importlab.graph import ImportGraph
 from watchdog.observers import Observer
+
 from domovoy.core.configuration import get_main_config
+from domovoy.core.dependency_tracking.file_watcher import ReloadPythonFileWatcher
+from domovoy.core.engine.engine import AppEngine
 from domovoy.core.errors import DomovoyAsyncException
 from domovoy.core.logging import get_logger
-from domovoy.core.engine.engine import AppEngine
 
-from domovoy.core.dependency_tracking.file_watcher import ReloadPythonFileWatcher
 from .deepreload import reload as deepreload
-
 
 _logcore = get_logger(__name__)
 _logcore_ignore_paths = get_logger(f"{__name__}.ignore")
@@ -94,7 +92,7 @@ class DependencyTracker:
 
         if filepath.endswith(".ignore.py"):
             _logcore.warning(
-                "Ignoring {filepath} because it ends in .ignore.py", filepath=filepath
+                "Ignoring {filepath} because it ends in .ignore.py", filepath=filepath,
             )
             return
 
@@ -181,17 +179,17 @@ class DependencyTracker:
 
         if _logcore.getEffectiveLevel() < logging.DEBUG:
             _logcore.debug(
-                "Depdency Graph: {graph}", graph=self.render_dependency_graph()
+                "Depdency Graph: {graph}", graph=self.render_dependency_graph(),
             )
 
         if not any(
             [
                 x[0].module_name.endswith(get_main_config().app_suffix)
                 for x in nodes_to_load + nodes_to_reload
-            ]
+            ],
         ):
             _logcore.warning(
-                "The dependency tree does not include an _apps file. Not reloading any modules"
+                "The dependency tree does not include an _apps file. Not reloading any modules",
             )
             return
 
@@ -215,7 +213,7 @@ class DependencyTracker:
         return buffer
 
     def __clean_and_rank(
-        self, nodes: list[Tuple[ModuleTrackingRecord, int]]
+        self, nodes: list[tuple[ModuleTrackingRecord, int]],
     ) -> list[ModuleTrackingRecord]:
         sorted_nodes = sorted(nodes, key=lambda x: x[1], reverse=True)
 
@@ -243,32 +241,32 @@ class DependencyTracker:
         return [x for x in self.__dependencies.values() if not x.imports]
 
     def __build_recursive_list_of_imports_from_node(
-        self, node: ModuleTrackingRecord, depth: int = 0
-    ) -> list[Tuple[ModuleTrackingRecord, int]]:
+        self, node: ModuleTrackingRecord, depth: int = 0,
+    ) -> list[tuple[ModuleTrackingRecord, int]]:
         nodes = [(node, depth)]
 
         for imp in node.imports:
             importers = self.__build_recursive_list_of_imports_from_node(
-                imp, depth=depth + 1
+                imp, depth=depth + 1,
             )
             _logcore.debug(
-                "Dependencies of {node}: {importers}", node=node, importers=importers
+                "Dependencies of {node}: {importers}", node=node, importers=importers,
             )
             nodes = importers + nodes
 
         return nodes
 
     def __build_recursive_list_of_importers_of_node(
-        self, node: ModuleTrackingRecord, depth: int = 0
-    ) -> list[Tuple[ModuleTrackingRecord, int]]:
+        self, node: ModuleTrackingRecord, depth: int = 0,
+    ) -> list[tuple[ModuleTrackingRecord, int]]:
         nodes = [(node, depth)]
 
         for imp in node.imported_by:
             importers = self.__build_recursive_list_of_importers_of_node(
-                imp, depth=depth + 1
+                imp, depth=depth + 1,
             )
             _logcore.debug(
-                "Importers of {node}: {importers}", node=node, importers=importers
+                "Importers of {node}: {importers}", node=node, importers=importers,
             )
             nodes = nodes + importers
 
@@ -313,7 +311,7 @@ class DependencyTracker:
                         )
 
                         node.module = deepreload(
-                            node.module, [n.module_name for n in nodes]
+                            node.module, [n.module_name for n in nodes],
                         )
 
                 except SyntaxError as e:
@@ -366,9 +364,9 @@ class DependencyTracker:
     def __notify_file_changed(self, filepath: str, is_deleted: bool) -> None:
         if self.__current_event_loop is None:
             raise DomovoyAsyncException(
-                "Code is not running inside an AsyncIO Event Loop"
+                "Code is not running inside an AsyncIO Event Loop",
             )
 
         self.__current_event_loop.create_task(
-            self.process_file_changed(filepath, is_deleted)
+            self.process_file_changed(filepath, is_deleted),
         )

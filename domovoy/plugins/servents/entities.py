@@ -3,10 +3,10 @@ from typing import Any
 
 from domovoy.core.errors import DomovoyException
 from domovoy.core.utils import parse_state
+from domovoy.plugins.hass import HassPlugin
 from domovoy.plugins.hass.core import EntityState
 from domovoy.plugins.hass.types import HassApiDataDict
-from .exceptions import ServentMissingRegistrationError
-from .enums import EntityType
+
 from .entity_configs import (
     ServEntBinarySensorConfig,
     ServEntButtonConfig,
@@ -18,7 +18,8 @@ from .entity_configs import (
     ServEntSwitchConfig,
     ServEntThresholdBinarySensorConfig,
 )
-from domovoy.plugins.hass import HassPlugin
+from .enums import EntityType
+from .exceptions import ServentMissingRegistrationError
 
 
 class ServEntEntity:
@@ -49,14 +50,14 @@ class ServEntEntity:
 
     def get_entity_id(self) -> str:
         entity_id = self.__hass.get_entity_id_by_attribute(
-            "servent_id", self.entity_config.servent_id
+            "servent_id", self.entity_config.servent_id,
         )
 
         if entity_id:
             return entity_id[0]
         else:
             raise ServentMissingRegistrationError(
-                "Servent Entity hasn't been registered in the system."
+                "Servent Entity hasn't been registered in the system.",
             )
 
     def get_state(self) -> str:
@@ -83,7 +84,7 @@ class ServEntEntity:
                 return full_state
 
         raise ServentMissingRegistrationError(
-            "The Servent Entity has not yet been registered in Home Assistant."
+            "The Servent Entity has not yet been registered in Home Assistant.",
         )
 
 
@@ -100,7 +101,7 @@ class ServEntSensor(ServEntEntity):
     async def set_to(
         self,
         state: float | int | str | datetime.datetime | None,
-        attributes: dict | None | None = None,
+        attributes: dict | None = None,
     ) -> None:
         return await super().set_to(state, attributes or {})
 
@@ -117,7 +118,7 @@ class ServEntThresholdBinarySensor(ServEntEntity):
         device_config: ServEntDeviceConfig,
     ) -> None:
         super().__init__(
-            hass, EntityType.THRESHOLD_BINARY_SENSOR, servent_id, config, device_config
+            hass, EntityType.THRESHOLD_BINARY_SENSOR, servent_id, config, device_config,
         )
 
     async def set_to(self, state: bool, attributes: dict | None = None) -> None:
@@ -142,7 +143,7 @@ class ServEntBinarySensor(ServEntEntity):
         device_config: ServEntDeviceConfig,
     ) -> None:
         super().__init__(
-            hass, EntityType.BINARY_SENSOR, servent_id, config, device_config
+            hass, EntityType.BINARY_SENSOR, servent_id, config, device_config,
         )
 
     async def set_on(self, attributes: dict | None = None) -> None:
@@ -232,7 +233,7 @@ class ServEntSelect(ServEntEntity):
         super().__init__(hass, EntityType.SELECT, servent_id, config, device_config)
 
     async def set_to(
-        self, state: str, attributes: dict[str, Any] | None = None
+        self, state: str, attributes: dict[str, Any] | None = None,
     ) -> None:
         return await super().set_to(state, attributes)
 

@@ -1,11 +1,12 @@
 import asyncio
+
 from aiohttp import web
 from strawberry.aiohttp.views import GraphQLView
-from domovoy.core.services.service import DomovoyService, DomovoyServiceResources
+
 from domovoy.core.logging import get_logger
+from domovoy.core.services.service import DomovoyService, DomovoyServiceResources
 
 from .schema import build_schema
-
 
 _logcore = get_logger(__name__)
 
