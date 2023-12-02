@@ -1,3 +1,6 @@
+[project]
+requires-python = ">=3.11"
+
 [tool.poetry]
 name = "domovoy"
 version = "0.1.0"
@@ -30,3 +33,49 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
 stubPath = "typings"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+# select = ["E4", "E7", "E9", "F", "W", "ARG"]
+select = ["ALL"]
+ignore = [
+    "ANN101",
+    "BLE001",
+    "C901",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "EM101",
+    "INP001",
+    "PERF203",
+    "PLE1205",
+    "PLR0912",
+    "PLR0913",
+    "PLR2004",
+    "PLW0603",
+    "S106",
+    "S311",
+    "S603",
+    "SIM105",
+    "TRY003",
+    "TRY400",
+    "TRY401",
+    "PLR0915",
+
+    "TCH001",
+    "TCH002",
+    "TCH003",
+# These are rules that are valuable but can be disabled when configuring ruff because they are very noisy in the current codebase
+# "ANN201", "ANN001", "ARG002", "G004", "D400", "D415", "PYI013",
+# "COM812", "D407", "D401", "ISC003", "UP037", "PIE790", "ANN204",
+# "PTH119", "TCH001", "S104", "ANN002", "ERA001","DTZ011", "DTZ005",
+# "TRY002", "PGH003", "A002", "A003", "ANN003"
+
+]
