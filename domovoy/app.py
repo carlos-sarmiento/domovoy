@@ -16,13 +16,13 @@ _logcore = get_logger(__name__)
 _is_running = False
 
 
-def stop_domovoy():
+def stop_domovoy() -> None:
     global _is_running
     _logcore.critical("Received Signal from App to stop Domovoy")
     _is_running = False
 
 
-async def start(wait_for_all_tasks_before_exit: bool = True):
+async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
     global _is_running
     _is_running = True
     app_engine = None
@@ -65,9 +65,7 @@ async def start(wait_for_all_tasks_before_exit: bool = True):
             dependency_tracker.stop()
 
         if wait_for_all_tasks_before_exit:
-            pending_tasks = [
-                t for t in asyncio.all_tasks() if t != asyncio.current_task()
-            ]
+            pending_tasks = [t for t in asyncio.all_tasks() if t != asyncio.current_task()]
 
             _logcore.warning(
                 "Cancelling remaining {pending_tasks} tasks",
@@ -83,9 +81,7 @@ async def start(wait_for_all_tasks_before_exit: bool = True):
         _logcore.critical("Domovoy Terminated")
 
 
-async def loop_until_exit():
-    global _is_running
-
+async def loop_until_exit() -> None:
     try:
         while _is_running:
             try:

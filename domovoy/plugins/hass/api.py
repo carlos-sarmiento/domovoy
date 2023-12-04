@@ -182,7 +182,7 @@ class HassWebsocketApi:
         finally:
             self.__notify_connection_state_update(HassApiConnectionState.DISCONNECTED)
 
-    def stop(self):
+    def stop(self) -> None:
         if not self.__is_running:
             return
 
@@ -195,7 +195,7 @@ class HassWebsocketApi:
         if not self.__msg_send_task.cancelled():
             self.__msg_send_task.cancel()
 
-    async def hass_message_receiver(self, websocket: WebSocketClientProtocol):
+    async def hass_message_receiver(self, websocket: WebSocketClientProtocol) -> None:
         try:
             async for message_raw in websocket:
                 message = parse_message(message_raw, self.__parse_datetimes)
