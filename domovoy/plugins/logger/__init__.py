@@ -1,8 +1,9 @@
 import asyncio
 import uuid
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Mapping, ParamSpec, Set
+from typing import TYPE_CHECKING, Any, ParamSpec
 
 from domovoy.core.app_infra import AppPlugin
 from domovoy.core.context import inside_log_callback
@@ -33,7 +34,7 @@ class LoggerCallbackRegistration:
 class LoggerPlugin(AppPlugin):
     _wrapper: "AppWrapper"
     __log_callbacks: dict[str, LoggerCallbackRegistration]
-    __running_callbacks: Set[asyncio.Task[None]]
+    __running_callbacks: set[asyncio.Task[None]]
 
     def __init__(
         self,

@@ -3,11 +3,10 @@ from __future__ import annotations
 import asyncio
 import datetime
 import inspect
+from collections.abc import Awaitable, Callable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
-    Callable,
     Concatenate,
     Literal,
     ParamSpec,
@@ -49,7 +48,7 @@ class CallbacksPlugin(AppPlugin):
         name: str,
         wrapper: AppWrapper,
         register: CallbackRegister,
-    ):
+    ) -> None:
         super().__init__(name, wrapper)
         self.__register = register
 

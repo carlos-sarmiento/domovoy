@@ -1,6 +1,7 @@
 import asyncio
 import datetime
-from typing import Any, Awaitable, Callable, ParamSpec, TypeVar, Union
+from collections.abc import Awaitable, Callable
+from typing import Any, ParamSpec, TypeVar
 
 import pytz
 from dateutil.parser import parse
@@ -11,8 +12,8 @@ from domovoy.core.configuration import get_main_config
 from domovoy.core.utils import asFloat, asInt, get_callback_name
 from domovoy.plugins.plugins import AppPlugin
 
-TFloat = TypeVar("TFloat", bound=Union[float, None])
-TInt = TypeVar("TInt", bound=Union[float, None])
+TFloat = TypeVar("TFloat", bound=float | None)
+TInt = TypeVar("TInt", bound=float | None)
 
 P = ParamSpec("P")
 

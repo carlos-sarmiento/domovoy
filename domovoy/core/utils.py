@@ -1,6 +1,7 @@
+from collections.abc import Callable
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Callable
+from typing import Any
 
 import pytz
 

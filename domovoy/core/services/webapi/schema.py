@@ -1,5 +1,5 @@
 import datetime
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import strawberry
 from apscheduler.job import Job

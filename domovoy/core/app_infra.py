@@ -4,9 +4,10 @@ import asyncio
 import datetime
 import inspect
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Awaitable, Callable, Concatenate, ParamSpec, TypeVar, Union
+from typing import Any, Concatenate, ParamSpec, TypeVar
 
 from apscheduler.job import Job
 from apscheduler.triggers.base import BaseTrigger
@@ -32,11 +33,11 @@ P = ParamSpec("P")
 T = TypeVar("T", bound=AppPlugin)
 _logcore = get_logger(__name__)
 
-TStrOrInt = TypeVar("TStrOrInt", bound=Union[int, str])
+TStrOrInt = TypeVar("TStrOrInt", bound=int | str)
 
 
 class EmptyAppBase(AppBase[EmptyAppConfig]):
-    def __init__(self):
+    def __init__(self) -> None:
         ...
 
     async def initialize(self) -> None:

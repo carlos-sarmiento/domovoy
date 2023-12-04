@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Literal, ParamSpec
+from typing import Any, Literal, ParamSpec
 
 from domovoy.applications.types import Interval
 from domovoy.core.logging import get_logger

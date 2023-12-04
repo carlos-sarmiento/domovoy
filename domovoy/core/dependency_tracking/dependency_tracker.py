@@ -34,10 +34,10 @@ class ModuleTrackingRecord:
     imports: list[ModuleTrackingRecord]
     is_app_file: bool = False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"MTR({self.module_name})"
 
 
@@ -45,7 +45,7 @@ class DependencyTracker:
     __dependencies: dict[str, ModuleTrackingRecord] = {}
     __current_event_loop: asyncio.AbstractEventLoop
 
-    def __init__(self, app_path: str, app_registry: AppEngine):
+    def __init__(self, app_path: str, app_registry: AppEngine) -> None:
         self.__app_path = app_path
         self.__app_package = os.path.basename(os.path.normpath(app_path))
         self.__app_registry = app_registry

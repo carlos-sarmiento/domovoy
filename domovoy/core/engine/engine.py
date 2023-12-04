@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from logging import DEBUG, WARNING
-from typing import Any, Awaitable, Callable, ParamSpec
+from typing import Any, ParamSpec
 
-# from domovoy.core.services.webapi import DomovoyWebApi
 from domovoy.applications import (
     AppBase,
     AppConfigBase,
 )
+from domovoy.core.app_infra import (
+    AppStatus,
+    AppWrapper,
+    EmptyAppConfig,
+)
 from domovoy.core.configuration import get_main_config
+from domovoy.core.context import context_logger
 from domovoy.core.logging import (
     get_logger,
     get_logger_for_app,
@@ -18,6 +24,7 @@ from domovoy.core.logging import (
 from domovoy.core.services.callback_register import CallbackRegister
 from domovoy.core.services.event_listener import EventListener
 from domovoy.core.services.service import DomovoyServiceResources
+from domovoy.core.services.webapi import DomovoyWebApi
 from domovoy.plugins.callbacks import (
     CallbacksPlugin,
 )
@@ -27,13 +34,6 @@ from domovoy.plugins.logger import LoggerPlugin
 from domovoy.plugins.meta import MetaPlugin
 from domovoy.plugins.servents import ServentsPlugin
 from domovoy.plugins.utils import UtilsPlugin
-
-from ..app_infra import (
-    AppStatus,
-    AppWrapper,
-    EmptyAppConfig,
-)
-from ..context import context_logger
 
 _logcore = get_logger(__name__)
 
@@ -56,9 +56,9 @@ class AppEngine:
 
     __event_listener: EventListener
     __hass_core: HassCore
-    # __webapi: DomovoyWebApi
+    __webapi: DomovoyWebApi
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.__event_listener = EventListener(
             DomovoyServiceResources(
                 start_dependent_apps_callback=self.__build_start_apps_using_service_callback(),
@@ -88,26 +88,26 @@ class AppEngine:
             ),
             self.__event_listener,
         )
-        # self.__webapi = DomovoyWebApi(
-        #     DomovoyServiceResources(
-        #         start_dependent_apps_callback=self.__build_start_apps_using_service_callback(),
-        #         stop_dependent_apps_callback=self.__build_terminate_apps_using_service_callback(),
-        #         get_all_apps_by_name=self.__get_all_apps_by_name,
-        #         config={"address": "0.0.0.0", "port": 8080},
-        #     ),
-        # )
+        self.__webapi = DomovoyWebApi(
+            DomovoyServiceResources(
+                start_dependent_apps_callback=self.__build_start_apps_using_service_callback(),
+                stop_dependent_apps_callback=self.__build_terminate_apps_using_service_callback(),
+                get_all_apps_by_name=self.__get_all_apps_by_name,
+                config={"address": "0.0.0.0", "port": 8080},
+            ),
+        )
 
     async def start(self):
         """Starts the App Engine and its dependent services."""
         _logcore.info("Starting Scheduling Engine")
         self.__event_listener.start()
         self.__callback_register.start()
-        # self.__webapi.start()
+        self.__webapi.start()
         await self.__hass_core.start()
 
     async def stop(self):
         await self.terminate_all_apps_before_engine_stop()
-        # await self.__webapi.stop()
+        await self.__webapi.stop()
         self.__callback_register.stop()
         self.__event_listener.stop()
         await self.__hass_core.stop()
@@ -154,7 +154,9 @@ class AppEngine:
             await self.__initialize_app(wrapper)
         except Exception as e:
             _logcore.exception(
-                "Error when initializing app: {app_name}", e, app_name=app_name,
+                "Error when initializing app: {app_name}",
+                e,
+                app_name=app_name,
             )
 
     def __build_app_instance(self, app_registration: AppRegistration) -> AppWrapper:
@@ -162,7 +164,8 @@ class AppEngine:
             self.__active_apps[app_registration.app_path] = []
 
         _logcore.debug(
-            "Initializing AppWrapper for {app_name}", app_name=app_registration.app_name,
+            "Initializing AppWrapper for {app_name}",
+            app_name=app_registration.app_name,
         )
         wrapper = AppWrapper(
             config=app_registration.config,
@@ -178,14 +181,17 @@ class AppEngine:
         )
 
         _logcore.debug(
-            "Initializing Modules for {app_name}", app_name=app_registration.app_name,
+            "Initializing Modules for {app_name}",
+            app_name=app_registration.app_name,
         )
 
         logmodule = LoggerPlugin("log", wrapper)
         wrapper.register_plugin(logmodule, logmodule.name)
 
         meta = MetaPlugin(
-            "meta", wrapper, lambda: self.__reload_app(app_registration.app_name),
+            "meta",
+            wrapper,
+            lambda: self.__reload_app(app_registration.app_name),
         )
         wrapper.register_plugin(meta, meta.name)
 
@@ -270,7 +276,8 @@ class AppEngine:
 
         if app_name not in self.__active_app_by_name:
             _logcore.warning(
-                "Tried to terminate {app_name} but it is not running", app_name=app_name,
+                "Tried to terminate {app_name} but it is not running",
+                app_name=app_name,
             )
             return
 
@@ -304,10 +311,13 @@ class AppEngine:
         self.__active_apps[wrapper.filepath].remove(wrapper)
 
     async def terminate_app_from_files(
-        self, paths: list[str], remove_from_registry: bool = True,
+        self,
+        paths: list[str],
+        remove_from_registry: bool = True,
     ) -> None:
         _logcore.debug(
-            "Building list of apps for termination from path(s): {paths}", paths=paths,
+            "Building list of apps for termination from path(s): {paths}",
+            paths=paths,
         )
 
         app_names_to_terminate: list[str] = []
@@ -318,12 +328,14 @@ class AppEngine:
             app_names_to_terminate += [x.app_name for x in self.__active_apps[path]]
 
         await self.__terminate_multiple_apps(
-            app_names_to_terminate, remove_from_registry,
+            app_names_to_terminate,
+            remove_from_registry,
         )
 
     async def terminate_all_apps_before_engine_stop(self) -> None:
         await self.__terminate_multiple_apps(
-            list(self.__active_app_by_name.keys()), True,
+            list(self.__active_app_by_name.keys()),
+            True,
         )
 
     def __build_terminate_apps_using_service_callback(
@@ -331,9 +343,7 @@ class AppEngine:
     ) -> Callable[[], Awaitable[None]]:
         async def app_termination_callback() -> None:
             apps_to_terminate = [
-                app_name
-                for app_name in self.__app_registrations.keys()
-                if app_name in self.__active_app_by_name
+                app_name for app_name in self.__app_registrations.keys() if app_name in self.__active_app_by_name
             ]
 
             _logcore.log(
@@ -342,9 +352,7 @@ class AppEngine:
                 apps_to_terminate=len(apps_to_terminate),
             )
 
-            app_terminations = [
-                self.__terminate_app(app_name) for app_name in apps_to_terminate
-            ]
+            app_terminations = [self.__terminate_app(app_name) for app_name in apps_to_terminate]
             await asyncio.gather(*app_terminations)
 
         return app_termination_callback
@@ -354,9 +362,7 @@ class AppEngine:
     ) -> Callable[[], Awaitable[None]]:
         async def app_start_callback() -> None:
             apps_to_start = [
-                app_name
-                for app_name in self.__app_registrations.keys()
-                if app_name not in self.__active_app_by_name
+                app_name for app_name in self.__app_registrations.keys() if app_name not in self.__active_app_by_name
             ]
 
             _logcore.warning(
@@ -369,7 +375,9 @@ class AppEngine:
         return app_start_callback
 
     async def __terminate_multiple_apps(
-        self, app_names_to_terminate: list[str], remove_from_app_registry: bool,
+        self,
+        app_names_to_terminate: list[str],
+        remove_from_app_registry: bool,
     ) -> None:
         if not app_names_to_terminate:
             _logcore.warning("Called termination on an empty app list")
@@ -379,7 +387,8 @@ class AppEngine:
 
             if remove_from_app_registry:
                 _logcore.debug(
-                    "Removing app {app_name} from registrations", app_name=app_name,
+                    "Removing app {app_name} from registrations",
+                    app_name=app_name,
                 )
                 if app_name not in self.__app_registrations:
                     _logcore.debug(

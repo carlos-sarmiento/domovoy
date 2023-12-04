@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from domovoy.core.logging import get_logger
 from domovoy.core.services.service import DomovoyService, DomovoyServiceResources

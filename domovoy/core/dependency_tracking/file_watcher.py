@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import threading
-from typing import Callable
+from collections.abc import Callable
 
 from watchdog.events import FileSystemEventHandler
 
@@ -13,7 +13,7 @@ _logcore = get_logger(__name__)
 class ReloadPythonFileWatcher(FileSystemEventHandler):
     __timer_per_file: dict[str, threading.Timer] = {}
 
-    def __init__(self, load_or_reload_callback: Callable[[str, bool], None]):
+    def __init__(self, load_or_reload_callback: Callable[[str, bool], None]) -> None:
         super().__init__()
         self.__module_load_callback = load_or_reload_callback
 

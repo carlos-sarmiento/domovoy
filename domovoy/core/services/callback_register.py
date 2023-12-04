@@ -3,7 +3,8 @@ from __future__ import annotations
 import datetime
 import logging
 import uuid
-from typing import Awaitable, Callable, Concatenate, ParamSpec
+from collections.abc import Awaitable, Callable
+from typing import Concatenate, ParamSpec
 
 import apscheduler
 from apscheduler.events import EVENT_ALL, JobExecutionEvent, SchedulerEvent

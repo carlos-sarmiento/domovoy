@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
+from collections.abc import Awaitable, Callable
 from enum import StrEnum
-from typing import Awaitable, Callable
 
 import websockets.frames
 from websockets.client import WebSocketClientProtocol, connect

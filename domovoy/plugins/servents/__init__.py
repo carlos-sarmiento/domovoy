@@ -1,6 +1,7 @@
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict
-from typing import Any, Awaitable, Callable, Concatenate, ParamSpec
+from typing import Any, Concatenate, ParamSpec
 
 from domovoy.core.app_infra import AppWrapper
 from domovoy.core.utils import stripNoneAndEnums

@@ -12,13 +12,11 @@ if TYPE_CHECKING:
 
 
 class AppConfigBase:
-    """The base implementation for App configuration classes"""
-
+    """The base implementation for App configuration classes."""
 
 
 class EmptyAppConfig(AppConfigBase):
-    """A configuration class with no fields. Used when an app doesn't need config"""
-
+    """A configuration class with no fields. Used when an app doesn't need config."""
 
 
 TConfig = TypeVar("TConfig", bound=AppConfigBase)  # , contravariant=True)
@@ -40,7 +38,7 @@ class AppBaseWithoutConfig:
         hass: HassPlugin,
         servents: ServentsPlugin,
         utils: UtilsPlugin,
-    ):
+    ) -> None:
         self.hass = hass
         self.callbacks = scheduler
         self.servents = servents
@@ -49,12 +47,16 @@ class AppBaseWithoutConfig:
         self.utils = utils
 
     async def initialize(self) -> None:
-        """The initialize function is called when an app is first started. It can be used to
-        setup listeners and other parameters needed during operations
+        """Initialize the App when it is started.
+
+        The initialize function is called when an app is first started. It can be used to
+        setup listeners and other parameters needed during operations.
         """
 
     async def finalize(self) -> None:
-        """This function is called when the app is being terminated. It can be used to cleanup
+        """Clean up resources when the app is being terminated.
+
+        This function is called when the app is being terminated. It can be used to cleanup
         any resources created or used by the app which are not handled by Domovoy
         """
 
@@ -71,7 +73,7 @@ class AppBase(Generic[TConfig], AppBaseWithoutConfig):
         hass: HassPlugin,
         servents: ServentsPlugin,
         utils: UtilsPlugin,
-    ):
+    ) -> None:
         super().__init__(meta, log, scheduler, hass, servents, utils)
         self.config = config
 

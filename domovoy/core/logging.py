@@ -5,7 +5,7 @@ import os
 from inspect import getfullargspec
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
 import coloredlogs
 import pytz
@@ -16,7 +16,7 @@ from domovoy.core.errors import DomovoyException
 
 
 class BraceMessage:
-    def __init__(self, fmt: str, args, kwargs):
+    def __init__(self, fmt: str, args, kwargs) -> None:
         self.fmt = fmt
         self.args = args
         self.kwargs = kwargs
@@ -29,7 +29,7 @@ class BraceMessage:
 
 
 class StyleAdapter(logging.LoggerAdapter):
-    def __init__(self, logger):
+    def __init__(self, logger) -> None:
         self.logger = logger
 
     def log(self, level, msg, *args, **kwargs):
@@ -75,7 +75,7 @@ def __get_log_config(name: str, use_app_logger_default: bool) -> LoggingConfig:
         return _default_config
 
 
-def __get_extended_formatter(formatter: Type[logging.Formatter]):
+def __get_extended_formatter(formatter: type[logging.Formatter]):
     class Formatter(formatter):
         def converter(self, timestamp):
             dt = datetime.datetime.fromtimestamp(timestamp)

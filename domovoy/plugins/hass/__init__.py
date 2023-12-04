@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Awaitable, Callable, Concatenate, ParamSpec
+from collections.abc import Awaitable, Callable
+from typing import Concatenate, ParamSpec
 
 from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppWrapper
@@ -27,7 +28,7 @@ class HassPlugin(AppPlugin):
         name: str,
         wrapper: AppWrapper,
         hass_core: HassCore,
-    ):
+    ) -> None:
         super().__init__(name, wrapper)
         self.__hass = hass_core
         self.services = HassSyntheticDomainsServiceCalls(self)

@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Awaitable, Callable, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, TypeVar
 
 from domovoy.core.app_infra import AppPlugin
 from domovoy.core.configuration import get_main_config

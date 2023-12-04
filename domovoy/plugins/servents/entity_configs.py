@@ -33,7 +33,7 @@ class ServEntSensorConfig(ServEntEntityConfig):
     state_class: SensorStateClass | None = None
     options: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.options is not None and self.device_class is None:
             self.device_class = SensorDeviceClass.ENUM
 
@@ -71,7 +71,7 @@ class ServEntThresholdBinarySensorConfig(ServEntEntityConfig):
     upper: float | None = None
     hysteresis: float = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.lower is None and self.upper is None:
             raise ValueError(
                 "Threshold sensor must have at least a lower or an upper value set.",

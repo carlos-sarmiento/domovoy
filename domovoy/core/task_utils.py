@@ -1,8 +1,9 @@
 import asyncio
 from asyncio import Task
-from typing import Any, Coroutine, Generator, Set
+from collections.abc import Coroutine, Generator
+from typing import Any
 
-_running_tasks: Set[Task[None]] = set()
+_running_tasks: set[Task[None]] = set()
 
 
 def run_and_forget_task(
