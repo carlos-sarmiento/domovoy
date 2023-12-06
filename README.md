@@ -1,5 +1,12 @@
 # Domovoy
 
+## How to run
+
+```bash
+poetry install
+python domovoy/cli.py --config config.yml
+```
+
 Missing Docs
 
 ## Basic App Template with Config
@@ -31,6 +38,7 @@ class AppName(AppBase[EmptyAppConfig]):
 ```
 
 ## How to register an app
+
 ```python
 from domovoy.applications.registration import register_app
 
@@ -45,6 +53,7 @@ register_app(
 ```
 
 ## Register multiple instances of the same AppType
+
 ```python
 from domovoy.applications.registration import register_app_multiple
 
@@ -68,4 +77,3 @@ register_app_multiple(
     configs=apps_to_register,
 )
 ```
-

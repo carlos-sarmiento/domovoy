@@ -1,5 +1,5 @@
-from domovoy.core.errors import DomovoyException
+from domovoy.core.errors import DomovoyError
 
 
-class ServentMissingRegistrationError(DomovoyException):
+class ServentMissingRegistrationError(DomovoyError):
     ...

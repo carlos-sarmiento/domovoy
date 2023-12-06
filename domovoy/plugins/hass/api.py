@@ -42,9 +42,10 @@ class HassApiConnectionState(StrEnum):
 class HassWebsocketApi:
     __cmd_queue: deque[HassApiDataDict]
     __in_flight_ops: dict[
-        int, tuple[HassApiDataDict, asyncio.Future[HassApiDataDict]],
-    ] = {}
-    __event_callbacks: dict[int, EventListenerCallable | TriggerListenerCallable] = {}
+        int,
+        tuple[HassApiDataDict, asyncio.Future[HassApiDataDict]],
+    ]
+    __event_callbacks: dict[int, EventListenerCallable | TriggerListenerCallable]
     __current_op_id = 2
     __msg_receive_task: asyncio.Task[None]
     __msg_send_task: asyncio.Task[None]
@@ -53,40 +54,44 @@ class HassWebsocketApi:
     __access_token: str
     __parse_datetimes: bool
     __connection_state_callback: Callable[[HassApiConnectionState], Awaitable[None]]
-    __connection_state_task: list[asyncio.Task[None]] = []
+    __connection_state_task: list[asyncio.Task[None]]
 
-    async def __dummy_callback(*args, **kwargs) -> None:
+    async def __dummy_callback(*_args: object, **_kwargs: object) -> None:
         ...
 
     def __init__(
         self,
         uri: str,
         access_token: str,
-        connection_state_callback: Callable[[HassApiConnectionState], Awaitable[None]]
-        | None = None,
+        connection_state_callback: Callable[[HassApiConnectionState], Awaitable[None]] | None = None,
+        *,
         parse_datetimes: bool = True,
     ) -> None:
+        self.__in_flight_ops = {}
+        self.__event_callbacks = {}
+        self.__connection_state_task = []
         self.__cmd_queue = deque([])
         self.__uri = uri
         self.__access_token = access_token
-        self.__connection_state_callback = (
-            connection_state_callback or self.__dummy_callback
-        )
+        self.__connection_state_callback = connection_state_callback or self.__dummy_callback
         self.__parse_datetimes = parse_datetimes
 
     def start(self) -> asyncio.Future[None]:
         _logcore.info("Starting Home Assistant API")
         future: asyncio.Future[None] = asyncio.get_event_loop().create_future()
         asyncio.get_event_loop().create_task(
-            self.__connect_and_listen(future), name="hass_api_connect_and_listen",
+            self.__connect_and_listen(future),
+            name="hass_api_connect_and_listen",
         )
         return future
 
     def __notify_connection_state_update(
-        self, connection_state: HassApiConnectionState,
+        self,
+        connection_state: HassApiConnectionState,
     ) -> None:
         _logcore.debug(
-            "Notifying connection state update: `{state}`", state=connection_state,
+            "Notifying connection state update: `{state}`",
+            state=connection_state,
         )
         task = asyncio.get_event_loop().create_task(
             self.__connection_state_callback(connection_state),  # type: ignore
@@ -110,7 +115,8 @@ class HassWebsocketApi:
             self.__prep_for_connection()
 
             await self.__authenticate(
-                websocket=websocket, access_token=self.__access_token,
+                websocket=websocket,
+                access_token=self.__access_token,
             )
 
             future.set_result(None)
@@ -164,9 +170,8 @@ class HassWebsocketApi:
                 if not future.done():
                     future.set_result(None)
 
-            else:
-                if not future.done():
-                    future.set_exception(e)
+            elif not future.done():
+                future.set_exception(e)
 
         except Exception as e:
             _logcore.exception("Unhandled Exception in HassAPI Connection Loop")
@@ -175,9 +180,8 @@ class HassWebsocketApi:
                 if not future.done():
                     future.set_result(None)
 
-            else:
-                if not future.done():
-                    future.set_exception(e)
+            elif not future.done():
+                future.set_exception(e)
 
         finally:
             self.__notify_connection_state_update(HassApiConnectionState.DISCONNECTED)
@@ -198,26 +202,26 @@ class HassWebsocketApi:
     async def hass_message_receiver(self, websocket: WebSocketClientProtocol) -> None:
         try:
             async for message_raw in websocket:
-                message = parse_message(message_raw, self.__parse_datetimes)
+                message = parse_message(message_raw, parse_datetimes=self.__parse_datetimes)
 
-                id: int = message["id"]  # type: ignore
-                type = message["type"]
+                message_id: int = message["id"]  # type: ignore
+                message_type = message["type"]
                 _messages_logcore.debug(
                     "Received Message from Hass. ID: {id} Type: {type}: Message: {message}",
-                    id=id,
-                    type=type,
+                    id=message_id,
+                    type=message_type,
                     message=message_raw,
                 )
 
-                if type == "event":
-                    if id not in self.__event_callbacks:
+                if message_type == "event":
+                    if message_id not in self.__event_callbacks:
                         _logcore.debug(
                             "Received an Event without a registered Callback. Callback ID: `{id}`",
-                            id=id,
+                            id=message_id,
                         )
                         continue
 
-                    event_callback = self.__event_callbacks[id]
+                    event_callback = self.__event_callbacks[message_id]
 
                     event: HassApiDataDict = message["event"]  # type: ignore
 
@@ -234,12 +238,12 @@ class HassWebsocketApi:
                         entity_id = data.get("entity_id", None)
 
                         _messages_logcore.debug(
-                            f"Received from listener with id: {id} "
-                            + f"a `{event_type_or_subscription_id}` event for {entity_id}. {data}",
+                            f"Received from listener with id: {message_id} "
+                            f"a `{event_type_or_subscription_id}` event for {entity_id}. {data}",
                         )
 
                     elif "variables" in event:
-                        event_type_or_subscription_id: int = id
+                        event_type_or_subscription_id: int = message_id
                         data = event["variables"].get("trigger", {})  # type: ignore
 
                         _messages_logcore.debug(
@@ -255,13 +259,13 @@ class HassWebsocketApi:
                     except asyncio.exceptions.CancelledError:
                         _logcore.debug(
                             "Cancelled Error for callback to Message ID: `{id}`",
-                            id=id,
+                            id=message_id,
                         )
 
                     except TimeoutError:
                         _logcore.debug(
                             "Timeout Error for callback to Message ID: `{id}`",
-                            id=id,
+                            id=message_id,
                         )
 
                     except Exception as e:
@@ -273,21 +277,21 @@ class HassWebsocketApi:
 
                     continue
 
-                if id not in self.__in_flight_ops:
+                if message_id not in self.__in_flight_ops:
                     _logcore.debug(
                         "Received a response for ID {id} that does not have an in-flight command. Ignoring...",
-                        id=id,
+                        id=message_id,
                     )
                     continue
 
-                (cmd, future) = self.__in_flight_ops[id]
-                self.__in_flight_ops.pop(id)
+                (cmd, future) = self.__in_flight_ops[message_id]
+                self.__in_flight_ops.pop(message_id)
 
                 if future.done():
                     if self.__is_running:
                         _logcore.warning(
                             "Received a response for a finished future. ID: `{id}`. Future: `{future}`",
-                            id=id,
+                            id=message_id,
                             future=future,
                         )
 
@@ -306,7 +310,7 @@ class HassWebsocketApi:
                     )
                     continue
 
-                elif "success" in message and message["success"] is False:
+                if "success" in message and message["success"] is False:
                     future.set_exception(
                         HassApiCommandError(
                             command_id=message["id"],  # type: ignore
@@ -332,14 +336,14 @@ class HassWebsocketApi:
             while True:
                 while len(self.__cmd_queue) > 0:
                     message = self.__cmd_queue.popleft()
-                    id: int = message["id"]  # type: ignore
+                    message_id: int = message["id"]  # type: ignore
                     try:
                         encoded_message = encode_message(message)
                         _logcore.debug("Sending message to hass")
                         await websocket.send(encoded_message)
                     except HassApiParseError as e:
-                        (cmd, future) = self.__in_flight_ops[id]
-                        self.__in_flight_ops.pop(id)
+                        (cmd, future) = self.__in_flight_ops[message_id]
+                        self.__in_flight_ops.pop(message_id)
                         future.set_exception(e)
 
                 # We do this to make sure this function yields
@@ -360,11 +364,13 @@ class HassWebsocketApi:
             return
 
     async def __authenticate(
-        self, websocket: WebSocketClientProtocol, access_token: str,
-    ):
+        self,
+        websocket: WebSocketClientProtocol,
+        access_token: str,
+    ) -> None:
         _logcore.info("Authenticating with Home Assistant")
         initial_message = await websocket.recv()
-        initial_message = parse_message(initial_message, self.__parse_datetimes)
+        initial_message = parse_message(initial_message, parse_datetimes=self.__parse_datetimes)
 
         if initial_message["type"] != "auth_required":
             raise HassApiCommandError(
@@ -380,12 +386,12 @@ class HassWebsocketApi:
         )
 
         auth_response = await websocket.recv()
-        auth_response = parse_message(auth_response, self.__parse_datetimes)
+        auth_response = parse_message(auth_response, parse_datetimes=self.__parse_datetimes)
 
         if auth_response["type"] == "auth_ok":
             _logcore.info("Authenticated with Home Assistant")
         else:
-            raise HassApiAuthenticationError()
+            raise HassApiAuthenticationError
 
     def __connect_to_ha(
         self,
@@ -398,7 +404,7 @@ class HassWebsocketApi:
             ping_timeout=None,
         )
 
-    def __prep_for_connection(self):
+    def __prep_for_connection(self) -> None:
         self.__cmd_queue = deque()
         self.__in_flight_ops = {}
         self.__event_callbacks = {}
@@ -406,7 +412,8 @@ class HassWebsocketApi:
     # Home Assistant API Below
 
     def __send_command(
-        self, command: HassApiDataDict,
+        self,
+        command: HassApiDataDict,
     ) -> asyncio.Future[HassApiDataDict]:
         _logcore.debug("Queueing Command to HA: {command}", command=command)
 
@@ -490,7 +497,7 @@ class HassWebsocketApi:
 
         _logcore.debug(
             "Received Response for unsubscribe_events call for subscription_id: {subscription_id}."
-            + " Response: {response}",
+            " Response: {response}",
             subscription_id=subscription_id,
             response=response,
         )
@@ -502,7 +509,9 @@ class HassWebsocketApi:
         return False
 
     async def fire_event(
-        self, event_type: str, event_data: HassApiDataDict | None = None,
+        self,
+        event_type: str,
+        event_data: HassApiDataDict | None = None,
     ) -> HassApiDataDict:
         _logcore.debug(
             "Calling fire_event with event: {event_type} and data: {event_data}",
@@ -519,7 +528,7 @@ class HassWebsocketApi:
 
         _logcore.debug(
             "Received Response for fire_event call for event: {event_type} and data: {event_data}."
-            + " Response: {response}",
+            " Response: {response}",
             event_type=event_type,
             event_data=event_data,
             response=response,

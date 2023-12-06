@@ -1,16 +1,18 @@
 import datetime
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
 from domovoy.core.configuration import get_main_config
 from domovoy.plugins.hass.parsing import encode_message
+from domovoy.plugins.hass.types import HassApiValue
 
 if TYPE_CHECKING:
     from domovoy.plugins.hass import HassPlugin
 
 
 class HassServiceCall(Protocol):
-    async def __call__(self, **kwargs) -> None:
+    async def __call__(self, **kwargs: HassApiValue) -> None:
         ...
 
 
@@ -23,7 +25,7 @@ class HassSyntheticServiceCall:
         self.__hass = hass_plugin
 
     def __getattr__(self, service: str) -> HassServiceCall:
-        async def synthetic_service_call(**kwargs) -> None:
+        async def synthetic_service_call(**kwargs: HassApiValue) -> None:
             await self.__hass.call_service(f"{self.__domain}.{service}", **kwargs)
 
         return synthetic_service_call
@@ -31,24 +33,29 @@ class HassSyntheticServiceCall:
 
 class HassSyntheticDomainsServiceCalls:
     __hass: "HassPlugin"
-    __defined_domains: dict[str, HassSyntheticServiceCall] = {}
+    __defined_domains: dict[str, HassSyntheticServiceCall]
 
     def __init__(self, hass_pluging: "HassPlugin") -> None:
         self.__hass = hass_pluging
+        self.__defined_domains = {}
 
     def __getattr__(self, name: str) -> HassSyntheticServiceCall:
         if name not in self.__defined_domains:
             self.__defined_domains[name] = HassSyntheticServiceCall(
-                hass_plugin=self.__hass, domain=name,
+                hass_plugin=self.__hass,
+                domain=name,
             )
 
         return self.__defined_domains[name]
 
 
 def generate_stub_file_for_synthetic_services(
-    domains: dict[str, Any], destination: str, save_domains_as_json: bool = False,
+    domains: dict[str, Any],
+    destination: str,
+    *,
+    save_domains_as_json: bool = False,
 ) -> None:
-    def __to_camel_case(snake_str):
+    def __to_camel_case(snake_str: str) -> str:
         return "".join(x.capitalize() for x in snake_str.lower().split("_"))
 
     def __clean_function_name(name: str, domain: str) -> str:
@@ -60,13 +67,14 @@ def generate_stub_file_for_synthetic_services(
     domain_to_class: dict[str, str] = {}
 
     if save_domains_as_json:
-        with open(f"{destination}.json", "w") as services_file:
+        with Path(f"{destination}.json").open("w") as services_file:
             asd = encode_message(domains)
             services_file.write(asd)
 
-    with open(destination, "w") as text_file:
+    with Path(destination).open("w") as text_file:
         now = datetime.datetime.now(get_main_config().get_timezone())
         text_file.write(f"# Generated on {now.isoformat()}\n\n")
+        text_file.write("# ruff: noqa\n\n")
 
         text_file.write("from __future__ import annotations\n")
         text_file.write("from typing import Any\n")
@@ -79,7 +87,7 @@ def generate_stub_file_for_synthetic_services(
             "    def __init__(self, hass_pluging: HassPlugin) -> None: ...\n\n",
         )
 
-        for domain, services in sorted(domains.items()):
+        for domain, _services in sorted(domains.items()):
             class_name = f"HassSyntheticService{__to_camel_case(domain)}Domain"
             domain_to_class[domain] = class_name
             text_file.write(f"    {domain}: {class_name}\n")
@@ -104,7 +112,7 @@ def generate_stub_file_for_synthetic_services(
                         typing = "Any"
 
                         if field == "entity_id":
-                            field = "service_data_entity_id"
+                            field = "service_data_entity_id"  # noqa: PLW2901
 
                         if "selector" in field_params:
                             if "boolean" in field_params["selector"]:
@@ -112,18 +120,12 @@ def generate_stub_file_for_synthetic_services(
                             if "text" in field_params["selector"]:
                                 typing += " | str"
                             if "number" in field_params["selector"]:
-                                if (
-                                    field_params["selector"]["number"]
-                                    and "step" in field_params["selector"]["number"]
-                                ):
+                                if field_params["selector"]["number"] and "step" in field_params["selector"]["number"]:
                                     step = field_params["selector"]["number"]["step"]
                                     if step == "any":
                                         typing += " | str | int | float"
 
-                                    elif isinstance(step, int) or (
-                                        isinstance(step, float)
-                                        and float.is_integer(step)
-                                    ):
+                                    elif isinstance(step, int) or (isinstance(step, float) and float.is_integer(step)):
                                         typing += " | int"
                                     else:
                                         typing += " | float"
@@ -140,19 +142,17 @@ def generate_stub_file_for_synthetic_services(
                         elif field.endswith("_id"):
                             typing = "str | list[str]"
 
-                        if (
-                            "required" not in field_params
-                            or not field_params["required"]
-                        ):
+                        if "required" not in field_params or not field_params["required"]:
                             typing += " | None = None"
 
                         arguments[field] = typing.replace("Any | None", "Any").replace(
-                            "Any | ", "",
+                            "Any | ",
+                            "",
                         )
 
                 for arg, typing in sorted(arguments.items()):
                     if arg == "in":
-                        arg = "in_"
+                        arg = "in_"  # noqa: PLW2901
                     args += f"{arg}: {typing}, "
 
                 if len(args) > 0:
@@ -167,7 +167,7 @@ def generate_stub_file_for_synthetic_services(
 
                 text_file.write(
                     "    async def "
-                    + f"{__clean_function_name(service, domain)}(self, {args}**kwargs) -> {return_type}: ...\n",
+                    f"{__clean_function_name(service, domain)}(self, {args}**kwargs) -> {return_type}: ...\n",
                 )
 
             text_file.write("\n\n")

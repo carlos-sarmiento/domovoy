@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -28,20 +27,22 @@ class HassSyntheticServiceStubUpdater(AppBase[HassSyntheticServiceStubUpdaterCon
         await self.update_stubs()
 
     async def homeassistant_started_event_handler(
-        self, event_name: str, event_data: dict[str, Any],
+        self,
+        _event_name: str,
+        _event_data: dict[str, Any],
     ) -> None:
         self.log.info("Home Assistant Started")
         await self.update_stubs()
 
-    async def update_stubs(self):
+    async def update_stubs(self) -> None:
         self.log.info("Updating Home Assitant Services Stub File")
-        Path(os.path.dirname(self.config.stub_path)).mkdir(parents=True, exist_ok=True)
+        Path(self.config.stub_path).parent.mkdir(parents=True, exist_ok=True)
 
         services_definitions = await self.hass.get_service_definitions()
         generate_stub_file_for_synthetic_services(
             services_definitions,
             self.config.stub_path,
-            self.config.dump_hass_services_json,
+            save_domains_as_json=self.config.dump_hass_services_json,
         )
 
 
@@ -56,6 +57,8 @@ class HassTerminateDomovoy(AppBase[EmptyAppConfig]):
         )
 
     async def homeassistant_started_event_handler(
-        self, event_name: str, event_data: dict[str, Any],
+        self,
+        _event_name: str,
+        _event_data: dict[str, Any],
     ) -> None:
         stop_domovoy()

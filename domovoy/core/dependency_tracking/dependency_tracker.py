@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from types import ModuleType
 
 from importlab import environment
@@ -16,7 +17,7 @@ from watchdog.observers import Observer
 from domovoy.core.configuration import get_main_config
 from domovoy.core.dependency_tracking.file_watcher import ReloadPythonFileWatcher
 from domovoy.core.engine.engine import AppEngine
-from domovoy.core.errors import DomovoyAsyncException
+from domovoy.core.errors import DomovoyAsyncError
 from domovoy.core.logging import get_logger
 
 from .deepreload import reload as deepreload
@@ -42,12 +43,14 @@ class ModuleTrackingRecord:
 
 
 class DependencyTracker:
-    __dependencies: dict[str, ModuleTrackingRecord] = {}
+    __dependencies: dict[str, ModuleTrackingRecord]
     __current_event_loop: asyncio.AbstractEventLoop
 
     def __init__(self, app_path: str, app_registry: AppEngine) -> None:
+        self.__dependencies = {}
         self.__app_path = app_path
-        self.__app_package = os.path.basename(os.path.normpath(app_path))
+        self.__app_package = Path(os.path.normpath(app_path)).name
+
         self.__app_registry = app_registry
         self.__current_event_loop = asyncio.get_running_loop()
 
@@ -78,7 +81,7 @@ class DependencyTracker:
         self.__observer.stop()
         self.__observer.join()
 
-    async def process_file_changed(self, filepath: str, is_deletion: bool) -> None:
+    async def process_file_changed(self, filepath: str, *, is_deletion: bool) -> None:
         if not is_deletion:
             _logcore.info(
                 "File Changed: {filepath}",
@@ -92,7 +95,8 @@ class DependencyTracker:
 
         if filepath.endswith(".ignore.py"):
             _logcore.warning(
-                "Ignoring {filepath} because it ends in .ignore.py", filepath=filepath,
+                "Ignoring {filepath} because it ends in .ignore.py",
+                filepath=filepath,
             )
             return
 
@@ -125,7 +129,7 @@ class DependencyTracker:
                 (sys.version_info.major, sys.version_info.minor),
             ),
             [path],
-            True,
+            trim=True,
         )
 
         _logcore.debug(
@@ -143,11 +147,11 @@ class DependencyTracker:
                     current_module_path=current_module_path,
                 )
                 continue
-            else:
-                _logcore.debug(
-                    "Should Import path: {current_module_path}",
-                    current_module_path=current_module_path,
-                )
+
+            _logcore.debug(
+                "Should Import path: {current_module_path}",
+                current_module_path=current_module_path,
+            )
 
             current_mtr = self.__get_module_tracking_record(current_module_path)
 
@@ -161,13 +165,13 @@ class DependencyTracker:
 
             current_mtr.imports = []
 
-            deps: list[str] = [import_graph.format(x) for x in (deps or [])]
-            deps = [x for x in deps if x.startswith(self.__app_path)]
+            final_deps: list[str] = [import_graph.format(x) for x in (deps or [])]
+            final_deps = [x for x in final_deps if x.startswith(self.__app_path)]
 
-            _logcore.debug("Identified dependencies: {deps}", deps=deps)
+            _logcore.debug("Identified dependencies: {final_deps}", final_deps=final_deps)
 
-            if deps:
-                for dep in deps:
+            if final_deps:
+                for dep in final_deps:
                     dep_mtr = self.__get_module_tracking_record(dep)
                     dep_mtr.imported_by.append(current_mtr)
                     current_mtr.imports.append(dep_mtr)
@@ -179,15 +183,11 @@ class DependencyTracker:
 
         if _logcore.getEffectiveLevel() < logging.DEBUG:
             _logcore.debug(
-                "Depdency Graph: {graph}", graph=self.render_dependency_graph(),
+                "Depdency Graph: {graph}",
+                graph=self.render_dependency_graph(),
             )
 
-        if not any(
-            [
-                x[0].module_name.endswith(get_main_config().app_suffix)
-                for x in nodes_to_load + nodes_to_reload
-            ],
-        ):
+        if not any(x[0].module_name.endswith(get_main_config().app_suffix) for x in nodes_to_load + nodes_to_reload):
             _logcore.warning(
                 "The dependency tree does not include an _apps file. Not reloading any modules",
             )
@@ -213,7 +213,8 @@ class DependencyTracker:
         return buffer
 
     def __clean_and_rank(
-        self, nodes: list[tuple[ModuleTrackingRecord, int]],
+        self,
+        nodes: list[tuple[ModuleTrackingRecord, int]],
     ) -> list[ModuleTrackingRecord]:
         sorted_nodes = sorted(nodes, key=lambda x: x[1], reverse=True)
 
@@ -241,32 +242,42 @@ class DependencyTracker:
         return [x for x in self.__dependencies.values() if not x.imports]
 
     def __build_recursive_list_of_imports_from_node(
-        self, node: ModuleTrackingRecord, depth: int = 0,
+        self,
+        node: ModuleTrackingRecord,
+        depth: int = 0,
     ) -> list[tuple[ModuleTrackingRecord, int]]:
         nodes = [(node, depth)]
 
         for imp in node.imports:
             importers = self.__build_recursive_list_of_imports_from_node(
-                imp, depth=depth + 1,
+                imp,
+                depth=depth + 1,
             )
             _logcore.debug(
-                "Dependencies of {node}: {importers}", node=node, importers=importers,
+                "Dependencies of {node}: {importers}",
+                node=node,
+                importers=importers,
             )
             nodes = importers + nodes
 
         return nodes
 
     def __build_recursive_list_of_importers_of_node(
-        self, node: ModuleTrackingRecord, depth: int = 0,
+        self,
+        node: ModuleTrackingRecord,
+        depth: int = 0,
     ) -> list[tuple[ModuleTrackingRecord, int]]:
         nodes = [(node, depth)]
 
         for imp in node.imported_by:
             importers = self.__build_recursive_list_of_importers_of_node(
-                imp, depth=depth + 1,
+                imp,
+                depth=depth + 1,
             )
             _logcore.debug(
-                "Importers of {node}: {importers}", node=node, importers=importers,
+                "Importers of {node}: {importers}",
+                node=node,
+                importers=importers,
             )
             nodes = nodes + importers
 
@@ -311,7 +322,8 @@ class DependencyTracker:
                         )
 
                         node.module = deepreload(
-                            node.module, [n.module_name for n in nodes],
+                            node.module,
+                            [n.module_name for n in nodes],
                         )
 
                 except SyntaxError as e:
@@ -333,13 +345,10 @@ class DependencyTracker:
             if module_name.endswith(f"{get_main_config().app_suffix}.py"):
                 is_app_file = True
                 module_name = (
-                    module_name.removesuffix(f"{get_main_config().app_suffix}.py")
-                    + get_main_config().app_suffix
+                    module_name.removesuffix(f"{get_main_config().app_suffix}.py") + get_main_config().app_suffix
                 )
             module_name = (
-                self.__app_package
-                + "."
-                + (module_name.replace("/", ".").removeprefix(".").removesuffix(".py"))
+                self.__app_package + "." + (module_name.replace("/", ".").removeprefix(".").removesuffix(".py"))
             )
 
             self.__dependencies[module_fs_path] = ModuleTrackingRecord(
@@ -361,12 +370,12 @@ class DependencyTracker:
         _logcore.debug("Files to unload: {files}", files=files_to_unload)
         return files_to_unload
 
-    def __notify_file_changed(self, filepath: str, is_deleted: bool) -> None:
+    def __notify_file_changed(self, filepath: str, *, is_deletion: bool) -> None:
         if self.__current_event_loop is None:
-            raise DomovoyAsyncException(
+            raise DomovoyAsyncError(
                 "Code is not running inside an AsyncIO Event Loop",
             )
 
         self.__current_event_loop.create_task(
-            self.process_file_changed(filepath, is_deleted),
+            self.process_file_changed(filepath, is_deletion=is_deletion),
         )

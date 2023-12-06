@@ -19,10 +19,14 @@ from dateutil.parser import parse
 from domovoy.applications.types import Interval
 from domovoy.core.configuration import get_main_config
 from domovoy.core.context import context_logger
-from domovoy.core.errors import DomovoySchedulerException
+from domovoy.core.errors import DomovoySchedulerError
+from domovoy.core.logging import get_logger
 from domovoy.core.utils import (
+    get_callback_class,
+    get_callback_name,
     get_callback_true_name,
     get_datetime_now_with_config_timezone,
+    is_datetime_aware,
 )
 from domovoy.plugins import hass
 from domovoy.plugins.hass.types import HassApiValue
@@ -36,6 +40,7 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 SunEvents = Literal["dawn", "sunrise", "noon", "sunset", "dusk"]
+_logcore = get_logger(__name__)
 
 
 class CallbacksPlugin(AppPlugin):
@@ -59,7 +64,7 @@ class CallbacksPlugin(AppPlugin):
         self,
         events: str | list[str],
         callback: Callable[Concatenate[str, dict[str, Any], P], None | Awaitable[None]],
-        oneshot: bool = False,
+        oneshot: bool = False,  # noqa: FBT001, FBT002
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> str:
@@ -69,13 +74,13 @@ class CallbacksPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def listen_event_callback(
-            callback_id: str, event: str, event_data: dict[str, Any],
+            callback_id: str,
+            event: str,
+            event_data: dict[str, Any],
         ) -> None:
             self._wrapper.logger.debug(
                 "Calling Listen Event Callback: {cls_name}.{func_name} from callback_id: {callback_id}",
-                cls_name=callback.__self__.__class__.__name__
-                if inspect.ismethod(callback)
-                else callback.__class__,
+                cls_name=callback.__self__.__class__.__name__ if inspect.ismethod(callback) else callback.__class__,
                 func_name=callback.__name__,
                 callback_id=callback_id,
             )
@@ -84,7 +89,11 @@ class CallbacksPlugin(AppPlugin):
                 self.cancel_callback(callback_id)
 
             await instrumented_callback(
-                callback_id, event, event_data, *callback_args, **callback_kwargs,
+                callback_id,
+                event,
+                event_data,
+                *callback_args,
+                **callback_kwargs,
             )
 
         return self.__register.add_event_callback(
@@ -100,8 +109,8 @@ class CallbacksPlugin(AppPlugin):
             Concatenate[str, str, HassApiValue | None, HassApiValue | None, P],
             None | Awaitable[None],
         ],
-        immediate: bool = False,
-        oneshot: bool = False,
+        immediate: bool = False,  # noqa: FBT001, FBT002
+        oneshot: bool = False,  # noqa: FBT001, FBT002
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> list[str]:
@@ -123,8 +132,8 @@ class CallbacksPlugin(AppPlugin):
             Concatenate[str, str, HassApiValue | None, HassApiValue | None, P],
             None | Awaitable[None],
         ],
-        immediate: bool = False,
-        oneshot: bool = False,
+        immediate: bool = False,  # noqa: FBT001, FBT002
+        oneshot: bool = False,  # noqa: FBT001, FBT002
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> list[str]:
@@ -139,7 +148,9 @@ class CallbacksPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def listen_attribute_callback(
-            callback_id: str, _event_name: str, event_data: dict[str, Any],
+            callback_id: str,
+            _event_name: str,
+            event_data: dict[str, Any],
         ) -> None:
             context_logger.set(self._wrapper.logger)
             event_entity_id = event_data["entity_id"]
@@ -171,10 +182,7 @@ class CallbacksPlugin(AppPlugin):
                 if old_value == new_value:
                     return
 
-            try:
-                callback_cls_name = callback.__self__.__class__.__name__
-            except AttributeError:
-                callback_cls_name = callback.__name__
+            callback_cls_name = get_callback_class(callback)
 
             self._wrapper.logger.debug(
                 "Calling Entity Callback: {cls_name}.{func_name}",
@@ -195,14 +203,14 @@ class CallbacksPlugin(AppPlugin):
                 **callback_kwargs,
             )
 
-        callback_id = []
-
-        for eid in target_entity_id:
-            callback_id.append(
-                self.__register.add_event_callback(
-                    self._wrapper, listen_attribute_callback, f"state_changed={eid}",
-                ),
+        callback_id = [
+            self.__register.add_event_callback(
+                self._wrapper,
+                listen_attribute_callback,
+                f"state_changed={eid}",
             )
+            for eid in target_entity_id
+        ]
 
         if immediate:
 
@@ -231,14 +239,17 @@ class CallbacksPlugin(AppPlugin):
             current_date = get_datetime_now_with_config_timezone()
 
             self.__register.add_scheduler_callback(
-                self._wrapper, immediate_callback, None, current_date,
+                self._wrapper,
+                immediate_callback,
+                None,
+                current_date,
             )
 
         return callback_id or []
 
-    def cancel_callback(self, id: str) -> None:
+    def cancel_callback(self, callback_id: str) -> None:
         context_logger.set(self._wrapper.logger)
-        self.__register.cancel_callback(self._wrapper, id)
+        self.__register.cancel_callback(self._wrapper, callback_id)
 
     def run_once(
         self,
@@ -251,7 +262,9 @@ class CallbacksPlugin(AppPlugin):
         current_date = get_datetime_now_with_config_timezone()
 
         target_date = current_date.replace(
-            hour=time.hour, minute=time.minute, second=time.second,
+            hour=time.hour,
+            minute=time.minute,
+            second=time.second,
         )
 
         if target_date < current_date:
@@ -274,7 +287,10 @@ class CallbacksPlugin(AppPlugin):
         )
 
         return self.run_at(
-            callback=callback, datetime=dt, *callback_args, **callback_kwargs,
+            callback=callback,
+            datetime=dt,
+            *callback_args,  # noqa: B026
+            **callback_kwargs,
         )
 
     def __get_next_sun_event_date(
@@ -289,9 +305,10 @@ class CallbacksPlugin(AppPlugin):
         if delta is not None:
             sun_event_datetime = sun_event_datetime + delta.to_timedelta()
 
-        if sun_event_datetime < datetime.datetime.now(datetime.timezone.utc):
+        if sun_event_datetime < datetime.datetime.now(tz=datetime.UTC):
             sun_locations = astral_location.sun(
-                initial_date + datetime.timedelta(days=1), local=True,
+                initial_date + datetime.timedelta(days=1),
+                local=True,
             )
             sun_event_datetime = sun_locations[sun_event]
             if delta is not None:
@@ -318,7 +335,10 @@ class CallbacksPlugin(AppPlugin):
             )
 
         sun_event_datetime = self.__get_next_sun_event_date(
-            sun_event, astral_location, delta, datetime.date.today(),
+            sun_event,
+            astral_location,
+            delta,
+            datetime.datetime.now(tz=get_main_config().get_timezone()).date(),
         )
 
         self._wrapper.logger.debug(
@@ -334,14 +354,17 @@ class CallbacksPlugin(AppPlugin):
         async def scheduled_callback(callback_id: str) -> None:
             self._wrapper.logger.debug(
                 "Calling Sun Event Callback: {cls_name}.{func_name}",
-                cls_name=callback.__self__.__class__.__name__,
+                cls_name=get_callback_class(callback),
                 func_name=callback.__name__,
             )
 
-            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+            tomorrow = datetime.datetime.now(tz=get_main_config().get_timezone()).date() + datetime.timedelta(days=1)
             # Calculate next sun event
             new_sun_event_datetime = self.__get_next_sun_event_date(
-                sun_event, astral_location, delta, tomorrow,
+                sun_event,
+                astral_location,
+                delta,
+                tomorrow,
             )
 
             self._wrapper.logger.debug(
@@ -368,7 +391,10 @@ class CallbacksPlugin(AppPlugin):
             await instrumented_callback(callback_id, *callback_args, **callback_kwargs)
 
         return self.__register.add_scheduler_callback(
-            self._wrapper, scheduled_callback, sun_event_datetime, sun_event_datetime,
+            self._wrapper,
+            scheduled_callback,
+            sun_event_datetime,
+            sun_event_datetime,
         )
 
     def run_at(
@@ -384,9 +410,8 @@ class CallbacksPlugin(AppPlugin):
         @self._wrapper.handle_exception_and_logging(callback)
         async def scheduled_callback(callback_id: str) -> None:
             self._wrapper.logger.debug(
-                "Calling Timer Callback: {cls_name}.{func_name}",
-                cls_name=callback.__self__.__class__.__name__,
-                func_name=callback.__name__,
+                "Calling Timer Callback: {callback_name}",
+                callback_name=get_callback_name(callback),
             )
 
             await instrumented_callback(callback_id, *callback_args, **callback_kwargs)
@@ -394,12 +419,14 @@ class CallbacksPlugin(AppPlugin):
         current_date = get_datetime_now_with_config_timezone()
 
         if datetime < current_date:
-            raise DomovoySchedulerException(
-                f"Cannot schedule a callback in the past (datetime={datetime}, current_time={current_date}).",
-            )
+            msg = f"Cannot schedule a callback in the past (datetime={datetime}, current_time={current_date})."
+            raise DomovoySchedulerError(msg)
 
         return self.__register.add_scheduler_callback(
-            self._wrapper, scheduled_callback, datetime, datetime,
+            self._wrapper,
+            scheduled_callback,
+            datetime,
+            datetime,
         )
 
     def run_daily(
@@ -409,19 +436,28 @@ class CallbacksPlugin(AppPlugin):
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> str:
+        true_start: datetime.datetime | str = "now"
         if isinstance(time, datetime.time):
-            true_start = (
-                get_main_config()
-                .get_timezone()
-                .localize(datetime.datetime.combine(datetime.date.today(), time))
+            true_start = datetime.datetime.combine(
+                datetime.datetime.now(tz=get_main_config().get_timezone()).date(),
+                time,
             )
+            true_start = get_main_config().get_timezone().localize(true_start)
 
-            current_time = datetime.datetime.now(datetime.timezone.utc).astimezone(
-                get_main_config().get_timezone(),
+            current_time = datetime.datetime.now(tz=get_main_config().get_timezone())
+
+            _logcore.debug(
+                "DT check: true_start: {true_start} [isAware: {true_start_aware}]"
+                " -- current_time: {current_time} [isAware: {current_time_aware}] ",
+                true_start=true_start,
+                true_start_aware=is_datetime_aware(true_start),
+                current_time=current_time,
+                current_time_aware=is_datetime_aware(current_time),
             )
 
             if true_start < current_time:
                 true_start = true_start + datetime.timedelta(days=1)
+
         else:
             true_start = time
 
@@ -441,7 +477,11 @@ class CallbacksPlugin(AppPlugin):
         **callback_kwargs: P.kwargs,
     ) -> str:
         return self.run_every(
-            Interval(hours=1), callback, start, *callback_args, **callback_kwargs,
+            Interval(hours=1),
+            callback,
+            start,
+            *callback_args,
+            **callback_kwargs,
         )
 
     def run_minutely(
@@ -486,7 +526,7 @@ class CallbacksPlugin(AppPlugin):
         instrumented_callback = self._wrapper.instrument_app_callback(callback)
 
         if not interval.is_valid():
-            raise DomovoySchedulerException(
+            raise DomovoySchedulerError(
                 "Cannot schedule a callback with an empty interval",
             )
 
@@ -512,5 +552,8 @@ class CallbacksPlugin(AppPlugin):
             await instrumented_callback(callback_id, *callback_args, **callback_kwargs)
 
         return self.__register.add_scheduler_callback(
-            self._wrapper, timer_callback, interval, start,
+            self._wrapper,
+            timer_callback,
+            interval,
+            start,
         )

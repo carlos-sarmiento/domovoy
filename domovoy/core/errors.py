@@ -1,18 +1,18 @@
-class DomovoyException(Exception):
+class DomovoyError(Exception):
     ...
 
 
-class DomovoyAsyncException(DomovoyException):
+class DomovoyAsyncError(DomovoyError):
     ...
 
 
-class DomovoySchedulerException(DomovoyException):
+class DomovoySchedulerError(DomovoyError):
     ...
 
 
-class DomovoyUnknownPluginException(DomovoyException):
+class DomovoyUnknownPluginError(DomovoyError):
     ...
 
 
-class DomovoyLogOnlyOnDebugWhenUncaughtException(Exception):
+class DomovoyLogOnlyOnDebugWhenUncaughtError(Exception):
     ...
