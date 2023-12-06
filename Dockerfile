@@ -10,4 +10,6 @@ COPY domovoy ./domovoy
 
 ENV PYTHONPATH /usr/src/app:${PYTHONPATH}
 
+WORKDIR /config
+
 CMD [ "python", "/usr/src/app/domovoy/cli.py", "--config", "/config/config.yml" ]

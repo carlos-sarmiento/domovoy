@@ -1,6 +1,6 @@
 from typing import Any
 
-from domovoy.core.errors import DomovoyLogOnlyOnDebugWhenUncaughtException
+from domovoy.core.errors import DomovoyLogOnlyOnDebugWhenUncaughtError
 
 
 class HassError(Exception):
@@ -18,7 +18,7 @@ class HassApiParseError(HassError):
     ...
 
 
-class HassApiConnectionError(HassError, DomovoyLogOnlyOnDebugWhenUncaughtException):
+class HassApiConnectionError(HassError, DomovoyLogOnlyOnDebugWhenUncaughtError):
     ...
 
 
@@ -46,8 +46,8 @@ class HassApiCommandError(HassError):
     ) -> None:
         super().__init__(
             "Received Error from HASS:"
-            + f"{message}. Code: {code}. Command ID: {command_id}. "
-            + f"Full response: {full_response}. Original Command: {original_command}",
+            f"{message}. Code: {code}. Command ID: {command_id}. "
+            f"Full response: {full_response}. Original Command: {original_command}",
         )
 
         self.command_id = command_id

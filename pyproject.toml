@@ -1,4 +1,5 @@
 [project]
+name = "domovoy"
 requires-python = ">=3.12"
 
 [tool.poetry]
@@ -9,7 +10,7 @@ authors = ["cargsl"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 importlab = "^0.8"
 watchdog = "^3.0.0"
 coloredlogs = "^15.0.1"
@@ -25,7 +26,7 @@ cron-converter = "^1.0.2"
 orjson = "^3.9.7"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.1.6"
+ruff = "^0.1.7"
 
 [build-system]
 requires = ["poetry-core"]
@@ -40,19 +41,22 @@ line-length = 120
 [tool.ruff.lint]
 select = ["ALL"] # Default config for ruff: ["E4", "E7", "E9", "F", "W", "ARG"]
 ignore = [
-    "ANN101", # missing-type-self 
-    "BLE001", # blind-except
-    "C901", # complex-structure
-    "D100", # undocumented-public-module
-    "D101", # undocumented-public-class
-    "D102", # undocumented-public-method
-    "D103", # undocumented-public-function
-    "D104", # undocumented-public-package
-    "D105", # undocumented-magic-method
-    "D106", # undocumented-public-nested-class
-    "D107", # undocumented-public-init
-    "EM101", # raw-string-in-exception
-    "INP001", # implicit-namespace-package
+    "ANN101",  # missing-type-self
+    "ANN102",  # missing-type-cls
+    "BLE001",  # blind-except
+    "C901",    # complex-structure
+    "D100",    # undocumented-public-module
+    "D101",    # undocumented-public-class
+    "D102",    # undocumented-public-method
+    "D103",    # undocumented-public-function
+    "D104",    # undocumented-public-package
+    "D105",    # undocumented-magic-method
+    "D106",    # undocumented-public-nested-class
+    "D107",    # undocumented-public-init
+    "D203",    # no-blank-line-before-class
+    "D213",    # multi-line-summary-second-line
+    "EM101",   # raw-string-in-exception
+    "INP001",  # implicit-namespace-package
     "PERF203", # try-except-in-loop
     "PLC0105", # type-name-incorrect-variance
     "PLE1205", # logging-too-many-args
@@ -61,21 +65,26 @@ ignore = [
     "PLR0915", # too-many-statements
     "PLR2004", # magic-value-comparison
     "PLW0603", # global-statement
-    "S106", # hardcoded-password-func-arg
-    "S311", # suspicious-non-cryptographic-random-usage
-    "S603", # subprocess-without-shell-equals-true
-    "SIM105", # suppressible-exception
-    "TCH001", # typing-only-first-party-import
-    "TCH002", # typing-only-third-party-import
-    "TCH003", # typing-only-standard-library-import
-    "TRY003", # raise-vanilla-args
-    "TRY400", # error-instead-of-exception
-    "TRY401", # verbose-log-message
+    "S106",    # hardcoded-password-func-arg
+    "S311",    # suspicious-non-cryptographic-random-usage
+    "S603",    # subprocess-without-shell-equals-true
+    "SIM105",  # suppressible-exception
+    "TCH001",  # typing-only-first-party-import
+    "TCH002",  # typing-only-third-party-import
+    "TCH003",  # typing-only-standard-library-import
+    "TD002",   # missing-todo-author
+    "TD003",   # missing-todo-link
+    "TRY003",  # raise-vanilla-args
+    "TRY300",  # try-consider-else
+    "TRY400",  # error-instead-of-exception
+    "TRY401",  # verbose-log-message
 
+    # Consider removing from ignore
+    "PGH003",
 
     # These are rules that are valuable but can be disabled when configuring ruff because they are very noisy in the current codebase
-    # "A002", # builtin-argument-shadowing
-    # "A003", # builtin-attribute-shadowing
+    # "A002",   # builtin-argument-shadowing
+    # "A003",   # builtin-attribute-shadowing
     # "ANN001", # missing-type-function-argument
     # "ANN002", # missing-type-args
     # "ANN003", # missing-type-kwargs
@@ -83,21 +92,21 @@ ignore = [
     # "ANN204", # missing-return-type-special-method
     # "ARG002", # unused-method-argument
     # "COM812", # missing-trailing-comma
-    # "D400", # ends-in-period
-    # "D401", # non-imperative-mood
-    # "D407", # dashed-underline-after-section
-    # "D415", # ends-in-punctuation
+    # "D400",   # ends-in-period
+    # "D401",   # non-imperative-mood
+    # "D407",   # dashed-underline-after-section
+    # "D415",   # ends-in-punctuation
     # "DTZ005", # call-datetime-now-without-tzinfo
     # "DTZ011", # call-date-today
     # "ERA001", # commented-out-code
-    # "G004", # logging-f-string
+    # "G004",   # logging-f-string
     # "ISC003", # explicit-string-concatenation
     # "PGH003", # blanket-type-ignore
     # "PIE790", # unnecessary-placeholder
     # "PTH119", # os-path-basename
     # "PYI013", # ellipsis-in-non-empty-class-body
-    # "S104", # hardcoded-bind-all-interfaces
+    # "S104",   # hardcoded-bind-all-interfaces
     # "TRY002", # raise-vanilla-class
-    # "UP037", # quoted-annotation
+    # "UP037",  # quoted-annotation
 
 ]

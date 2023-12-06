@@ -13,7 +13,7 @@ from domovoy.core.services.service import DomovoyService, DomovoyServiceResource
 from domovoy.core.task_utils import run_and_forget_task
 
 from .api import HassApiConnectionState, HassWebsocketApi
-from .types import HassApiDataDict
+from .types import HassApiDataDict, PrimitiveHassApiValue
 
 _logcore = get_logger(__name__)
 
@@ -46,15 +46,16 @@ class EntityState:
         return self.raw_data
 
     def get_time_in_current_state(self) -> datetime.timedelta:
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(tz=datetime.UTC)
         return now - self.last_changed
 
     def has_been_in_state_for_at_least(
         self,
         target_states: str | list[str],
         interval: Interval,
+        *,
         log_calculations: bool = False,
-    ):
+    ) -> bool:
         if not interval.is_valid():
             raise ValueError("Hours, minutes and seconds cannot be all zero")
 
@@ -67,7 +68,7 @@ class EntityState:
             return False
 
         duration = interval.to_timedelta()
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(tz=datetime.UTC)
         minimum_time = self.last_changed + duration
 
         if log_calculations:
@@ -89,14 +90,14 @@ class EntityState:
     def has_been_in_current_state_for_at_least(
         self,
         interval: Interval,
-    ):
+    ) -> bool:
         return self.has_been_in_state_for_at_least(self.state, interval)
 
 
 class HassCore(DomovoyService):
     __event_publisher: EventListener
     __hass_api: HassWebsocketApi
-    __entity_state_cache: dict[str, EntityState] = {}
+    __entity_state_cache: dict[str, EntityState]
     __state_subscription_id: int | None = None
     __start_future: asyncio.Future[None] | None = None
     __resources: DomovoyServiceResources
@@ -109,11 +110,13 @@ class HassCore(DomovoyService):
         event_publisher: EventListener,
     ) -> None:
         super().__init__(resources)
+        self.__entity_state_cache = {}
         self.__event_publisher = event_publisher
         self.__resources = resources
 
     async def __connection_state_updated(
-        self, connection_state: HassApiConnectionState,
+        self,
+        connection_state: HassApiConnectionState,
     ) -> None:
         if connection_state == HassApiConnectionState.CONNECTED:
             _logcore.info("Subscribing to all events from Home Assistant")
@@ -188,12 +191,11 @@ class HassCore(DomovoyService):
         self.__hass_api.stop()
 
     async def __all_events_callback(
-        self, event_type: str, event_data: dict[str, Any],
+        self,
+        event_type: str,
+        event_data: dict[str, Any],
     ) -> None:
-        if (
-            event_type == "homeassistant_started"
-            and self.__reload_reason == "hass_restart"
-        ):
+        if event_type == "homeassistant_started" and self.__reload_reason == "hass_restart":
             _logcore.warning(
                 "Received Homeassistant started event. Starting any stopped app that use Hass API",
             )
@@ -211,12 +213,15 @@ class HassCore(DomovoyService):
             try:
                 await self.__process_state_changed(event_data)
                 await self.__event_publisher.publish_event(
-                    f"{event_type}={event_data['entity_id']}", event_data,
+                    f"{event_type}={event_data['entity_id']}",
+                    event_data,
                 )
 
             except Exception as e:
                 _logcore.exception(
-                    "Error when processing {event_data}", e, event_data=event_data,
+                    "Error when processing {event_data}",
+                    e,
+                    event_data=event_data,
                 )
         await self.__event_publisher.publish_event(event_type, event_data)
 
@@ -238,22 +243,17 @@ class HassCore(DomovoyService):
             self.__entity_state_cache[entity_id] = new_entity_data
             return
 
-        if (
-            self.__entity_state_cache[entity_id].last_updated
-            > new_entity_data.last_updated
-        ):
+        if self.__entity_state_cache[entity_id].last_updated > new_entity_data.last_updated:
             _logcore.critical(
                 "Tried to replace a newer state on entity_cache with an older state. "
-                + f"Original State Date: {self.__entity_state_cache[entity_id].last_updated.isoformat()} "
-                + f"Updated State Date: {new_entity_data.last_updated.isoformat()} "
-                + f"Original State: {self.__entity_state_cache[entity_id]}. "
-                + f"Updated State: {new_entity_data}",
+                f"Original State Date: {self.__entity_state_cache[entity_id].last_updated.isoformat()} "
+                f"Updated State Date: {new_entity_data.last_updated.isoformat()} "
+                f"Original State: {self.__entity_state_cache[entity_id]}. "
+                f"Updated State: {new_entity_data}",
             )
             return
-        elif (
-            self.__entity_state_cache[entity_id].last_updated
-            == new_entity_data.last_updated
-        ):
+
+        if self.__entity_state_cache[entity_id].last_updated == new_entity_data.last_updated:
             return
 
         self.__entity_state_cache[entity_id] = new_entity_data
@@ -261,7 +261,7 @@ class HassCore(DomovoyService):
     def get_state(self, entity_id: str) -> EntityState | None:
         return self.__entity_state_cache.get(entity_id, None)
 
-    def get_entity_id_by_attribute(self, attribute: str, value: Any) -> list[str]:
+    def get_entity_id_by_attribute(self, attribute: str, value: PrimitiveHassApiValue) -> list[str]:
         return [
             x.entity_id
             for x in self.__entity_state_cache.values()
@@ -269,7 +269,9 @@ class HassCore(DomovoyService):
         ]
 
     async def fire_event(
-        self, event_type: str, event_data: HassApiDataDict | None = None,
+        self,
+        event_type: str,
+        event_data: HassApiDataDict | None = None,
     ) -> None:
         await self.__hass_api.fire_event(event_type, event_data)
 

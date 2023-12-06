@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import TypeVar
 
 import pytz
 
@@ -13,75 +13,82 @@ def get_datetime_now_with_config_timezone() -> datetime:
     return datetime.now(pytz.timezone(config.timezone))
 
 
-def asFloat(x: Any, default: float | None = None) -> float | None:
+def as_float(x: object, default: float | None = None) -> float | None:
     try:
         return float(x)
     except (TypeError, ValueError):
         return default
 
 
-def asInt(x: Any, default: int | None = None) -> int | None:
+def as_int(x: object, default: int | None = None) -> int | None:
     try:
         return int(x)
     except (TypeError, ValueError):
         return default
 
 
-def parse_state(state: str) -> int | float | str:
-    as_int = asFloat(state)
-    if as_int is not None:
-        return as_int
+def is_datetime_aware(dt: datetime) -> bool:
+    return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
-    as_float = asFloat(state)
-    if as_float is not None:
-        return as_float
+
+def parse_state(state: str) -> int | float | str:
+    int_val = as_float(state)
+    if int_val is not None:
+        return int_val
+
+    float_val = as_float(state)
+    if float_val is not None:
+        return float_val
 
     return state
 
 
-def stripNoneAndEnums(data):
+T = TypeVar("T")
+
+
+def strip_none_and_enums_from_containers(data: T) -> T:
     if isinstance(data, dict):
-        return {
-            k: stripNoneAndEnums(v)
-            for k, v in data.items()
-            if k is not None and v is not None
-        }
-    elif isinstance(data, list):
-        return [stripNoneAndEnums(item) for item in data if item is not None]
-    elif isinstance(data, tuple):
-        return tuple(stripNoneAndEnums(item) for item in data if item is not None)
-    elif isinstance(data, set):
-        return {stripNoneAndEnums(item) for item in data if item is not None}
-    elif isinstance(data, StrEnum):
-        return data.value
-    else:
-        return data
+        return {k: strip_none_and_enums_from_containers(v) for k, v in data.items() if k is not None and v is not None}  # type: ignore[return-value]
+
+    if isinstance(data, list):
+        return [strip_none_and_enums_from_containers(item) for item in data if item is not None]  # type: ignore[return-value]
+
+    if isinstance(data, tuple):
+        return tuple(strip_none_and_enums_from_containers(item) for item in data if item is not None)  # type: ignore[return-value]
+
+    if isinstance(data, set):
+        return {strip_none_and_enums_from_containers(item) for item in data if item is not None}  # type: ignore[return-value]
+
+    if isinstance(data, StrEnum):
+        return data.value  # type: ignore[return-value]
+
+    return data
 
 
 def get_callback_true_name(callback: Callable) -> str:
     try:
-        return callback._true_name
+        return callback._true_name  # type: ignore[attr-defined]  # noqa: SLF001
     except AttributeError:
         return callback.__name__
 
 
 def get_callback_true_class(callback: Callable) -> str:
     try:
-        return callback._true_class
+        return callback._true_class  # type: ignore[attr-defined]  # noqa: SLF001
     except AttributeError:
-        return "Unknown"
+        return get_callback_class(callback)
 
 
-def get_callback_class(callback) -> str:
+def get_callback_class(callback: Callable) -> str:
     try:
-        return callback.__self__.__class__.__name__
+        return callback.__self__.__class__.__name__  # type: ignore[attr-defined]
     except AttributeError:
         return callback.__name__
 
 
 def set_callback_true_information(callback: Callable, true_callback: Callable) -> None:
-    callback._true_name = true_callback.__name__
-    callback._true_class = get_callback_class(true_callback)
+    callback._true_name = get_callback_true_name(true_callback)  # type: ignore[attr-defined]  # noqa: SLF001
+    callback._true_class = get_callback_class(true_callback)  # type: ignore[attr-defined]  # noqa: SLF001
 
 
 def get_callback_name(callback: Callable) -> str:

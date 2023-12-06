@@ -50,15 +50,19 @@ class AppRegistration:
 
 
 class AppEngine:
-    __active_apps: dict[str, list[AppWrapper]] = {}
-    __active_app_by_name: dict[str, AppWrapper] = {}
-    __app_registrations: dict[str, AppRegistration] = {}
+    __active_apps: dict[str, list[AppWrapper]]
+    __active_app_by_name: dict[str, AppWrapper]
+    __app_registrations: dict[str, AppRegistration]
 
     __event_listener: EventListener
     __hass_core: HassCore
     __webapi: DomovoyWebApi
 
     def __init__(self) -> None:
+        self.__active_apps = {}
+        self.__active_app_by_name = {}
+        self.__app_registrations = {}
+
         self.__event_listener = EventListener(
             DomovoyServiceResources(
                 start_dependent_apps_callback=self.__build_start_apps_using_service_callback(),
@@ -93,19 +97,19 @@ class AppEngine:
                 start_dependent_apps_callback=self.__build_start_apps_using_service_callback(),
                 stop_dependent_apps_callback=self.__build_terminate_apps_using_service_callback(),
                 get_all_apps_by_name=self.__get_all_apps_by_name,
-                config={"address": "0.0.0.0", "port": 8080},
+                config={"address": "0.0.0.0", "port": 8080},  # noqa: S104 We bind to all interfaces because Domovoy is intended to run inside a docker container
             ),
         )
 
-    async def start(self):
-        """Starts the App Engine and its dependent services."""
+    async def start(self) -> None:
+        """Start the App Engine and its dependent services."""
         _logcore.info("Starting Scheduling Engine")
         self.__event_listener.start()
         self.__callback_register.start()
         self.__webapi.start()
         await self.__hass_core.start()
 
-    async def stop(self):
+    async def stop(self) -> None:
         await self.terminate_all_apps_before_engine_stop()
         await self.__webapi.stop()
         self.__callback_register.stop()
@@ -146,7 +150,7 @@ class AppEngine:
         self.__app_registrations[app_name] = app_registration
         await self.__start_app(app_name)
 
-    async def __start_app(self, app_name: str):
+    async def __start_app(self, app_name: str) -> None:
         # Needs Validation
         try:
             app_registration = self.__app_registrations[app_name]
@@ -313,6 +317,7 @@ class AppEngine:
     async def terminate_app_from_files(
         self,
         paths: list[str],
+        *,
         remove_from_registry: bool = True,
     ) -> None:
         _logcore.debug(
@@ -329,13 +334,13 @@ class AppEngine:
 
         await self.__terminate_multiple_apps(
             app_names_to_terminate,
-            remove_from_registry,
+            remove_from_app_registry=remove_from_registry,
         )
 
     async def terminate_all_apps_before_engine_stop(self) -> None:
         await self.__terminate_multiple_apps(
             list(self.__active_app_by_name.keys()),
-            True,
+            remove_from_app_registry=True,
         )
 
     def __build_terminate_apps_using_service_callback(
@@ -343,7 +348,7 @@ class AppEngine:
     ) -> Callable[[], Awaitable[None]]:
         async def app_termination_callback() -> None:
             apps_to_terminate = [
-                app_name for app_name in self.__app_registrations.keys() if app_name in self.__active_app_by_name
+                app_name for app_name in self.__app_registrations if app_name in self.__active_app_by_name
             ]
 
             _logcore.log(
@@ -362,7 +367,7 @@ class AppEngine:
     ) -> Callable[[], Awaitable[None]]:
         async def app_start_callback() -> None:
             apps_to_start = [
-                app_name for app_name in self.__app_registrations.keys() if app_name not in self.__active_app_by_name
+                app_name for app_name in self.__app_registrations if app_name not in self.__active_app_by_name
             ]
 
             _logcore.warning(
@@ -377,6 +382,7 @@ class AppEngine:
     async def __terminate_multiple_apps(
         self,
         app_names_to_terminate: list[str],
+        *,
         remove_from_app_registry: bool,
     ) -> None:
         if not app_names_to_terminate:

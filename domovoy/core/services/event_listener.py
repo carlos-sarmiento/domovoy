@@ -22,13 +22,16 @@ class ListenerRegistration:
 
 
 class EventListener(DomovoyService):
-    __registered_callbacks_by_event: dict[str, dict[str, ListenerRegistration]] = {}
-    __registered_callbacks_by_id: dict[str, ListenerRegistration] = {}
+    __registered_callbacks_by_event: dict[str, dict[str, ListenerRegistration]]
+    __registered_callbacks_by_id: dict[str, ListenerRegistration]
     __is_running: bool = False
-    __running_callbacks: set[asyncio.Future[Any]] = set()
+    __running_callbacks: set[asyncio.Future[Any]]
 
     def __init__(self, resources: DomovoyServiceResources) -> None:
         super().__init__(resources)
+        self.__registered_callbacks_by_event = {}
+        self.__registered_callbacks_by_id = {}
+        self.__running_callbacks = set()
 
     def start(self) -> None:
         _logcore.info("Starting EventListener")
@@ -60,10 +63,9 @@ class EventListener(DomovoyService):
 
         callbacks = self.__registered_callbacks_by_event[event_name]
 
-        async_calls: list[Awaitable[None]] = []
-
-        for callback in callbacks.values():
-            async_calls.append(callback.callable(callback.id, event_name, event_data))
+        async_calls: list[Awaitable[None]] = [
+            callback.callable(callback.id, event_name, event_data) for callback in callbacks.values()
+        ]
 
         _logcore.debug(
             "Gathering all async callbacks for event {event_name}",

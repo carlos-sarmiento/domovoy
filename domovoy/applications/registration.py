@@ -52,7 +52,7 @@ def register_app(
     logging_config_name: str | None = None,
     ignore: bool = False,
 ) -> None:
-    """Registers an app in the current running instance of the Domovy App Engine.
+    """Register an app in the current running instance of the Domovy App Engine.
 
     Args:
     ----
@@ -72,7 +72,7 @@ def register_app(
     if mod is None:
         _logcore.error(
             "Error when trying to retrieve the module which called register_app for app {app_name}."
-            + " App wasn't registered",
+            " App wasn't registered",
             app_name=app_name,
         )
         return
@@ -82,7 +82,7 @@ def register_app(
     if not app_file_path.endswith(f"{get_main_config().app_suffix}.py"):
         get_logger(mod.__name__).error(
             "Attempting to register an app from a regular python file {path}."
-            + " Apps should be registered only in files that end in {suffix}.py",
+            " Apps should be registered only in files that end in {suffix}.py",
             path=app_file_path,
             suffix=get_main_config().app_suffix,
         )
@@ -106,8 +106,7 @@ def register_app_multiple(
     logging_config_name: str | None = None,
     ignore: Literal[True, False] = False,
 ) -> None:
-    """Registers a group of apps in the current running instance of the Domovy App Engine, with each one using its own
-      config.
+    """Register a group of apps in the current running instance of the Domovy App Engine, each one using its own config.
 
     Args:
     ----
@@ -126,7 +125,7 @@ def register_app_multiple(
     if mod is None:
         _logcore.error(
             "Error when trying to retrieve the module which called register_app for apps {app_names}."
-            + " Apps weren't registered",
+            " Apps weren't registered",
             app_name=configs.keys(),
         )
         return
@@ -136,7 +135,7 @@ def register_app_multiple(
     if not app_file_path.endswith(f"{get_main_config().app_suffix}.py"):
         get_logger(mod.__name__).error(
             "Attempting to register apps from a regular python file {path}."
-            + " Apps should be registered only in files that end in {suffix}.py",
+            " Apps should be registered only in files that end in {suffix}.py",
             path=app_file_path,
             suffix=get_main_config().app_suffix,
         )
