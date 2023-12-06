@@ -23,8 +23,7 @@ jobs:
       run: pipx install poetry
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
-        cache: 'poetry'
+        python-version: '3.12'
     - run: poetry export > docker_requirements.txt
     - name: Build image
       run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
