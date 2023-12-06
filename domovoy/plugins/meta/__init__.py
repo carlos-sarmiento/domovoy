@@ -1,3 +1,4 @@
+import datetime
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, TypeVar
 
@@ -38,7 +39,7 @@ class MetaPlugin(AppPlugin):
     def get_status(self) -> "AppStatus":
         return self._wrapper.status
 
-    def get_config_tz(self):
+    def get_config_tz(self) -> datetime.tzinfo:
         return get_main_config().get_timezone()
 
     async def restart_app(self) -> None:

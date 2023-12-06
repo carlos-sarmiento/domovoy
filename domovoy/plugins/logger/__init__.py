@@ -3,7 +3,7 @@ import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ParamSpec
+from typing import TYPE_CHECKING, ParamSpec
 
 from domovoy.core.app_infra import AppPlugin
 from domovoy.core.context import inside_log_callback
@@ -56,7 +56,7 @@ class LoggerPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def log_callback(callback_id: str) -> None:
-            inside_log_callback.set(True)
+            inside_log_callback.set(True)  # noqa: FBT003
             try:
                 self._wrapper.logger.debug(
                     "Calling Timer Callback: {cls_name}.{func_name}",
@@ -65,18 +65,20 @@ class LoggerPlugin(AppPlugin):
                 )
 
                 await instrumented_callback(
-                    callback_id, *callback_args, **callback_kwargs,
+                    callback_id,
+                    *callback_args,
+                    **callback_kwargs,
                 )
 
-            except Exception:
-                raise
             finally:
-                inside_log_callback.set(False)
+                inside_log_callback.set(False)  # noqa: FBT003
 
         callback_id = f"logs-{uuid.uuid4().hex}"
 
         self.__log_callbacks[callback_id] = LoggerCallbackRegistration(
-            id=callback_id, callback=log_callback, minimum_log_level=minimim_log_level,
+            id=callback_id,
+            callback=log_callback,
+            minimum_log_level=minimim_log_level,
         )
 
         return callback_id
@@ -106,7 +108,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: Any = None,
+        exc_info: object = None,
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -126,7 +128,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: Any = None,
+        exc_info: object = None,
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -146,7 +148,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: Any = None,
+        exc_info: object = None,
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -166,7 +168,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: Any = None,
+        exc_info: object = None,
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -186,7 +188,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: Any = True,
+        exc_info: object = True,
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -206,7 +208,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: Any = None,
+        exc_info: object = None,
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -227,7 +229,7 @@ class LoggerPlugin(AppPlugin):
         level: int,
         msg: object,
         *args: object,
-        exc_info: Any = None,
+        exc_info: object = None,
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,

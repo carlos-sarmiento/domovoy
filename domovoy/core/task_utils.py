@@ -1,13 +1,13 @@
 import asyncio
 from asyncio import Task
-from collections.abc import Coroutine, Generator
+from collections.abc import Coroutine
 from typing import Any
 
 _running_tasks: set[Task[None]] = set()
 
 
 def run_and_forget_task(
-    call: Generator[Any, None, None] | Coroutine[Any, Any, None],
+    call: Coroutine[Any, Any, None],
     name: str | None = None,
 ) -> None:
     task = asyncio.get_event_loop().create_task(call, name=name)

@@ -4,7 +4,7 @@ import asyncio
 import datetime
 import inspect
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, Concatenate, ParamSpec, TypeVar
@@ -13,15 +13,16 @@ from apscheduler.job import Job
 from apscheduler.triggers.base import BaseTrigger
 
 from domovoy.applications import AppBase, AppConfigBase, EmptyAppConfig
+from domovoy.core.configuration import get_main_config
 from domovoy.core.context import (
     context_callback_id,
     context_logger,
     inside_log_callback,
 )
 from domovoy.core.errors import (
-    DomovoyException,
-    DomovoyLogOnlyOnDebugWhenUncaughtException,
-    DomovoyUnknownPluginException,
+    DomovoyError,
+    DomovoyLogOnlyOnDebugWhenUncaughtError,
+    DomovoyUnknownPluginError,
 )
 from domovoy.core.logging import get_logger
 from domovoy.core.utils import get_callback_name, set_callback_true_information
@@ -86,7 +87,7 @@ class AppWrapper:
     class_name: str
     status: AppStatus
     logger: logging.LoggerAdapter[Any]
-    app: AppBase[Any] = EmptyAppBase()
+    app: AppBase[Any] = field(default_factory=lambda: EmptyAppBase())
     scheduler_callbacks: dict[str, SchedulerCallbackRegistration] = field(
         default_factory=dict,
     )
@@ -97,8 +98,9 @@ class AppWrapper:
         plugin = self.get_plugin(plugin_type, name)
 
         if plugin is None:
-            raise DomovoyUnknownPluginException(
-                f"Unknown plugin of type: {plugin_type}",
+            msg = f"Unknown plugin of type: {plugin_type}"
+            raise DomovoyUnknownPluginError(
+                msg,
             )
 
         return plugin
@@ -112,22 +114,22 @@ class AppWrapper:
         if name is not None:
             if name not in plugins:
                 return None
-            else:
-                return plugins[name]  # type: ignore
+
+            return plugins[name]  # type: ignore[generaltypeissues]
 
         total_plugins = len(plugins)
 
         if total_plugins == 0:
-            raise DomovoyException(
-                f"There are no plugins registered for type {plugin_type.__name__}",
-            )
-        elif total_plugins >= 2:
-            raise DomovoyException(
+            msg = f"There are no plugins registered for type {plugin_type.__name__}"
+            raise DomovoyError(msg)
+        if total_plugins >= 2:
+            msg = (
                 f"There are multiple plugins registered for type {plugin_type.__name__}."
-                + " You need to include the name of the plugin instance you require",
+                " You need to include the name of the plugin instance you require",
             )
-        else:
-            return next(iter(plugins.values()))  # type: ignore
+            raise DomovoyError(msg)
+
+        return next(iter(plugins.values()))  # type: ignore[generaltypeissues]
 
     def register_plugin(self, plugin: AppPlugin, name: str) -> None:
         plugin_type = type(plugin)
@@ -152,26 +154,26 @@ class AppWrapper:
                 p.post_prepare()
 
     def handle_exception_and_logging(
-        self, true_callback: Callable,
+        self,
+        true_callback: Callable,
     ) -> Callable[
-        [Callable[Concatenate[TStrOrInt, P], Awaitable[None]]],
-        Callable[Concatenate[TStrOrInt, P], Awaitable[None]],
+        [Callable[Concatenate[TStrOrInt, P], Coroutine[Any, Any, None]]],
+        Callable[Concatenate[TStrOrInt, P], Coroutine[Any, Any, None]],
     ]:
         def inner_handle_exception_and_logging(
-            func: Callable[Concatenate[TStrOrInt, P], Awaitable[None]],
-        ) -> Callable[Concatenate[TStrOrInt, P], Awaitable[None]]:
+            func: Callable[Concatenate[TStrOrInt, P], Coroutine[Any, Any, None]],
+        ) -> Callable[Concatenate[TStrOrInt, P], Coroutine[Any, Any, None]]:
             async def wrapper(
-                callback_id: TStrOrInt, *args: P.args, **kwargs: P.kwargs,
+                callback_id: TStrOrInt,
+                *args: P.args,
+                **kwargs: P.kwargs,
             ) -> None:
-                if inside_log_callback.get():
-                    logger = _logcore
-                else:
-                    logger = self.logger
+                logger = _logcore if inside_log_callback.get() else self.logger
 
                 if self.status != AppStatus.RUNNING:
                     _logcore.warning(
                         "Tried to call {function_name} on app `{app_name}` when app's status was `{status}`."
-                        + " -- args: {pargs} -- kwargs: {pkwargs}",
+                        " -- args: {pargs} -- kwargs: {pkwargs}",
                         app_name=self.app_name,
                         status=self.status,
                         function_name=func.__name__,
@@ -191,9 +193,9 @@ class AppWrapper:
                 )
 
                 try:
-                    self.scheduler_callbacks
                     await asyncio.create_task(
-                        func(callback_id, *args, **kwargs), name=get_callback_name(true_callback),  # type: ignore
+                        func(callback_id, *args, **kwargs),
+                        name=get_callback_name(true_callback),
                     )
 
                 except asyncio.exceptions.CancelledError as e:
@@ -203,7 +205,7 @@ class AppWrapper:
                         app_name=self.app_name,
                     )
 
-                except DomovoyLogOnlyOnDebugWhenUncaughtException as e:
+                except DomovoyLogOnlyOnDebugWhenUncaughtError as e:
                     logger.debug(
                         "Debug Log only Uncaught Exception",
                         e,
@@ -225,31 +227,37 @@ class AppWrapper:
         return inner_handle_exception_and_logging
 
     def __get_callback_registration(
-        self, callback_id: str | int,
+        self,
+        callback_id: str | int,
     ) -> CallbackRegistration | None:
         if isinstance(callback_id, int):
             return None
 
         if callback_id.startswith("event-"):
             return self.event_callbacks.get(callback_id, None)
-        elif callback_id.startswith("scheduler-"):
+
+        if callback_id.startswith("scheduler-"):
             return self.scheduler_callbacks.get(callback_id, None)
-        elif callback_id.startswith("ephemeral_callback"):
+
+        if callback_id.startswith("ephemeral_callback"):
             return None
-        else:
-            self.logger.error(
-                "Tried to load invalid callback_id `{callback_id}` from callback registrations",
-                callback_id=callback_id,
-            )
-            return None
+
+        self.logger.error(
+            "Tried to load invalid callback_id `{callback_id}` from callback registrations",
+            callback_id=callback_id,
+        )
+        return None
 
     TReturn = TypeVar("TReturn")
 
     def instrument_app_callback(
-        self, callback: Callable[P, None | Awaitable[None]],
+        self,
+        callback: Callable[P, None | Awaitable[None]],
     ) -> Callable[Concatenate[str | int, P], Awaitable[None]]:
         async def instrumented_call(
-            callback_id: str | int, *args: P.args, **kwargs: P.kwargs,
+            callback_id: str | int,
+            *args: P.args,
+            **kwargs: P.kwargs,
         ) -> None:
             try:
                 self.__callback_called(callback_id)
@@ -268,10 +276,10 @@ class AppWrapper:
 
         if registration:
             registration.times_called += 1
-            registration.last_call_datetime = datetime.datetime.now()
+            registration.last_call_datetime = datetime.datetime.now(tz=get_main_config().get_timezone())
 
     def __callback_failed(self, callback_id: str | int) -> None:
         registration = self.__get_callback_registration(callback_id)
 
         if registration:
-            registration.last_error_datetime = datetime.datetime.now()
+            registration.last_error_datetime = datetime.datetime.now(tz=get_main_config().get_timezone())

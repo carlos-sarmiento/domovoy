@@ -50,12 +50,16 @@ class HassPlugin(AppPlugin):
         return entity_state
 
     def get_entity_id_by_attribute(
-        self, attribute: str, value: str | None,
+        self,
+        attribute: str,
+        value: str | None,
     ) -> list[str]:
         return self.__hass.get_entity_id_by_attribute(attribute, value)
 
     async def fire_event(
-        self, event_type: str, event_data: HassApiDataDict | None = None,
+        self,
+        event_type: str,
+        event_data: HassApiDataDict | None = None,
     ) -> None:
         await self.__hass.fire_event(event_type, event_data)
 
@@ -66,7 +70,7 @@ class HassPlugin(AppPlugin):
         self,
         trigger: HassApiDataDict,
         callback: Callable[Concatenate[HassApiDataDict, P], None | Awaitable[None]],
-        oneshot: bool = False,
+        oneshot: bool = False,  # noqa: FBT001, FBT002
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> str:
@@ -76,7 +80,8 @@ class HassPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def listen_trigger_callback(
-            subscription_id: int, trigger_vars: HassApiDataDict,
+            subscription_id: int,
+            trigger_vars: HassApiDataDict,
         ) -> None:
             self._wrapper.logger.debug(
                 "Calling Listen Trigger Callback: {cls_name}.{func_name} from callback_id: {subscription_id}",
@@ -89,7 +94,10 @@ class HassPlugin(AppPlugin):
                 await self.__hass.unsubscribe_trigger(subscription_id)
 
             await instrumented_callback(
-                subscription_id, trigger_vars, *callback_args, **callback_kwargs,
+                subscription_id,
+                trigger_vars,
+                *callback_args,
+                **callback_kwargs,
             )
 
         return str(
@@ -100,7 +108,9 @@ class HassPlugin(AppPlugin):
         )
 
     async def call_service(
-        self, service_name: str, **kwargs: HassApiValue,
+        self,
+        service_name: str,
+        **kwargs: HassApiValue,
     ) -> HassApiDataDict | None:
         service_name_segments = service_name.split(".")
 
@@ -115,24 +125,19 @@ class HassPlugin(AppPlugin):
         service = service_name_segments[1]
 
         entity_id: str | list[str] | None = None
-        if "entity_id" in kwargs and (
-            "domovoy_drop_target" not in kwargs or not kwargs["domovoy_drop_target"]
-        ):
+        if "entity_id" in kwargs and ("domovoy_drop_target" not in kwargs or not kwargs["domovoy_drop_target"]):
             # We add the ignore because there is no easy way
             # to restrict the typing of kwargs until python 3.12
             entity_id = kwargs["entity_id"]  # type: ignore
 
             if (
                 entity_id is None
-                or (
-                    isinstance(entity_id, list)
-                    and not all(isinstance(sub, str) for sub in entity_id)
-                )
+                or (isinstance(entity_id, list) and not all(isinstance(sub, str) for sub in entity_id))
                 or (not isinstance(entity_id, str) and not isinstance(entity_id, list))
             ):
                 self._wrapper.logger.error(
                     "Cannot call service `{service_name}`. The `entity_id` key has an invalid type."
-                    + " Only `str` or `list[str]` are allowed. If passing a list, make sure all the elements are str",
+                    " Only `str` or `list[str]` are allowed. If passing a list, make sure all the elements are str",
                     service_name=service_name,
                 )
                 return None
@@ -148,7 +153,10 @@ class HassPlugin(AppPlugin):
             kwargs["entity_id"] = val
 
         return await self.__hass.call_service(
-            domain=domain, service=service, service_data=kwargs, entity_id=entity_id,
+            domain=domain,
+            service=service,
+            service_data=kwargs,
+            entity_id=entity_id,
         )
 
     async def wait_for_state_to_be(
@@ -160,12 +168,16 @@ class HassPlugin(AppPlugin):
     ) -> None:
         if timeout is None:
             await self.__wait_for_state_to_be_implementation(
-                entity_id, states, duration,
+                entity_id,
+                states,
+                duration,
             )
         else:
             async with asyncio.timeout(timeout.total_seconds()):
                 await self.__wait_for_state_to_be_implementation(
-                    entity_id, states, duration,
+                    entity_id,
+                    states,
+                    duration,
                 )
 
     def __wait_for_state_to_be_implementation(
@@ -179,23 +191,21 @@ class HassPlugin(AppPlugin):
         if isinstance(states, str):
             states = [states]
 
-        async def state_callback(entity, attribute, old, new):
+        async def state_callback(
+            entity: str,
+            _attribute: str,
+            _old: HassApiValue | None,
+            new: HassApiValue | None,
+        ) -> None:
             callback_id: str = context_callback_id.get()  # type: ignore
 
             if new in states and not future.done():
                 entity_full_state = self.get_full_state(entity)
-                if (
-                    duration is not None
-                    and not entity_full_state.has_been_in_current_state_for_at_least(
-                        duration,
-                    )
+                if duration is not None and not entity_full_state.has_been_in_current_state_for_at_least(
+                    duration,
                 ):
                     await asyncio.sleep(
-                        (
-                            duration.to_timedelta()
-                            - entity_full_state.get_time_in_current_state()
-                        ).total_seconds()
-                        + 0.5,
+                        (duration.to_timedelta() - entity_full_state.get_time_in_current_state()).total_seconds() + 0.5,
                     )
 
                     if not self.get_full_state(

@@ -1,5 +1,5 @@
 import datetime
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 
 import strawberry
 from apscheduler.job import Job
@@ -15,7 +15,8 @@ from domovoy.core.utils import get_callback_name
 @strawberry.interface
 class AppCallback:
     def __init__(
-        self, registration: SchedulerCallbackRegistration | EventCallbackRegistration,
+        self,
+        registration: SchedulerCallbackRegistration | EventCallbackRegistration,
     ) -> None:
         self.id = registration.id
         self.callback = get_callback_name(registration.callback)
@@ -36,11 +37,11 @@ class AppCallback:
 
 @strawberry.type
 class AppCallbackConnection:
-    def __init__(self, app_callbacks: list[AppCallback]) -> None:
+    def __init__(self, app_callbacks: Sequence[AppCallback]) -> None:
         self.__app_callbacks = app_callbacks
 
     @strawberry.field
-    def nodes(self) -> list[AppCallback]:
+    def nodes(self) -> Sequence[AppCallback]:
         return self.__app_callbacks
 
     @strawberry.field
@@ -104,15 +105,10 @@ class Application:
 
     @strawberry.field
     async def callbacks(self) -> AppCallbackConnection:
-        scheduler_callbacks = [
-            SchedulerCallback(x)
-            for x in self.__app_wrapper.scheduler_callbacks.values()
-        ]
-        event_callbacks = [
-            EventCallback(x) for x in self.__app_wrapper.event_callbacks.values()
-        ]
+        scheduler_callbacks = [SchedulerCallback(x) for x in self.__app_wrapper.scheduler_callbacks.values()]
+        event_callbacks = [EventCallback(x) for x in self.__app_wrapper.event_callbacks.values()]
 
-        return AppCallbackConnection(scheduler_callbacks + event_callbacks)  # type: ignore
+        return AppCallbackConnection(scheduler_callbacks + event_callbacks)
 
 
 def build_schema(

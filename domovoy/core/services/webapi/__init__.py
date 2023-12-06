@@ -34,7 +34,7 @@ class DomovoyWebApi(DomovoyService):
         # set up the web server
         self.__runner = web.AppRunner(app)
 
-        async def app_run():
+        async def app_run() -> None:
             address = self.__resources.config["address"]
             port = self.__resources.config["port"]
 

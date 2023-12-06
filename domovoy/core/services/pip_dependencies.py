@@ -33,6 +33,7 @@ def install_requirements() -> None:
             [sys.executable, "-m", "pip", "install", "-r", file],
             capture_output=True,
             text=True,
+            check=False,
         )
 
         if result.stdout:

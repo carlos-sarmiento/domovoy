@@ -1,5 +1,5 @@
 from domovoy.core.engine.engine import AppEngine
-from domovoy.core.errors import DomovoyException
+from domovoy.core.errors import DomovoyError
 from domovoy.core.logging import get_logger
 
 __active_engine = None
@@ -13,10 +13,8 @@ def set_active_engine_for_app_registration(engine: AppEngine) -> None:
 
 
 def get_active_engine() -> AppEngine:
-    global __active_engine
-
     if __active_engine is None:
-        raise DomovoyException(
+        raise DomovoyError(
             "Trying to fetch the active App Engine but none has been set yet.",
         )
 

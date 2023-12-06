@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable
+from typing import Protocol
 
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import (
+    FileCreatedEvent,
+    FileDeletedEvent,
+    FileModifiedEvent,
+    FileMovedEvent,
+    FileSystemEventHandler,
+)
 
 from domovoy.core.logging import get_logger
 
@@ -11,13 +17,18 @@ _logcore = get_logger(__name__)
 
 
 class ReloadPythonFileWatcher(FileSystemEventHandler):
-    __timer_per_file: dict[str, threading.Timer] = {}
+    class LoadOrReloadCallback(Protocol):
+        def __call__(self, filepath: str, *, is_deletion: bool) -> None:
+            ...
 
-    def __init__(self, load_or_reload_callback: Callable[[str, bool], None]) -> None:
+    __timer_per_file: dict[str, threading.Timer]
+
+    def __init__(self, load_or_reload_callback: LoadOrReloadCallback) -> None:
         super().__init__()
+        self.__timer_per_file = {}
         self.__module_load_callback = load_or_reload_callback
 
-    def __process_event(self, path: str, is_deletion: bool) -> None:
+    def __process_event(self, path: str, *, is_deletion: bool) -> None:
         if not path.endswith(".py"):
             return
 
@@ -35,23 +46,23 @@ class ReloadPythonFileWatcher(FileSystemEventHandler):
         timer.start()
         self.__timer_per_file[path] = timer
 
-    def __notify(self, filepath: str, is_deletion: bool) -> None:
+    def __notify(self, filepath: str, *, is_deletion: bool) -> None:
         _logcore.debug("Detected File Change: {filepath}", filepath=filepath)
-        self.__module_load_callback(filepath, is_deletion)
+        self.__module_load_callback(filepath, is_deletion=is_deletion)
 
-    def on_moved(self, event):
+    def on_moved(self, event: FileMovedEvent) -> None:
         super().on_moved(event)
-        self.__process_event(event.src_path, True)
-        self.__process_event(event.dest_path, False)
+        self.__process_event(event.src_path, is_deletion=True)
+        self.__process_event(event.dest_path, is_deletion=False)
 
-    def on_created(self, event):
+    def on_created(self, event: FileCreatedEvent) -> None:
         super().on_created(event)
-        self.__process_event(event.src_path, False)
+        self.__process_event(event.src_path, is_deletion=False)
 
-    def on_deleted(self, event):
+    def on_deleted(self, event: FileDeletedEvent) -> None:
         super().on_deleted(event)
-        self.__process_event(event.src_path, True)
+        self.__process_event(event.src_path, is_deletion=True)
 
-    def on_modified(self, event):
+    def on_modified(self, event: FileModifiedEvent) -> None:
         super().on_modified(event)
-        self.__process_event(event.src_path, False)
+        self.__process_event(event.src_path, is_deletion=False)

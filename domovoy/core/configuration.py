@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import logging
 import sys
 from dataclasses import dataclass, field
@@ -10,7 +11,7 @@ from astral import LocationInfo
 from astral.location import Location
 from dataclass_wizard import YAMLWizard
 
-from domovoy.core.errors import DomovoyException
+from domovoy.core.errors import DomovoyError
 
 
 @dataclass(frozen=True)
@@ -24,9 +25,9 @@ class MainConfig(YAMLWizard):
     astral: AstralConfig | None = None
 
     logs: dict[str, LoggingConfig] = field(default_factory=dict)
-    # plugins: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # plugins: dict[str, dict[str, Any]] = field(default_factory=dict)  # noqa: ERA001
 
-    def get_timezone(self):
+    def get_timezone(self) -> datetime.tzinfo:
         return pytz.timezone(self.timezone)
 
     def get_astral_location(self) -> Location | None:
@@ -59,31 +60,32 @@ class LoggingConfig:
     output_filename: str | None = None
     write_to_stdout: bool | None = True
     formatter: str | None = "[%(asctime)s][%(levelname)s][%(name)s]  %(message)s"
-    formatter_with_app_name: str | None = (
-        "[%(asctime)s][%(levelname)s][%(name)s][%(app_name)s]  %(message)s"
-    )
+    formatter_with_app_name: str | None = "[%(asctime)s][%(levelname)s][%(name)s][%(app_name)s]  %(message)s"
 
     def get_actual_output_stream(self) -> TextIO | None:
-        logging.getLevelName
         if self.write_to_stdout is None or self.write_to_stdout is True:
             return sys.stdout
-        elif self.write_to_stdout is False:
+
+        if self.write_to_stdout is False:
             return None
-        else:
-            raise ValueError(
-                f"Invalid value for output_stream: {self.write_to_stdout}",
-            )
+
+        msg = f"Invalid value for output_stream: {self.write_to_stdout}"
+        raise ValueError(msg)
 
     def get_numeric_log_level(self) -> int:
         if self.log_level == "critical":
             return logging.CRITICAL
-        elif self.log_level == "error":
+
+        if self.log_level == "error":
             return logging.ERROR
-        elif self.log_level == "warning":
+
+        if self.log_level == "warning":
             return logging.WARNING
-        elif self.log_level == "info":
+
+        if self.log_level == "info":
             return logging.INFO
-        elif self.log_level == "debug":
+
+        if self.log_level == "debug":
             return logging.DEBUG
 
         return 0
@@ -116,11 +118,11 @@ class LoggingConfig:
 
 
 def load_main_config_from_yaml(config: str, source: str) -> None:
-    global _main_config
     from domovoy.core.logging import get_logger
 
     get_logger(__name__).info(
-        "Loading Configuration for Domovoy from: {source}", source=source,
+        "Loading Configuration for Domovoy from: {source}",
+        source=source,
     )
 
     main_config = MainConfig.from_yaml(config)
@@ -144,7 +146,7 @@ def set_main_config(config: MainConfig) -> None:
     from domovoy.core.logging import get_logger
 
     if _main_config is not None:
-        e = DomovoyException(
+        e = DomovoyError(
             "Main Config is already set. It cannot be set to a new value",
         )
         get_logger(__name__).exception(e)
@@ -154,9 +156,7 @@ def set_main_config(config: MainConfig) -> None:
 
 
 def get_main_config() -> MainConfig:
-    global _main_config
-
     if _main_config is None:
-        raise DomovoyException("Main configuration has not been set")
+        raise DomovoyError("Main configuration has not been set")
 
     return _main_config
