@@ -5,22 +5,22 @@ from typing import TypeVar
 
 import pytz
 
-from domovoy.core.configuration import get_main_config
+from domovoy.core.configuration import MainConfig, get_main_config
 
 
 def get_datetime_now_with_config_timezone() -> datetime:
-    config = get_main_config()
+    config: MainConfig = get_main_config()
     return datetime.now(pytz.timezone(config.timezone))
 
 
-def as_float(x: object, default: float | None = None) -> float | None:
+def as_float(x: str, default: float | None = None) -> float | None:
     try:
         return float(x)
     except (TypeError, ValueError):
         return default
 
 
-def as_int(x: object, default: int | None = None) -> int | None:
+def as_int(x: str, default: int | None = None) -> int | None:
     try:
         return int(x)
     except (TypeError, ValueError):

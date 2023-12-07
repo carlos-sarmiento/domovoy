@@ -3,7 +3,7 @@ import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, ParamSpec
+from typing import TYPE_CHECKING, Any, ParamSpec
 
 from domovoy.core.app_infra import AppPlugin
 from domovoy.core.context import inside_log_callback
@@ -108,7 +108,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: object = None,
+        exc_info: Any = None,  # noqa: ANN401
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -128,7 +128,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: object = None,
+        exc_info: Any = None,  # noqa: ANN401
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -148,7 +148,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: object = None,
+        exc_info: Any = None,  # noqa: ANN401
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -168,7 +168,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: object = None,
+        exc_info: Any = None,  # noqa: ANN401
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -188,7 +188,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: object = True,
+        exc_info: Any = None,  # noqa: ANN401
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -208,7 +208,7 @@ class LoggerPlugin(AppPlugin):
         self,
         msg: object,
         *args: object,
-        exc_info: object = None,
+        exc_info: Any = None,  # noqa: ANN401
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,
@@ -229,7 +229,7 @@ class LoggerPlugin(AppPlugin):
         level: int,
         msg: object,
         *args: object,
-        exc_info: object = None,
+        exc_info: Any = None,  # noqa: ANN401
         stack_info: bool = False,
         stacklevel: int = 1,
         extra: Mapping[str, object] | None = None,

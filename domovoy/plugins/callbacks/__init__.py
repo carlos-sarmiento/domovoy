@@ -436,7 +436,6 @@ class CallbacksPlugin(AppPlugin):
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> str:
-        true_start: datetime.datetime | str = "now"
         if isinstance(time, datetime.time):
             true_start = datetime.datetime.combine(
                 datetime.datetime.now(tz=get_main_config().get_timezone()).date(),

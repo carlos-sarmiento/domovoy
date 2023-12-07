@@ -110,7 +110,7 @@ class HassPlugin(AppPlugin):
     async def call_service(
         self,
         service_name: str,
-        **kwargs: HassApiValue,
+        **kwargs: HassApiValue | None,
     ) -> HassApiDataDict | None:
         service_name_segments = service_name.split(".")
 

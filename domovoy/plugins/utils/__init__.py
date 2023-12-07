@@ -76,7 +76,7 @@ class UtilsPlugin(AppPlugin):
         **kwargs: P.kwargs,
     ) -> asyncio.Task[T]:
         async def callback_wrapper() -> T:
-            await callback(*args, **kwargs)
+            return await callback(*args, **kwargs)
 
         return asyncio.get_event_loop().create_task(
             callback_wrapper(),
@@ -88,11 +88,11 @@ class UtilsPlugin(AppPlugin):
         callback: Callable[P, T],
         *args: P.args,
         **kwargs: P.kwargs,
-    ) -> None:
-        def callback_wrapper() -> None:
-            callback(*args, **kwargs)
+    ) -> asyncio.Future[T]:
+        def callback_wrapper() -> T:
+            return callback(*args, **kwargs)
 
-        asyncio.get_event_loop().run_in_executor(None, callback_wrapper)
+        return asyncio.get_event_loop().run_in_executor(None, callback_wrapper)
 
     def is_now_between_dawn_and_dusk(self) -> bool:
         return self.is_between_dawn_and_dusk(

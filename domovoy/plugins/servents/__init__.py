@@ -371,12 +371,12 @@ class ServentsPlugin(AppPlugin):
             self.__callbacks.listen_event(
                 f"servent.{target_event}",
                 extended_callback,
-            )
+            )  # type: ignore
 
         else:
             self.__callbacks.listen_event(
                 f"servent.{target_event}",
                 callback,
-            )
+            )  # type: ignore
 
         return button

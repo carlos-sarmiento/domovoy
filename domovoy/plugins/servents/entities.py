@@ -104,6 +104,8 @@ class ServEntSensor(ServEntEntity):
         state: float | str | datetime.datetime | None,
         attributes: dict | None = None,
     ) -> None:
+        if state is None:
+            state = "unknown"
         return await super().set_to(state, attributes or {})
 
     def get_state(self) -> float | int | str | datetime.datetime:

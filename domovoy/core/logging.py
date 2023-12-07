@@ -14,7 +14,7 @@ from domovoy.core.errors import DomovoyError
 
 
 class BraceMessage:
-    def __init__(self, fmt: str, args: object, kwargs: object) -> None:
+    def __init__(self, fmt: str, args: tuple[object, ...], kwargs: dict[str, object]) -> None:
         self.fmt = fmt
         self.args = args
         self.kwargs = kwargs
