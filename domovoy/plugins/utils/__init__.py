@@ -69,6 +69,11 @@ class UtilsPlugin(AppPlugin):
     def datetime_to_local_timezone(self, dt: datetime.datetime) -> datetime.datetime:
         return dt.astimezone(get_main_config().get_timezone())
 
+    def now(self, *, tz: datetime.tzinfo | None = None) -> datetime.datetime:
+        if tz is None:
+            tz = get_main_config().get_timezone()
+        return datetime.datetime.now(tz=tz)
+
     def run_async(
         self,
         callback: Callable[P, Awaitable[T]],

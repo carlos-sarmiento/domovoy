@@ -13,6 +13,6 @@ HassApiDataDict = dict[str, HassApiValue | None]
 
 HassData = HassApiDataDict
 
-HassValue = HassApiValue
+HassValue = HassApiValueOrNone
 
-HassValueOrNone = HassApiValueOrNone
+HassValueStrict = HassApiValue
