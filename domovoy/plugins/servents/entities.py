@@ -38,7 +38,7 @@ class ServEntEntity:
         self.entity_config = config
         self.device_config = device_config
 
-    async def set_to(self, state: HassApiValue, attributes: dict[str, object] | None = None) -> None:
+    async def set_to(self, state: HassApiValue | None, attributes: dict[str, object] | None = None) -> None:
         if attributes is not None and not isinstance(attributes, dict):
             raise DomovoyError("Attributes is not a dict")
 
@@ -104,8 +104,6 @@ class ServEntSensor(ServEntEntity):
         state: float | str | datetime.datetime | None,
         attributes: dict | None = None,
     ) -> None:
-        if state is None:
-            state = "unknown"
         return await super().set_to(state, attributes or {})
 
     def get_state(self) -> float | int | str | datetime.datetime:

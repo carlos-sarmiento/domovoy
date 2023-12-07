@@ -7,6 +7,7 @@ from typing import Concatenate, ParamSpec
 from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppWrapper
 from domovoy.core.context import context_callback_id, context_logger
+from domovoy.core.logging import get_logger
 from domovoy.plugins import callbacks
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
@@ -16,6 +17,8 @@ from .synthetic import HassSyntheticDomainsServiceCalls
 from .types import HassApiDataDict, HassApiValue
 
 P = ParamSpec("P")
+
+_missing_entities_logger = get_logger("missing_entitites")
 
 
 class HassPlugin(AppPlugin):
@@ -48,6 +51,21 @@ class HassPlugin(AppPlugin):
             raise HassUnknownEntityError(entity_id)
 
         return entity_state
+
+    def warn_if_entity_doesnt_exists(self, entity_id: str | list[str] | None) -> None:
+        if entity_id is None:
+            return
+
+        if isinstance(entity_id, str):
+            entity_id = [entity_id]
+
+        for eid in entity_id:
+            if not self.__hass.entity_exists_in_cache(eid):
+                _missing_entities_logger.warning(
+                    "[{app_name}] '{entity_id}' doesn't exist in Hass.",
+                    entity_id=eid,
+                    app_name=self._wrapper.app_name,
+                )
 
     def get_entity_id_by_attribute(
         self,
@@ -150,7 +168,10 @@ class HassPlugin(AppPlugin):
         if "service_data_entity_id" in kwargs:
             val = kwargs["service_data_entity_id"]
             kwargs.pop("service_data_entity_id")
+            self.warn_if_entity_doesnt_exists(str(val) if val else None)
             kwargs["entity_id"] = val
+
+        self.warn_if_entity_doesnt_exists(entity_id)
 
         return await self.__hass.call_service(
             domain=domain,
