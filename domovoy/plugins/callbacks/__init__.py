@@ -142,6 +142,8 @@ class CallbacksPlugin(AppPlugin):
         if isinstance(target_entity_id, str):
             target_entity_id = [target_entity_id]
 
+        self.__hass.warn_if_entity_doesnt_exists(target_entity_id)
+
         target_entity_id = set(target_entity_id)
 
         instrumented_callback = self._wrapper.instrument_app_callback(callback)

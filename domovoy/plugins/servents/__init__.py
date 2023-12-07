@@ -348,15 +348,11 @@ class ServentsPlugin(AppPlugin):
                 **callback_kwargs: P.kwargs,
             ) -> None:
                 self._wrapper.logger.debug(
-                    "Calling Extended Button Press functionality for `{final_event}`",
+                    "Received Extended Button Press with event: `{final_event}`",
                     final_event=final_event,
                 )
                 if extended_event_data["true_event"] != final_event:
-                    self._wrapper.logger.debug(
-                        "{true_event} != `{final_event}`",
-                        true_event=extended_event_data["true_event"],
-                        final_event=final_event,
-                    )
+                    # This event is not related to this button
                     return
 
                 callback_result = callback(
