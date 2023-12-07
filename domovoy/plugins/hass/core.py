@@ -261,7 +261,7 @@ class HassCore(DomovoyService):
     def get_state(self, entity_id: str) -> EntityState | None:
         return self.__entity_state_cache.get(entity_id, None)
 
-    def get_entity_id_by_attribute(self, attribute: str, value: PrimitiveHassApiValue) -> list[str]:
+    def get_entity_id_by_attribute(self, attribute: str, value: PrimitiveHassApiValue | None) -> list[str]:
         return [
             x.entity_id
             for x in self.__entity_state_cache.values()

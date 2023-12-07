@@ -7,7 +7,7 @@ from domovoy.applications import AppBase, AppConfigBase, EmptyAppConfig
 from domovoy.plugins.servents.enums import ButtonDeviceClass, EntityCategory
 
 from .synthetic import (
-    generate_stub_file_for_synthetic_services,
+    generate_stub_file_for_synthetic_services,  # type: ignore
 )
 
 

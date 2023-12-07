@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from .enums import (
@@ -31,7 +32,7 @@ class ServEntSensorConfig(ServEntEntityConfig):
     device_class: SensorDeviceClass | None = None
     unit_of_measurement: str | None = None
     state_class: SensorStateClass | None = None
-    options: list[str] | None = None
+    options: Sequence[str] | None = None
 
     def __post_init__(self) -> None:
         if self.options is not None and self.device_class is None:
@@ -81,7 +82,7 @@ class ServEntThresholdBinarySensorConfig(ServEntEntityConfig):
 @dataclass(kw_only=True)
 class ServEntSelectConfig(ServEntEntityConfig):
     type: EntityType = EntityType.SELECT
-    options: list[str] | None = None
+    options: Sequence[str] | None = None
 
 
 @dataclass(kw_only=True)

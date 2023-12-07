@@ -664,6 +664,17 @@ sanic = ["sanic (>=20.12.2)"]
 starlite = ["starlite (>=1.48.0)"]
 
 [[package]]
+name = "types-pytz"
+version = "2023.3.1.1"
+description = "Typing stubs for pytz"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-pytz-2023.3.1.1.tar.gz", hash = "sha256:cc23d0192cd49c8f6bba44ee0c81e4586a8f30204970fc0894d209a6b08dab9a"},
+    {file = "types_pytz-2023.3.1.1-py3-none-any.whl", hash = "sha256:1999a123a3dc0e39a2ef6d19f3f8584211de9e6a77fe7a0259f04a524e90a5cf"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.8.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -926,4 +937,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "d21508f089c2616b8f7a581918724fe3e6f27ea33358c560b017e64544aef0a5"
+content-hash = "0f8bdce9b91110084fd9b98c18ec861b1cd3ed1be6b5ec90ab44687b297e5e7f"

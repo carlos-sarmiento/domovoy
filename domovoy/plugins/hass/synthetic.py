@@ -67,9 +67,8 @@ def generate_stub_file_for_synthetic_services(
     domain_to_class: dict[str, str] = {}
 
     if save_domains_as_json:
-        with Path(f"{destination}.json").open("w") as services_file:
-            asd = encode_message(domains)
-            services_file.write(asd)
+        with Path(f"{destination}.json").open("wb") as services_file:
+            services_file.write(encode_message(domains))
 
     with Path(destination).open("w") as text_file:
         now = datetime.datetime.now(get_main_config().get_timezone())

@@ -10,6 +10,7 @@ import pytz
 from astral import LocationInfo
 from astral.location import Location
 from dataclass_wizard import YAMLWizard
+from pytz import BaseTzInfo
 
 from domovoy.core.errors import DomovoyError
 
@@ -27,7 +28,7 @@ class MainConfig(YAMLWizard):
     logs: dict[str, LoggingConfig] = field(default_factory=dict)
     # plugins: dict[str, dict[str, Any]] = field(default_factory=dict)  # noqa: ERA001
 
-    def get_timezone(self) -> datetime.tzinfo:
+    def get_timezone(self) -> BaseTzInfo:
         return pytz.timezone(self.timezone)
 
     def get_astral_location(self) -> Location | None:
