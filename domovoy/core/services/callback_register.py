@@ -259,23 +259,23 @@ class CallbackRegister(DomovoyService):
 
         app_wrapper.event_callbacks.clear()
 
-    def cancel_callback(self, app_wrapper: AppWrapper, id: str) -> None:
-        if id.startswith("ephemeral_callback"):
+    def cancel_callback(self, app_wrapper: AppWrapper, callback_id: str) -> None:
+        if callback_id.startswith("ephemeral_callback"):
             return
 
-        if id in app_wrapper.scheduler_callbacks:
-            self.__cancel_single_scheduler_callback(app_wrapper, id)
-            app_wrapper.scheduler_callbacks.pop(id)
+        if callback_id in app_wrapper.scheduler_callbacks:
+            self.__cancel_single_scheduler_callback(app_wrapper, callback_id)
+            app_wrapper.scheduler_callbacks.pop(callback_id)
             return
 
-        if id in app_wrapper.event_callbacks:
-            self.__cancel_single_event_callback(app_wrapper, id)
-            app_wrapper.event_callbacks.pop(id)
+        if callback_id in app_wrapper.event_callbacks:
+            self.__cancel_single_event_callback(app_wrapper, callback_id)
+            app_wrapper.event_callbacks.pop(callback_id)
             return
 
         c_logger().error(
             "Callback with id {callback_id} is not registered for app {app_name}",
-            callback_id=id,
+            callback_id=callback_id,
             app_name=app_wrapper.app_name,
         )
 
