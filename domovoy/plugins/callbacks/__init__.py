@@ -24,6 +24,7 @@ from domovoy.core.utils import (
 )
 from domovoy.plugins import hass
 from domovoy.plugins.callbacks.entity_listener_callbacks import EntityListenerCallback
+from domovoy.plugins.callbacks.event_listener_callbacks import EventListenerCallback
 from domovoy.plugins.hass.types import HassApiValue
 from domovoy.plugins.plugins import AppPlugin
 
@@ -54,6 +55,31 @@ class CallbacksPlugin(AppPlugin):
 
     def prepare(self) -> None:
         self.__hass = self._wrapper.get_pluginx(hass.HassPlugin)
+
+    def listen_event_new(
+        self,
+        events: str | list[str],
+        callback: EventListenerCallback,
+        *,
+        oneshot: bool = False,
+    ) -> str:
+        signature = inspect.signature(callback)
+        valid_params = set(signature.parameters.keys())
+
+        async def wrapper(event_name: str, data: dict[str, Any]) -> None:
+            call_args = {}
+            if "event_name" in valid_params:
+                call_args["event_name"] = event_name
+            if "data" in valid_params:
+                call_args["data"] = data
+
+            if inspect.iscoroutinefunction(callback):
+                await callback(**call_args)
+            else:
+                callback(**call_args)
+
+        set_callback_true_information(wrapper, callback)
+        return self.listen_event(events, wrapper, oneshot)
 
     def listen_event(
         self,
