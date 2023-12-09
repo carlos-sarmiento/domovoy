@@ -3,14 +3,12 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TypeVar
 
-import pytz
-
 from domovoy.core.configuration import MainConfig, get_main_config
 
 
 def get_datetime_now_with_config_timezone() -> datetime:
     config: MainConfig = get_main_config()
-    return datetime.now(pytz.timezone(config.timezone))
+    return datetime.now(config.get_timezone())
 
 
 def as_float(x: str, default: float | None = None) -> float | None:
