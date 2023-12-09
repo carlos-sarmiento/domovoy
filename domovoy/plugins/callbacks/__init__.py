@@ -4,14 +4,7 @@ import asyncio
 import datetime
 import inspect
 from collections.abc import Awaitable, Callable
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Concatenate,
-    Literal,
-    ParamSpec,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Concatenate, Literal, ParamSpec, Protocol, TypeVar
 
 from astral.location import Location
 from dateutil.parser import parse
@@ -27,8 +20,10 @@ from domovoy.core.utils import (
     get_callback_true_name,
     get_datetime_now_with_config_timezone,
     is_datetime_aware,
+    set_callback_true_information,
 )
 from domovoy.plugins import hass
+from domovoy.plugins.callbacks.entity_listener_callbacks import EntityListenerCallback
 from domovoy.plugins.hass.types import HassApiValue
 from domovoy.plugins.plugins import AppPlugin
 
@@ -101,6 +96,47 @@ class CallbacksPlugin(AppPlugin):
             listen_event_callback,
             events,
         )
+
+    def listen_state_new(
+        self,
+        entity_id: str | list[str],
+        callback: EntityListenerCallback,
+        *,
+        immediate: bool = False,
+        oneshot: bool = False,
+    ) -> list[str]:
+        return self.listen_attribute_new(entity_id, "state", callback, immediate=immediate, oneshot=oneshot)
+
+    def listen_attribute_new(
+        self,
+        entity_id: str | list[str],
+        attribute: str,
+        callback: EntityListenerCallback,
+        *,
+        immediate: bool = False,
+        oneshot: bool = False,
+    ) -> list[str]:
+        signature = inspect.signature(callback)
+        valid_params = set(signature.parameters.keys())
+
+        async def wrapper(entity_id: str, attribute: str, old: HassApiValue | None, new: HassApiValue | None) -> None:
+            call_args = {}
+            if "entity_id" in valid_params:
+                call_args["entity_id"] = entity_id
+            if "attribute" in valid_params:
+                call_args["attribute"] = attribute
+            if "old" in valid_params:
+                call_args["old"] = old
+            if "new" in valid_params:
+                call_args["new"] = new
+
+            if inspect.iscoroutinefunction(callback):
+                await callback(**call_args)
+            else:
+                callback(**call_args)
+
+        set_callback_true_information(wrapper, callback)
+        return self.listen_attribute(entity_id, attribute, wrapper, immediate, oneshot)
 
     def listen_state(
         self,
