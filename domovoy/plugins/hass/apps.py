@@ -58,7 +58,5 @@ class HassTerminateDomovoy(AppBase[EmptyAppConfig]):
 
     async def homeassistant_started_event_handler(
         self,
-        _event_name: str,
-        _event_data: dict[str, Any],
     ) -> None:
         stop_domovoy()

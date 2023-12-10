@@ -1,11 +1,12 @@
 import asyncio
-from collections.abc import Awaitable, Callable
+import inspect
 from dataclasses import asdict
-from typing import Any, Concatenate, ParamSpec
+from typing import Any, ParamSpec
 
 from domovoy.core.app_infra import AppWrapper
 from domovoy.core.utils import strip_none_and_enums_from_containers
 from domovoy.plugins import callbacks, hass, meta
+from domovoy.plugins.callbacks.event_listener_callbacks import EventListenerCallback
 from domovoy.plugins.plugins import AppPlugin
 
 from .entities import (
@@ -82,7 +83,7 @@ class ServentsPlugin(AppPlugin):
             disabled_by_default=True,
         )
 
-    async def __reload_callback(self, _event_name: str, _data: dict[str, object]) -> None:
+    async def __reload_callback(self) -> None:
         # TODO: Add Logging
         await self.__meta.restart_app()
 
@@ -290,7 +291,7 @@ class ServentsPlugin(AppPlugin):
 
     async def listen_button_press(
         self,
-        callback: Callable[Concatenate[str, dict[str, Any], P], None | Awaitable[None]],
+        callback: EventListenerCallback,
         button_name: str,
         event_name_to_fire: str,
         event_data: dict[str, Any] | None = None,
@@ -342,35 +343,36 @@ class ServentsPlugin(AppPlugin):
             )
 
             async def extended_callback(
-                _event_name: str,
-                extended_event_data: dict[str, object],
-                *callback_args: P.args,
-                **callback_kwargs: P.kwargs,
+                data: dict[str, Any],
             ) -> None:
                 self._wrapper.logger.debug(
                     "Received Extended Button Press with event: `{final_event}`",
                     final_event=final_event,
                 )
-                if extended_event_data["true_event"] != final_event:
+                if data["true_event"] != final_event:
                     # This event is not related to this button
                     return
 
-                callback_result = callback(
-                    event_name_to_fire,
-                    event_data or {},
-                    *callback_args,
-                    **callback_kwargs,
-                )
+                signature = inspect.signature(callback)
+                valid_params = set(signature.parameters.keys())
+
+                call_args = {}
+                if "event_name" in valid_params:
+                    call_args["event_name"] = event_name_to_fire
+                if "data" in valid_params:
+                    call_args["data"] = event_data or {}
+
+                callback_result = callback(**call_args)
                 if callback_result is not None:
                     await callback_result
 
-            self.__callbacks.listen_event(
+            self.__callbacks.listen_event_new(
                 f"servent.{target_event}",
                 extended_callback,
-            )  # type: ignore
+            )
 
         else:
-            self.__callbacks.listen_event(
+            self.__callbacks.listen_event_new(
                 f"servent.{target_event}",
                 callback,
             )  # type: ignore
