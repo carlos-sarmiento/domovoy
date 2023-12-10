@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class HassServiceCall(Protocol):
-    async def __call__(self, **kwargs: HassApiValue) -> None:
+    async def __call__(self, **kwargs: HassApiValue) -> dict[str, Any] | None:
         ...
 
 
@@ -25,8 +25,15 @@ class HassSyntheticServiceCall:
         self.__hass = hass_plugin
 
     def __getattr__(self, service: str) -> HassServiceCall:
-        async def synthetic_service_call(**kwargs: HassApiValue) -> None:
-            await self.__hass.call_service(f"{self.__domain}.{service}", **kwargs)
+        async def synthetic_service_call(**kwargs: HassApiValue) -> dict[str, Any] | None:
+            full_name = f"{self.__domain}.{service}"
+            service_definitions = await self.__hass._get_cached_service_definitions()  # noqa: SLF001
+
+            if full_name in service_definitions and service_definitions[full_name].has_response:
+                response: dict[str, Any] = await self.__hass.call_service(full_name, return_response=True, **kwargs)  # type: ignore
+                return response["response"]
+
+            return await self.__hass.call_service(full_name, return_response=False, **kwargs)
 
         return synthetic_service_call
 

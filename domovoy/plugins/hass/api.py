@@ -538,10 +538,12 @@ class HassWebsocketApi:
 
     async def call_service(
         self,
+        *,
         domain: str,
         service: str,
         service_data: HassApiDataDict | None = None,
         entity_id: str | list[str] | None = None,
+        return_response: bool = False,
     ) -> HassApiDataDict | None:
         _logcore.debug(
             f"Calling call_service for {domain}.{service}",
@@ -553,6 +555,7 @@ class HassWebsocketApi:
             "type": "call_service",
             "domain": domain,
             "service": service,
+            "return_response": return_response,
         }
 
         if service_data is not None:

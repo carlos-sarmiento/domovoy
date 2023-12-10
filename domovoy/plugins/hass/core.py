@@ -290,16 +290,19 @@ class HassCore(DomovoyService):
 
     async def call_service(
         self,
+        *,
         domain: str,
         service: str,
         service_data: HassApiDataDict | None = None,
         entity_id: str | list[str] | None = None,
+        return_response: bool = False,
     ) -> HassApiDataDict | None:
         return await self.__hass_api.call_service(
-            domain,
-            service,
-            service_data,
-            entity_id,
+            domain=domain,
+            service=service,
+            service_data=service_data,
+            entity_id=entity_id,
+            return_response=return_response,
         )
 
     async def get_service_definitions(self) -> HassApiDataDict:
