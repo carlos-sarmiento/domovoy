@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
+from pathlib import Path
 
 from domovoy.core.configuration import get_main_config
 from domovoy.core.dependency_tracking.dependency_tracker import DependencyTracker
@@ -33,10 +34,16 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
 
         _logcore.debug("Inserting App path into Python PATH")
         app_path = get_main_config().app_path
-        app_path = os.path.abspath(app_path)
+        app_path = Path(app_path).resolve()
 
-        parent_app_path = os.path.abspath(os.path.join(app_path, os.pardir))
-        sys.path.insert(0, parent_app_path)
+        parent_app_path = (app_path / os.pardir).resolve()
+
+        _logcore.warning(
+            "Inserting Parent Path: `{parent_app_path}` of App Path: `{app_path}` to PYTHON_PATH",
+            parent_app_path=parent_app_path,
+            app_path=app_path,
+        )
+        sys.path.insert(0, str(parent_app_path))
 
         install_requirements()
 
@@ -47,7 +54,7 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
         await app_engine.start()
 
         _logcore.debug("Initializing Dependency Tracker")
-        dependency_tracker = DependencyTracker(app_path, app_engine)
+        dependency_tracker = DependencyTracker(str(app_path), app_engine)
 
         dependency_tracker.start()
 
