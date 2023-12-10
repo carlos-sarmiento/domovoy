@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Concatenate, ParamSpec
+from dataclasses import dataclass
+from typing import Any, Concatenate, ParamSpec
 
 from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppWrapper
@@ -21,10 +22,16 @@ P = ParamSpec("P")
 _missing_entities_logger = get_logger("missing_entitites")
 
 
+@dataclass
+class ServiceDetails:
+    has_response: bool
+
+
 class HassPlugin(AppPlugin):
     __hass: HassCore
     _wrapper: AppWrapper
     __callbacks: callbacks.CallbacksPlugin
+    __cached_service_definitions: dict[str, ServiceDetails] | None = None
 
     def __init__(
         self,
@@ -128,6 +135,8 @@ class HassPlugin(AppPlugin):
     async def call_service(
         self,
         service_name: str,
+        *,
+        return_response: bool = False,
         **kwargs: HassApiValue | None,
     ) -> HassApiDataDict | None:
         service_name_segments = service_name.split(".")
@@ -178,6 +187,7 @@ class HassPlugin(AppPlugin):
             service=service,
             service_data=kwargs,
             entity_id=entity_id,
+            return_response=return_response,
         )
 
     async def wait_for_state_to_be(
@@ -240,3 +250,17 @@ class HassPlugin(AppPlugin):
         self.__callbacks.listen_state_extended(entity_id, state_callback, immediate=True)
 
         return future
+
+    async def _get_cached_service_definitions(self) -> dict[str, ServiceDetails]:
+        if self.__cached_service_definitions is None:
+            domains: dict[str, Any] = await self.get_service_definitions()
+
+            service_definitions = {}
+
+            for domain, services in sorted(domains.items()):
+                for service, details in sorted(services.items()):
+                    service_definitions[f"{domain}.{service}"] = ServiceDetails(has_response="response" in details)
+
+            self.__cached_service_definitions = service_definitions
+
+        return self.__cached_service_definitions
