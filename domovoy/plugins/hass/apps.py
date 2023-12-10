@@ -19,7 +19,7 @@ class HassSyntheticServiceStubUpdaterConfig(AppConfigBase):
 
 class HassSyntheticServiceStubUpdater(AppBase[HassSyntheticServiceStubUpdaterConfig]):
     async def initialize(self) -> None:
-        self.callbacks.listen_event(
+        self.callbacks.listen_event_extended(
             "homeassistant_started",
             self.homeassistant_started_event_handler,
         )
