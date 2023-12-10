@@ -74,6 +74,9 @@ class UtilsPlugin(AppPlugin):
             tz = get_main_config().get_timezone()
         return datetime.datetime.now(tz=tz)
 
+    def today(self, *, tz: datetime.tzinfo | None = None) -> datetime.date:
+        return self.now(tz=tz).date()
+
     def run_async(
         self,
         callback: Callable[P, Awaitable[T]],
