@@ -4,7 +4,7 @@ import asyncio
 import datetime
 import inspect
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any, Concatenate, Literal, ParamSpec, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Concatenate, Literal, ParamSpec, TypeVar
 
 from astral.location import Location
 from dateutil.parser import parse
@@ -82,6 +82,16 @@ class CallbacksPlugin(AppPlugin):
         return self.listen_event(events, wrapper, oneshot)
 
     def listen_event(
+        self,
+        events: str | list[str],
+        callback: Callable[Concatenate[str, dict[str, Any], P], None | Awaitable[None]],
+        oneshot: bool = False,  # noqa: FBT001, FBT002
+        *callback_args: P.args,
+        **callback_kwargs: P.kwargs,
+    ) -> str:
+        return self.listen_event_extended(events, callback, oneshot, *callback_args, **callback_kwargs)
+
+    def listen_event_extended(
         self,
         events: str | list[str],
         callback: Callable[Concatenate[str, dict[str, Any], P], None | Awaitable[None]],
@@ -176,6 +186,20 @@ class CallbacksPlugin(AppPlugin):
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> list[str]:
+        return self.listen_state_extended(entity_id, callback, immediate, oneshot, *callback_args, **callback_kwargs)
+
+    def listen_state_extended(
+        self,
+        entity_id: str | list[str],
+        callback: Callable[
+            Concatenate[str, str, HassApiValue | None, HassApiValue | None, P],
+            None | Awaitable[None],
+        ],
+        immediate: bool = False,  # noqa: FBT001, FBT002
+        oneshot: bool = False,  # noqa: FBT001, FBT002
+        *callback_args: P.args,
+        **callback_kwargs: P.kwargs,
+    ) -> list[str]:
         return self.listen_attribute(
             entity_id,
             "state",
@@ -187,6 +211,29 @@ class CallbacksPlugin(AppPlugin):
         )
 
     def listen_attribute(
+        self,
+        entity_id: str | list[str],
+        attribute: str,
+        callback: Callable[
+            Concatenate[str, str, HassApiValue | None, HassApiValue | None, P],
+            None | Awaitable[None],
+        ],
+        immediate: bool = False,  # noqa: FBT001, FBT002
+        oneshot: bool = False,  # noqa: FBT001, FBT002
+        *callback_args: P.args,
+        **callback_kwargs: P.kwargs,
+    ) -> list[str]:
+        return self.listen_attribute_extended(
+            entity_id,
+            attribute,
+            callback,
+            immediate,
+            oneshot,
+            *callback_args,
+            **callback_kwargs,
+        )
+
+    def listen_attribute_extended(
         self,
         entity_id: str | list[str],
         attribute: str,
