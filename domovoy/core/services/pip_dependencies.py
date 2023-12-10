@@ -1,6 +1,6 @@
-import glob
 import subprocess
 import sys
+from pathlib import Path
 
 from domovoy.core.configuration import get_main_config
 from domovoy.core.logging import get_logger
@@ -17,8 +17,7 @@ def install_requirements() -> None:
 
     _logcore.info("Installing Packages from Apps Folder")
     app_folder = get_main_config().app_path
-    path = f"{app_folder}/**/requirements.txt"
-    files = glob.glob(path, recursive=True)
+    files = Path(app_folder).glob("**/requirements*.txt")
 
     if not files:
         _logcore.info(
@@ -30,7 +29,7 @@ def install_requirements() -> None:
     for file in files:
         _logcore.info("Processing package dependencies from: {file}", file=file)
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-r", file],
+            [sys.executable, "-m", "pip", "install", "-r", str(file)],
             capture_output=True,
             text=True,
             check=False,
