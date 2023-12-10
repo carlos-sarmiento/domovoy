@@ -237,6 +237,6 @@ class HassPlugin(AppPlugin):
                 self.__callbacks.cancel_callback(callback_id)
                 future.set_result(None)
 
-        self.__callbacks.listen_state(entity_id, state_callback, immediate=True)
+        self.__callbacks.listen_state_extended(entity_id, state_callback, immediate=True)
 
         return future

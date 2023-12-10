@@ -79,17 +79,16 @@ class CallbacksPlugin(AppPlugin):
                 callback(**call_args)
 
         set_callback_true_information(wrapper, callback)
-        return self.listen_event(events, wrapper, oneshot)
+        return self.listen_event_extended(events, wrapper, oneshot)
 
     def listen_event(
         self,
         events: str | list[str],
-        callback: Callable[Concatenate[str, dict[str, Any], P], None | Awaitable[None]],
-        oneshot: bool = False,  # noqa: FBT001, FBT002
-        *callback_args: P.args,
-        **callback_kwargs: P.kwargs,
+        callback: EventListenerCallback,
+        *,
+        oneshot: bool = False,
     ) -> str:
-        return self.listen_event_extended(events, callback, oneshot, *callback_args, **callback_kwargs)
+        return self.listen_event_new(events, callback, oneshot=oneshot)
 
     def listen_event_extended(
         self,
@@ -172,21 +171,17 @@ class CallbacksPlugin(AppPlugin):
                 callback(**call_args)
 
         set_callback_true_information(wrapper, callback)
-        return self.listen_attribute(entity_id, attribute, wrapper, immediate, oneshot)
+        return self.listen_attribute_extended(entity_id, attribute, wrapper, immediate, oneshot)
 
     def listen_state(
         self,
         entity_id: str | list[str],
-        callback: Callable[
-            Concatenate[str, str, HassApiValue | None, HassApiValue | None, P],
-            None | Awaitable[None],
-        ],
-        immediate: bool = False,  # noqa: FBT001, FBT002
-        oneshot: bool = False,  # noqa: FBT001, FBT002
-        *callback_args: P.args,
-        **callback_kwargs: P.kwargs,
+        callback: EntityListenerCallback,
+        *,
+        immediate: bool = False,
+        oneshot: bool = False,
     ) -> list[str]:
-        return self.listen_state_extended(entity_id, callback, immediate, oneshot, *callback_args, **callback_kwargs)
+        return self.listen_state_new(entity_id, callback, immediate=immediate, oneshot=oneshot)
 
     def listen_state_extended(
         self,
@@ -200,7 +195,7 @@ class CallbacksPlugin(AppPlugin):
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> list[str]:
-        return self.listen_attribute(
+        return self.listen_attribute_extended(
             entity_id,
             "state",
             callback,
@@ -214,23 +209,17 @@ class CallbacksPlugin(AppPlugin):
         self,
         entity_id: str | list[str],
         attribute: str,
-        callback: Callable[
-            Concatenate[str, str, HassApiValue | None, HassApiValue | None, P],
-            None | Awaitable[None],
-        ],
-        immediate: bool = False,  # noqa: FBT001, FBT002
-        oneshot: bool = False,  # noqa: FBT001, FBT002
-        *callback_args: P.args,
-        **callback_kwargs: P.kwargs,
+        callback: EntityListenerCallback,
+        *,
+        immediate: bool = False,
+        oneshot: bool = False,
     ) -> list[str]:
-        return self.listen_attribute_extended(
+        return self.listen_attribute_new(
             entity_id,
             attribute,
             callback,
-            immediate,
-            oneshot,
-            *callback_args,
-            **callback_kwargs,
+            immediate=immediate,
+            oneshot=oneshot,
         )
 
     def listen_attribute_extended(
