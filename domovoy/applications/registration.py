@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 from typing import Literal, TypeVar
 
 from domovoy.applications import AppBase, AppConfigBase
@@ -87,6 +88,9 @@ def register_app(
             suffix=get_main_config().app_suffix,
         )
         return
+
+    if logging_config_name is None:
+        logging_config_name = Path(app_file_path).name.removesuffix(f"{get_main_config().app_suffix}.py")
 
     __actual_registration(
         app_class=app_class,
