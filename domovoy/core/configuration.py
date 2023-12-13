@@ -25,7 +25,7 @@ class MainConfig(YAMLWizard):
     astral: AstralConfig | None = None
 
     logs: dict[str, LoggingConfig] = field(default_factory=dict)
-    # plugins: dict[str, dict[str, Any]] = field(default_factory=dict)  # noqa: ERA001
+    # plugins: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def get_timezone(self) -> BaseTzInfo:
         return pytz.timezone(self.timezone)
