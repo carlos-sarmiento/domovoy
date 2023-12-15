@@ -56,7 +56,7 @@ class CallbacksPlugin(AppPlugin):
     def prepare(self) -> None:
         self.__hass = self._wrapper.get_pluginx(hass.HassPlugin)
 
-    def listen_event_new(
+    def listen_event(
         self,
         events: str | list[str],
         callback: EventListenerCallback,
@@ -80,15 +80,6 @@ class CallbacksPlugin(AppPlugin):
 
         set_callback_true_information(wrapper, callback)
         return self.listen_event_extended(events, wrapper, oneshot)
-
-    def listen_event(
-        self,
-        events: str | list[str],
-        callback: EventListenerCallback,
-        *,
-        oneshot: bool = False,
-    ) -> str:
-        return self.listen_event_new(events, callback, oneshot=oneshot)
 
     def listen_event_extended(
         self,
@@ -132,7 +123,7 @@ class CallbacksPlugin(AppPlugin):
             events,
         )
 
-    def listen_state_new(
+    def listen_state(
         self,
         entity_id: str | list[str],
         callback: EntityListenerCallback,
@@ -140,9 +131,9 @@ class CallbacksPlugin(AppPlugin):
         immediate: bool = False,
         oneshot: bool = False,
     ) -> list[str]:
-        return self.listen_attribute_new(entity_id, "state", callback, immediate=immediate, oneshot=oneshot)
+        return self.listen_attribute(entity_id, "state", callback, immediate=immediate, oneshot=oneshot)
 
-    def listen_attribute_new(
+    def listen_attribute(
         self,
         entity_id: str | list[str],
         attribute: str,
@@ -173,16 +164,6 @@ class CallbacksPlugin(AppPlugin):
         set_callback_true_information(wrapper, callback)
         return self.listen_attribute_extended(entity_id, attribute, wrapper, immediate, oneshot)
 
-    def listen_state(
-        self,
-        entity_id: str | list[str],
-        callback: EntityListenerCallback,
-        *,
-        immediate: bool = False,
-        oneshot: bool = False,
-    ) -> list[str]:
-        return self.listen_state_new(entity_id, callback, immediate=immediate, oneshot=oneshot)
-
     def listen_state_extended(
         self,
         entity_id: str | list[str],
@@ -203,23 +184,6 @@ class CallbacksPlugin(AppPlugin):
             oneshot,
             *callback_args,
             **callback_kwargs,
-        )
-
-    def listen_attribute(
-        self,
-        entity_id: str | list[str],
-        attribute: str,
-        callback: EntityListenerCallback,
-        *,
-        immediate: bool = False,
-        oneshot: bool = False,
-    ) -> list[str]:
-        return self.listen_attribute_new(
-            entity_id,
-            attribute,
-            callback,
-            immediate=immediate,
-            oneshot=oneshot,
         )
 
     def listen_attribute_extended(
