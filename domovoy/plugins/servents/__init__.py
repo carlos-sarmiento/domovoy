@@ -366,15 +366,19 @@ class ServentsPlugin(AppPlugin):
                 if callback_result is not None:
                     await callback_result
 
-            self.__callbacks.listen_event_new(
+            self.__callbacks.listen_event(
                 f"servent.{target_event}",
                 extended_callback,
             )
 
         else:
-            self.__callbacks.listen_event_new(
+            self._wrapper.logger.debug(
+                "Adding simple button press listener for {target_event}",
+                target_event=target_event,
+            )
+            self.__callbacks.listen_event(
                 f"servent.{target_event}",
                 callback,
-            )  # type: ignore
+            )
 
         return button
