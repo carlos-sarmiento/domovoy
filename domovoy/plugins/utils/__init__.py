@@ -77,6 +77,15 @@ class UtilsPlugin(AppPlugin):
     def today(self, *, tz: datetime.tzinfo | None = None) -> datetime.date:
         return self.now(tz=tz).date()
 
+    def make_datetime_aware(self, *, dt: datetime.datetime, tz: datetime.tzinfo | None = None) -> datetime.datetime:
+        if tz is None:
+            tz = get_main_config().get_timezone()
+
+        return dt.replace(tzinfo=tz)
+
+    def is_datetime_aware(self, dt: datetime.datetime) -> bool:
+        return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
+
     def run_async(
         self,
         callback: Callable[P, Awaitable[T]],
