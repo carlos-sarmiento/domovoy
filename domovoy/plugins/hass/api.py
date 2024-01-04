@@ -18,7 +18,7 @@ from .exceptions import (
     HassApiParseError,
 )
 from .parsing import encode_message, parse_message
-from .types import HassApiDataDict
+from .types import HassData
 
 # Horrible hack to not have to encode the json output of orjson into unicode only
 # to have it decoded again.
@@ -29,8 +29,8 @@ websockets.frames.OP_BINARY = websockets.frames.OP_TEXT
 _logcore = get_logger(__name__)
 _messages_logcore = get_logger(f"{__name__}.messages")
 
-EventListenerCallable = Callable[[str, HassApiDataDict], Awaitable[None]]
-TriggerListenerCallable = Callable[[int, HassApiDataDict], Awaitable[None]]
+EventListenerCallable = Callable[[str, HassData], Awaitable[None]]
+TriggerListenerCallable = Callable[[int, HassData], Awaitable[None]]
 
 
 class HassApiConnectionState(StrEnum):
@@ -40,10 +40,10 @@ class HassApiConnectionState(StrEnum):
 
 
 class HassWebsocketApi:
-    __cmd_queue: deque[HassApiDataDict]
+    __cmd_queue: deque[HassData]
     __in_flight_ops: dict[
         int,
-        tuple[HassApiDataDict, asyncio.Future[HassApiDataDict]],
+        tuple[HassData, asyncio.Future[HassData]],
     ]
     __event_callbacks: dict[int, EventListenerCallable | TriggerListenerCallable]
     __current_op_id = 2
@@ -223,11 +223,11 @@ class HassWebsocketApi:
 
                     event_callback = self.__event_callbacks[message_id]
 
-                    event: HassApiDataDict = message["event"]  # type: ignore
+                    event: HassData = message["event"]  # type: ignore
 
                     if "event_type" in event:
                         event_type_or_subscription_id: str = event["event_type"]  # type: ignore
-                        data: HassApiDataDict = event["data"]  # type: ignore
+                        data: HassData = event["data"]  # type: ignore
 
                         _messages_logcore.debug(
                             "Calling Callback for event {event_type} with data {event_data}",
@@ -413,8 +413,8 @@ class HassWebsocketApi:
 
     def __send_command(
         self,
-        command: HassApiDataDict,
-    ) -> asyncio.Future[HassApiDataDict]:
+        command: HassData,
+    ) -> asyncio.Future[HassData]:
         _logcore.debug("Queueing Command to HA: {command}", command=command)
 
         # create Future
@@ -435,7 +435,7 @@ class HassWebsocketApi:
 
     async def subscribe_events(
         self,
-        callback: Callable[[str, HassApiDataDict], Awaitable[None]],
+        callback: Callable[[str, HassData], Awaitable[None]],
         event_type: str | None = None,
     ) -> int:
         _logcore.debug(
@@ -443,7 +443,7 @@ class HassWebsocketApi:
             event_type=event_type,
         )
 
-        cmd: HassApiDataDict = {"type": "subscribe_events"}
+        cmd: HassData = {"type": "subscribe_events"}
 
         if event_type is not None:
             cmd["event_type"] = event_type
@@ -463,15 +463,15 @@ class HassWebsocketApi:
 
     async def subscribe_trigger(
         self,
-        callback: Callable[[int, HassApiDataDict], Awaitable[None]],
-        trigger: HassApiDataDict,
+        callback: Callable[[int, HassData], Awaitable[None]],
+        trigger: HassData,
     ) -> int:
         _logcore.debug(
             "Calling subscribe_trigger with trigger: {trigger}",
             trigger=trigger,
         )
 
-        cmd: HassApiDataDict = {"type": "subscribe_trigger", "trigger": trigger}
+        cmd: HassData = {"type": "subscribe_trigger", "trigger": trigger}
 
         response = await self.__send_command(cmd)
 
@@ -511,15 +511,15 @@ class HassWebsocketApi:
     async def fire_event(
         self,
         event_type: str,
-        event_data: HassApiDataDict | None = None,
-    ) -> HassApiDataDict:
+        event_data: HassData | None = None,
+    ) -> HassData:
         _logcore.debug(
             "Calling fire_event with event: {event_type} and data: {event_data}",
             event_type=event_type,
             event_data=event_data,
         )
 
-        cmd: HassApiDataDict = {"type": "fire_event", "event_type": event_type}
+        cmd: HassData = {"type": "fire_event", "event_type": event_type}
 
         if event_data is not None:
             cmd["event_data"] = event_data
@@ -541,17 +541,17 @@ class HassWebsocketApi:
         *,
         domain: str,
         service: str,
-        service_data: HassApiDataDict | None = None,
+        service_data: HassData | None = None,
         entity_id: str | list[str] | None = None,
         return_response: bool = False,
-    ) -> HassApiDataDict | None:
+    ) -> HassData | None:
         _logcore.debug(
             f"Calling call_service for {domain}.{service}",
             domain=domain,
             service=service,
         )
 
-        cmd: HassApiDataDict = {
+        cmd: HassData = {
             "type": "call_service",
             "domain": domain,
             "service": service,
@@ -576,7 +576,7 @@ class HassWebsocketApi:
 
     async def get_states(
         self,
-    ) -> list[HassApiDataDict]:
+    ) -> list[HassData]:
         response = await self.__send_command(
             {
                 "type": "get_states",
@@ -587,7 +587,7 @@ class HassWebsocketApi:
 
     async def get_services(
         self,
-    ) -> HassApiDataDict:
+    ) -> HassData:
         response = await self.__send_command(
             {
                 "type": "get_services",

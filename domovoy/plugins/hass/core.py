@@ -13,7 +13,7 @@ from domovoy.core.services.service import DomovoyService, DomovoyServiceResource
 from domovoy.core.task_utils import run_and_forget_task
 
 from .api import HassApiConnectionState, HassWebsocketApi
-from .types import HassApiDataDict, PrimitiveHassApiValue
+from .types import HassData, PrimitiveHassValue
 
 _logcore = get_logger(__name__)
 
@@ -26,9 +26,9 @@ class EntityState:
     state: str
     last_changed: datetime.datetime
     last_updated: datetime.datetime
-    raw_data: HassApiDataDict
-    attributes: HassApiDataDict = field(default_factory=dict)
-    context: HassApiDataDict = field(default_factory=dict)
+    raw_data: HassData
+    attributes: HassData = field(default_factory=dict)
+    context: HassData = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> EntityState:
@@ -42,7 +42,7 @@ class EntityState:
             raw_data=data,
         )
 
-    def to_dict(self) -> HassApiDataDict:
+    def to_dict(self) -> HassData:
         return self.raw_data
 
     def get_time_in_current_state(self) -> datetime.timedelta:
@@ -264,7 +264,7 @@ class HassCore(DomovoyService):
     def entity_exists_in_cache(self, entity_id: str) -> bool:
         return entity_id in self.__entity_state_cache
 
-    def get_entity_id_by_attribute(self, attribute: str, value: PrimitiveHassApiValue | None) -> list[str]:
+    def get_entity_id_by_attribute(self, attribute: str, value: PrimitiveHassValue | None) -> list[str]:
         return [
             x.entity_id
             for x in self.__entity_state_cache.values()
@@ -274,7 +274,7 @@ class HassCore(DomovoyService):
     async def fire_event(
         self,
         event_type: str,
-        event_data: HassApiDataDict | None = None,
+        event_data: HassData | None = None,
     ) -> None:
         await self.__hass_api.fire_event(event_type, event_data)
 
@@ -283,8 +283,8 @@ class HassCore(DomovoyService):
 
     async def subscribe_trigger(
         self,
-        callback: Callable[[int, HassApiDataDict], Awaitable[None]],
-        trigger: HassApiDataDict,
+        callback: Callable[[int, HassData], Awaitable[None]],
+        trigger: HassData,
     ) -> int:
         return await self.__hass_api.subscribe_trigger(callback, trigger)
 
@@ -293,10 +293,10 @@ class HassCore(DomovoyService):
         *,
         domain: str,
         service: str,
-        service_data: HassApiDataDict | None = None,
+        service_data: HassData | None = None,
         entity_id: str | list[str] | None = None,
         return_response: bool = False,
-    ) -> HassApiDataDict | None:
+    ) -> HassData | None:
         return await self.__hass_api.call_service(
             domain=domain,
             service=service,
@@ -305,5 +305,5 @@ class HassCore(DomovoyService):
             return_response=return_response,
         )
 
-    async def get_service_definitions(self) -> HassApiDataDict:
+    async def get_service_definitions(self) -> HassData:
         return await self.__hass_api.get_services()

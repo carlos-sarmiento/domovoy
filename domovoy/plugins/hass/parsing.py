@@ -10,7 +10,7 @@ from websockets.typing import Data
 from .exceptions import (
     HassApiParseError,
 )
-from .types import HassApiDataDict
+from .types import HassData
 
 pattern = re.compile("^\\d{4}-\\d{2}-\\d{2}")
 
@@ -36,7 +36,7 @@ def __decode_response(msg: T) -> T:
     return msg
 
 
-def parse_message(message: Data, *, parse_datetimes: bool) -> HassApiDataDict:
+def parse_message(message: Data, *, parse_datetimes: bool) -> HassData:
     if not isinstance(message, str):
         raise HassApiParseError("Invalid message received from Home Assistant")
 
@@ -48,7 +48,7 @@ def parse_message(message: Data, *, parse_datetimes: bool) -> HassApiDataDict:
     return msg
 
 
-def encode_message(message: HassApiDataDict) -> bytes:
+def encode_message(message: HassData) -> bytes:
     try:
         return json.dumps(message)
     except TypeError as e:
