@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from domovoy.core.configuration import get_main_config
 from domovoy.plugins.hass.parsing import encode_message
-from domovoy.plugins.hass.types import HassApiValue
+from domovoy.plugins.hass.types import HassValueStrict
 
 if TYPE_CHECKING:
     from domovoy.plugins.hass import HassPlugin
 
 
 class HassServiceCall(Protocol):
-    async def __call__(self, **kwargs: HassApiValue) -> dict[str, Any] | None:
+    async def __call__(self, **kwargs: HassValueStrict) -> dict[str, Any] | None:
         ...
 
 
@@ -25,7 +25,7 @@ class HassSyntheticServiceCall:
         self.__hass = hass_plugin
 
     def __getattr__(self, service: str) -> HassServiceCall:
-        async def synthetic_service_call(**kwargs: HassApiValue) -> dict[str, Any] | None:
+        async def synthetic_service_call(**kwargs: HassValueStrict) -> dict[str, Any] | None:
             full_name = f"{self.__domain}.{service}"
             service_definitions = await self.__hass._get_cached_service_definitions()  # noqa: SLF001
 

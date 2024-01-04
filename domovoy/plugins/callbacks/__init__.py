@@ -25,7 +25,7 @@ from domovoy.core.utils import (
 from domovoy.plugins import hass
 from domovoy.plugins.callbacks.entity_listener_callbacks import EntityListenerCallback
 from domovoy.plugins.callbacks.event_listener_callbacks import EventListenerCallback
-from domovoy.plugins.hass.types import HassApiValue
+from domovoy.plugins.hass.types import HassValue
 from domovoy.plugins.plugins import AppPlugin
 
 if TYPE_CHECKING:
@@ -145,7 +145,7 @@ class CallbacksPlugin(AppPlugin):
         signature = inspect.signature(callback)
         valid_params = set(signature.parameters.keys())
 
-        async def wrapper(entity_id: str, attribute: str, old: HassApiValue | None, new: HassApiValue | None) -> None:
+        async def wrapper(entity_id: str, attribute: str, old: HassValue, new: HassValue) -> None:
             call_args = {}
             if "entity_id" in valid_params:
                 call_args["entity_id"] = entity_id
@@ -168,7 +168,7 @@ class CallbacksPlugin(AppPlugin):
         self,
         entity_id: str | list[str],
         callback: Callable[
-            Concatenate[str, str, HassApiValue | None, HassApiValue | None, P],
+            Concatenate[str, str, HassValue, HassValue, P],
             None | Awaitable[None],
         ],
         immediate: bool = False,  # noqa: FBT001, FBT002
@@ -191,7 +191,7 @@ class CallbacksPlugin(AppPlugin):
         entity_id: str | list[str],
         attribute: str,
         callback: Callable[
-            Concatenate[str, str, HassApiValue | None, HassApiValue | None, P],
+            Concatenate[str, str, HassValue, HassValue, P],
             None | Awaitable[None],
         ],
         immediate: bool = False,  # noqa: FBT001, FBT002

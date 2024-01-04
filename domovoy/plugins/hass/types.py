@@ -3,16 +3,12 @@ from __future__ import annotations
 import datetime
 from typing import Union
 
-PrimitiveHassApiValue = int | float | str | bool | datetime.datetime
+PrimitiveHassValue = int | float | str | bool | datetime.datetime
 
-HassApiValue = PrimitiveHassApiValue | list["HassApiValue"] | dict[str, Union["HassApiValue", None]]
+HassApiValue = PrimitiveHassValue | list["HassApiValue"] | dict[str, Union["HassApiValue", None]]
 
-HassApiValueOrNone = HassApiValue | None
+HassData = dict[str, HassApiValue | None]
 
-HassApiDataDict = dict[str, HassApiValue | None]
-
-HassData = HassApiDataDict
-
-HassValue = HassApiValueOrNone
+HassValue = HassApiValue | None
 
 HassValueStrict = HassApiValue

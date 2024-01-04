@@ -15,7 +15,7 @@ from domovoy.plugins.plugins import AppPlugin
 
 from .core import EntityState, HassCore
 from .synthetic import HassSyntheticDomainsServiceCalls
-from .types import HassApiDataDict, HassApiValue
+from .types import HassData, HassValue
 
 P = ParamSpec("P")
 
@@ -84,17 +84,17 @@ class HassPlugin(AppPlugin):
     async def fire_event(
         self,
         event_type: str,
-        event_data: HassApiDataDict | None = None,
+        event_data: HassData | None = None,
     ) -> None:
         await self.__hass.fire_event(event_type, event_data)
 
-    async def get_service_definitions(self) -> HassApiDataDict:
+    async def get_service_definitions(self) -> HassData:
         return await self.__hass.get_service_definitions()
 
     async def listen_trigger(
         self,
-        trigger: HassApiDataDict,
-        callback: Callable[Concatenate[HassApiDataDict, P], None | Awaitable[None]],
+        trigger: HassData,
+        callback: Callable[Concatenate[HassData, P], None | Awaitable[None]],
         oneshot: bool = False,  # noqa: FBT001, FBT002
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
@@ -106,7 +106,7 @@ class HassPlugin(AppPlugin):
         @self._wrapper.handle_exception_and_logging(callback)
         async def listen_trigger_callback(
             subscription_id: int,
-            trigger_vars: HassApiDataDict,
+            trigger_vars: HassData,
         ) -> None:
             self._wrapper.logger.debug(
                 "Calling Listen Trigger Callback: {cls_name}.{func_name} from callback_id: {subscription_id}",
@@ -137,8 +137,8 @@ class HassPlugin(AppPlugin):
         service_name: str,
         *,
         return_response: bool = False,
-        **kwargs: HassApiValue | None,
-    ) -> HassApiDataDict | None:
+        **kwargs: HassValue,
+    ) -> HassData | None:
         service_name_segments = service_name.split(".")
 
         if len(service_name_segments) != 2:
@@ -225,8 +225,8 @@ class HassPlugin(AppPlugin):
         async def state_callback(
             entity: str,
             _attribute: str,
-            _old: HassApiValue | None,
-            new: HassApiValue | None,
+            _old: HassValue,
+            new: HassValue,
         ) -> None:
             callback_id: str = context_callback_id.get()  # type: ignore
 

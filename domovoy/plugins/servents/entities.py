@@ -5,7 +5,7 @@ from domovoy.core.errors import DomovoyError
 from domovoy.core.utils import parse_state
 from domovoy.plugins.hass import HassPlugin
 from domovoy.plugins.hass.core import EntityState
-from domovoy.plugins.hass.types import HassApiDataDict, HassApiValue
+from domovoy.plugins.hass.types import HassData, HassValue
 
 from .entity_configs import (
     ServEntBinarySensorConfig,
@@ -38,7 +38,7 @@ class ServEntEntity:
         self.entity_config = config
         self.device_config = device_config
 
-    async def set_to(self, state: HassApiValue | None, attributes: dict[str, object] | None = None) -> None:
+    async def set_to(self, state: HassValue, attributes: dict[str, object] | None = None) -> None:
         if attributes is not None and not isinstance(attributes, dict):
             raise DomovoyError("Attributes is not a dict")
 
@@ -71,7 +71,7 @@ class ServEntEntity:
         except ServentMissingRegistrationError:
             return "unknown"
 
-    def get_state_attributes(self) -> HassApiDataDict:
+    def get_state_attributes(self) -> HassData:
         full_state = self.get_full_state()
         return full_state.attributes
 
