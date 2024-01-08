@@ -271,6 +271,9 @@ class HassCore(DomovoyService):
             if attribute in x.attributes and (value is None or x.attributes[attribute] == value)  # type: ignore
         ]
 
+    def get_all_entities(self) -> list[EntityState]:
+        return list(self.__entity_state_cache.values())
+
     async def fire_event(
         self,
         event_type: str,

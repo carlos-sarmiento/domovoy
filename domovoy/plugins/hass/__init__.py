@@ -81,6 +81,9 @@ class HassPlugin(AppPlugin):
     ) -> list[str]:
         return self.__hass.get_entity_id_by_attribute(attribute, value)
 
+    def get_all_entities(self) -> list[EntityState]:
+        return self.__hass.get_all_entities()
+
     async def fire_event(
         self,
         event_type: str,
