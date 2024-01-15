@@ -43,6 +43,9 @@ class UtilsPlugin(AppPlugin):
     async def sleep_for(self, interval: Interval) -> None:
         await asyncio.sleep(interval.total_seconds())
 
+    def parse_date(self, string: str) -> datetime.datetime:
+        return parse(string)
+
     def timedelta_from_now(
         self,
         date: datetime.datetime | str,
