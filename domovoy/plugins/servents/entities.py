@@ -58,7 +58,7 @@ class ServEntEntity:
             return entity_id[0]
 
         raise ServentMissingRegistrationError(
-            "Servent Entity hasn't been registered in the system.",
+            "Servent Entity hasn't been registered in the system. Check if it has been disabled in HA",
         )
 
     def get_state(self) -> str:
