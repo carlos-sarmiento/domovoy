@@ -29,11 +29,23 @@ class HassSyntheticServiceCall:
             full_name = f"{self.__domain}.{service}"
             service_definitions = await self.__hass._get_cached_service_definitions()  # noqa: SLF001
 
+            throw_on_error: bool = kwargs.pop("domovoy_throw_on_error", False)  # type: ignore
+
             if full_name in service_definitions and service_definitions[full_name].has_response:
-                response: dict[str, Any] = await self.__hass.call_service(full_name, return_response=True, **kwargs)  # type: ignore
+                response: dict[str, Any] = await self.__hass.call_service(
+                    full_name,
+                    return_response=True,
+                    throw_on_error=throw_on_error,
+                    **kwargs,
+                )  # type: ignore
                 return response["response"]
 
-            return await self.__hass.call_service(full_name, return_response=False, **kwargs)
+            return await self.__hass.call_service(
+                full_name,
+                return_response=False,
+                throw_on_error=throw_on_error,
+                **kwargs,
+            )
 
         return synthetic_service_call
 
@@ -163,6 +175,8 @@ def generate_stub_file_for_synthetic_services(
 
                 if len(args) > 0:
                     args = "*, " + args
+
+                args += ", domovoy_throw_on_error: bool = False"
 
                 if "response" not in details:
                     return_type = "None"
