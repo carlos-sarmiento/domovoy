@@ -84,7 +84,7 @@ class ServentsPlugin(AppPlugin):
         )
 
     async def __reload_callback(self) -> None:
-        # TODO: Add Logging
+        self._wrapper.logger.info("Restarting App from Servent Button")
         await self.__meta.restart_app()
 
     async def _create_entity(

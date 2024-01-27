@@ -14,6 +14,7 @@ from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
 
 from .core import EntityState, HassCore
+from .exceptions import HassApiCommandError
 from .synthetic import HassSyntheticDomainsServiceCalls
 from .types import HassData, HassValue
 
@@ -140,6 +141,7 @@ class HassPlugin(AppPlugin):
         service_name: str,
         *,
         return_response: bool = False,
+        throw_on_error: bool = False,
         **kwargs: HassValue,
     ) -> HassData | None:
         service_name_segments = service_name.split(".")
@@ -185,13 +187,22 @@ class HassPlugin(AppPlugin):
 
         self.warn_if_entity_doesnt_exists(entity_id)
 
-        return await self.__hass.call_service(
-            domain=domain,
-            service=service,
-            service_data=kwargs,
-            entity_id=entity_id,
-            return_response=return_response,
-        )
+        try:
+            return await self.__hass.call_service(
+                domain=domain,
+                service=service,
+                service_data=kwargs,
+                entity_id=entity_id,
+                return_response=return_response,
+            )
+        except HassApiCommandError as e:
+            if throw_on_error:
+                raise
+
+            self._wrapper.logger.error(
+                "There was an error when executing the command. Exception was not raised to app. Message: {exception_message}",
+                exception_message=str(e),
+            )
 
     async def wait_for_state_to_be(
         self,
