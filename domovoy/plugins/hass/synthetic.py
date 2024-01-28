@@ -176,8 +176,6 @@ def generate_stub_file_for_synthetic_services(
                 if len(args) > 0:
                     args = "*, " + args
 
-                args += ", domovoy_throw_on_error: bool = False"
-
                 if "response" not in details:
                     return_type = "None"
                 else:
