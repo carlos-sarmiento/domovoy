@@ -44,8 +44,8 @@ class ServEntEntity:
 
         await self.__hass.services.servents.update_state(
             servent_id=self.entity_config.servent_id,
-            state=state,
-            attributes=attributes or {},
+            state=state,  # type: ignore
+            attributes=attributes or {},  # type: ignore
         )
 
     def get_entity_id(self) -> str:
