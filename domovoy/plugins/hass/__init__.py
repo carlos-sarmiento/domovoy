@@ -278,3 +278,10 @@ class HassPlugin(AppPlugin):
             self.__cached_service_definitions = service_definitions
 
         return self.__cached_service_definitions
+
+    async def search_related(
+        self,
+        item_type: str,
+        item_id: str,
+    ) -> HassData:
+        return await self.__hass.search_related(item_type, item_id)

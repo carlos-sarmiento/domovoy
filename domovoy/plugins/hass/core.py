@@ -310,3 +310,10 @@ class HassCore(DomovoyService):
 
     async def get_service_definitions(self) -> HassData:
         return await self.__hass_api.get_services()
+
+    async def search_related(
+        self,
+        item_type: str,
+        item_id: str,
+    ) -> HassData:
+        return await self.__hass_api.search_related(item_type, item_id)
