@@ -595,3 +595,18 @@ class HassWebsocketApi:
         )
 
         return response["result"]  # type: ignore
+
+    async def search_related(
+        self,
+        item_type: str,
+        item_id: str,
+    ) -> HassData:
+        response = await self.__send_command(
+            {
+                "type": "search/related",
+                "item_type": item_type,
+                "item_id": item_id,
+            },
+        )
+
+        return response["result"]  # type: ignore
