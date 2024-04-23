@@ -317,3 +317,6 @@ class HassCore(DomovoyService):
         item_id: str,
     ) -> HassData:
         return await self.__hass_api.search_related(item_type, item_id)
+
+    async def send_raw_command(self, command_type: str, command_args: HassData) -> HassData | list[HassData]:
+        return await self.__hass_api.send_command(command_type, command_args)
