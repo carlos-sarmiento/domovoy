@@ -7,6 +7,8 @@ from typing import TypeVar
 import orjson as json
 from websockets.typing import Data
 
+from domovoy.core.logging import get_logger
+
 from .exceptions import (
     HassApiParseError,
 )
@@ -16,6 +18,8 @@ pattern = re.compile("^\\d{4}-\\d{2}-\\d{2}")
 
 
 T = TypeVar("T")
+
+_logcore = get_logger("hass_parsing")
 
 
 def __decode_response(msg: T) -> T:
@@ -42,10 +46,13 @@ def parse_message(message: Data, *, parse_datetimes: bool) -> HassData:
 
     msg = json.loads(message)
 
-    if parse_datetimes:
-        return __decode_response(msg)
+    if isinstance(msg, list):
+        _logcore.error("Received a message from Hass which is a list")
 
-    return msg
+    if parse_datetimes:
+        return __decode_response(msg)  # type: ignore
+
+    return msg  # type: ignore
 
 
 def encode_message(message: HassData) -> bytes:
