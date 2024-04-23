@@ -135,7 +135,7 @@ class HassWebsocketApi:
             completed, pending = await asyncio.wait(
                 [self.__msg_receive_task, self.__msg_send_task],
                 return_when=asyncio.FIRST_COMPLETED,
-            )
+            )  # type: ignore
 
             for task in completed:
                 _logcore.debug("Task `{task}` completed", task=task)
@@ -607,6 +607,15 @@ class HassWebsocketApi:
                 "item_type": item_type,
                 "item_id": item_id,
             },
+        )
+
+        return response["result"]  # type: ignore
+
+    async def send_command(self, command_type: str, command_args: HassData) -> HassData | list[HassData]:
+        command = command_args | {"type": command_type}
+
+        response = await self.__send_command(
+            command,
         )
 
         return response["result"]  # type: ignore
