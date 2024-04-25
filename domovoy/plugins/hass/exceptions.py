@@ -34,6 +34,8 @@ class HassUnknownEntityError(HassError):
 class HassApiCommandError(HassError):
     command_id: int
     code: int
+    message: str
+    full_response: dict[str, Any]
 
     def __init__(
         self,
@@ -44,11 +46,14 @@ class HassApiCommandError(HassError):
         full_response: dict[str, Any],
         original_command: dict[str, Any],
     ) -> None:
+        message = full_response["message"] if "message" in full_response else message
         super().__init__(
             "Received Error from HASS:"
             f"{message}. Code: {code}. Command ID: {command_id}. "
             f"Full response: {full_response}. Original Command: {original_command}",
         )
 
+        self.message = message
+        self.full_response = full_response
         self.command_id = command_id
         self.code = code
