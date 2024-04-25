@@ -199,6 +199,11 @@ class HassPlugin(AppPlugin):
             if throw_on_error:
                 raise
 
+            if e.message == "Service call requires responses but caller did not ask for responses":
+                return await self.call_service(
+                    service_name, return_response=True, throw_on_error=throw_on_error, **kwargs
+                )
+
             self._wrapper.logger.error(
                 "There was an error when executing the command. Exception was not raised to app. Message: {exception_message}",
                 exception_message=str(e),
