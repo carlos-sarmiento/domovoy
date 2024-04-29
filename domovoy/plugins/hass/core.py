@@ -129,6 +129,8 @@ class HassCore(DomovoyService):
                 self.__reload_reason = None
 
             if self.__is_running and self.__reload_reason == "disconnected":
+                _logcore.info("Waiting for 10 seconds to make sure HA is fully initialized")
+                await asyncio.sleep(10)  # We are waiting for HASS to fully start
                 await self.start_apps()
                 self.__reload_reason = None
 
