@@ -119,7 +119,11 @@ class HassCore(DomovoyService):
         connection_state: HassApiConnectionState,
     ) -> None:
         if connection_state == HassApiConnectionState.CONNECTED:
-            _logcore.info("Subscribing to all events from Home Assistant")
+            _logcore.info(
+                "Subscribing to all events from Home Assistant. Is Running: {is_running}. Reload Reason: {reason}",
+                is_running=self.__is_running,
+                reason=self.__reload_reason,
+            )
             self.__state_subscription_id = await self.__hass_api.subscribe_events(
                 self.__all_events_callback,
             )
