@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .enums import (
     BinarySensorDeviceClass,
@@ -16,11 +16,11 @@ from .enums import (
 
 @dataclass(kw_only=True)
 class ServEntEntityConfig:
-    type: EntityType
+    entity_type: EntityType
     servent_id: str
     name: str
     default_state: str | bool | int | float | None = None
-    fixed_attributes: dict[str, str | bool | int | float] | None = None
+    fixed_attributes: dict[str, str | bool | int | float] = field(default_factory=dict)
     entity_category: EntityCategory | None = None
     disabled_by_default: bool = False
     app_name: str | None = None
@@ -28,7 +28,7 @@ class ServEntEntityConfig:
 
 @dataclass(kw_only=True)
 class ServEntSensorConfig(ServEntEntityConfig):
-    type: EntityType = EntityType.SENSOR
+    entity_type: EntityType = EntityType.SENSOR
     device_class: SensorDeviceClass | None = None
     unit_of_measurement: str | None = None
     state_class: SensorStateClass | None = None
@@ -48,25 +48,25 @@ class ServEntSensorConfig(ServEntEntityConfig):
 
 @dataclass(kw_only=True)
 class ServEntNumberConfig(ServEntEntityConfig):
-    type: EntityType = EntityType.NUMBER
+    entity_type: EntityType = EntityType.NUMBER
     device_class: NumberDeviceClass | None = None
     unit_of_measurement: str | None = None
-    mode: NumberMode | None = None
-    min_value: int | float | None = None
-    max_value: int | float | None = None
-    step: int | float | None = None
+    mode: NumberMode
+    min_value: float | None = None
+    max_value: float | None = None
+    step: float | None = None
 
 
 @dataclass(kw_only=True)
 class ServEntBinarySensorConfig(ServEntEntityConfig):
-    type: EntityType = EntityType.BINARY_SENSOR
+    entity_type: EntityType = EntityType.BINARY_SENSOR
     device_class: BinarySensorDeviceClass | None = None
 
 
 @dataclass(kw_only=True)
 class ServEntThresholdBinarySensorConfig(ServEntEntityConfig):
-    type: EntityType = EntityType.THRESHOLD_BINARY_SENSOR
-    entity_id: str | None = None
+    entity_type: EntityType = EntityType.THRESHOLD_BINARY_SENSOR
+    entity_id: str
     device_class: BinarySensorDeviceClass | None = None
     lower: float | None = None
     upper: float | None = None
@@ -81,28 +81,28 @@ class ServEntThresholdBinarySensorConfig(ServEntEntityConfig):
 
 @dataclass(kw_only=True)
 class ServEntSelectConfig(ServEntEntityConfig):
-    type: EntityType = EntityType.SELECT
+    entity_type: EntityType = EntityType.SELECT
     options: Sequence[str] | None = None
 
 
 @dataclass(kw_only=True)
 class ServEntSwitchConfig(ServEntEntityConfig):
-    type: EntityType = EntityType.SWITCH
+    entity_type: EntityType = EntityType.SWITCH
     device_class: SwitchDeviceClass | None = None
 
 
 @dataclass(kw_only=True)
 class ServEntButtonConfig(ServEntEntityConfig):
-    type: EntityType = EntityType.BUTTON
-    event: str | None = None
-    event_data: dict | None = None
+    entity_type: EntityType = EntityType.BUTTON
+    event: str
+    event_data: dict = field(default_factory=dict)
     device_class: ButtonDeviceClass | None = None
 
 
 @dataclass(kw_only=True)
 class ServEntDeviceConfig:
-    servent_device_id: str | None = None
-    name: str | None = None
+    device_id: str
+    name: str
     manufacturer: str | None = None
     model: str | None = None
     version: str | None = None
