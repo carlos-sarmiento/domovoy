@@ -13,6 +13,7 @@ from domovoy.core.services.service import DomovoyService, DomovoyServiceResource
 from domovoy.core.task_utils import run_and_forget_task
 
 from .api import HassApiConnectionState, HassWebsocketApi
+from .exceptions import HassApiCommandError
 from .types import HassData, PrimitiveHassValue
 
 _logcore = get_logger(__name__)
@@ -114,6 +115,13 @@ class HassCore(DomovoyService):
         self.__event_publisher = event_publisher
         self.__resources = resources
 
+    async def __is_hass_up(self) -> bool:
+        try:
+            is_hass_up_state = await self.send_raw_command("servent/hass-state", {})
+            return is_hass_up_state["is_hass_up"]  # type: ignore
+        except HassApiCommandError:
+            return False
+
     async def __connection_state_updated(
         self,
         connection_state: HassApiConnectionState,
@@ -133,8 +141,20 @@ class HassCore(DomovoyService):
                 self.__reload_reason = None
 
             if self.__is_running and self.__reload_reason == "disconnected":
-                _logcore.info("Waiting for 10 seconds to make sure HA is fully initialized")
-                await asyncio.sleep(10)  # We are waiting for HASS to fully start
+                is_hass_up = await self.__is_hass_up()
+
+                if not is_hass_up:
+                    count = 0
+                    _logcore.info("Waiting to make sure HA is fully initialized (max 60 seconds wait)")
+
+                    while not is_hass_up and count < 60:
+                        await asyncio.sleep(0.5)  # We are waiting for HASS to fully start
+                        is_hass_up = await self.__is_hass_up()
+                        count += 0.5
+
+                    if not is_hass_up:
+                        _logcore.warn("Home Assistant is not up yet. Continuing Initialization")
+
                 await self.start_apps()
                 self.__reload_reason = None
 
