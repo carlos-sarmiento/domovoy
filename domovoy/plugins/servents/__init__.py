@@ -29,7 +29,7 @@ from .entity_configs import (
     ServEntSwitchConfig,
     ServEntThresholdBinarySensorConfig,
 )
-from .enums import ButtonDeviceClass, EntityCategory, EntityType
+from .enums import ButtonDeviceClass, EntityCategory
 
 P = ParamSpec("P")
 
@@ -54,7 +54,7 @@ class ServentsPlugin(AppPlugin):
 
     def post_prepare(self) -> None:
         self.__default_device_for_app = ServEntDeviceConfig(
-            servent_device_id=self.__meta.get_app_name(),
+            device_id=self.__meta.get_app_name(),
             name=self.__meta.get_app_name(),
             model=self.__meta.get_app_name(),
             manufacturer=f"{self.__meta.get_module_name()}/{self.__meta.get_class_name()}",
@@ -89,7 +89,6 @@ class ServentsPlugin(AppPlugin):
 
     async def _create_entity(
         self,
-        entity_type: EntityType,
         entity_config: ServEntEntityConfig,
         device_config: ServEntDeviceConfig | None,
         *,
@@ -112,11 +111,11 @@ class ServentsPlugin(AppPlugin):
         entity_config_dict: dict[str, Any] = strip_none_and_enums_from_containers(asdict(entity_config))  # type: ignore
         device_config_dict: dict[str, Any] = strip_none_and_enums_from_containers(asdict(device_config))  # type: ignore
 
+        entity_config_dict["device_config"] = device_config_dict
+
         await self.__hass.services.servents.create_entity(
-            type=entity_type,
-            entity=entity_config_dict,
-            device=device_config_dict,
-        )
+            entities=[entity_config_dict],
+        )  # type: ignore
 
         if wait_for_creation:
             entities = self.__hass.get_entity_id_by_attribute(
@@ -125,8 +124,8 @@ class ServentsPlugin(AppPlugin):
             )
 
             count = 0
-            while not any(entities) and count < 10:
-                await asyncio.sleep(0.5)
+            while not any(entities) and count < 50:
+                await asyncio.sleep(0.1)
                 entities = self.__hass.get_entity_id_by_attribute(
                     "servent_id",
                     entity_config.servent_id,
@@ -143,7 +142,6 @@ class ServentsPlugin(AppPlugin):
         device_config = device_config or self.__default_device_for_app
 
         await self._create_entity(
-            EntityType.SENSOR,
             entity_config,
             device_config,
             wait_for_creation=wait_for_creation,
@@ -165,7 +163,6 @@ class ServentsPlugin(AppPlugin):
         device_config = device_config or self.__default_device_for_app
 
         await self._create_entity(
-            EntityType.THRESHOLD_BINARY_SENSOR,
             entity_config,
             device_config,
             wait_for_creation=wait_for_creation,
@@ -187,7 +184,6 @@ class ServentsPlugin(AppPlugin):
         device_config = device_config or self.__default_device_for_app
 
         await self._create_entity(
-            EntityType.BINARY_SENSOR,
             entity_config,
             device_config,
             wait_for_creation=wait_for_creation,
@@ -209,7 +205,6 @@ class ServentsPlugin(AppPlugin):
         device_config = device_config or self.__default_device_for_app
 
         await self._create_entity(
-            EntityType.NUMBER,
             entity_config,
             device_config,
             wait_for_creation=wait_for_creation,
@@ -231,7 +226,6 @@ class ServentsPlugin(AppPlugin):
         device_config = device_config or self.__default_device_for_app
 
         await self._create_entity(
-            EntityType.SELECT,
             entity_config,
             device_config,
             wait_for_creation=wait_for_creation,
@@ -253,7 +247,6 @@ class ServentsPlugin(AppPlugin):
         device_config = device_config or self.__default_device_for_app
 
         await self._create_entity(
-            EntityType.BUTTON,
             entity_config,
             device_config,
             wait_for_creation=wait_for_creation,
@@ -275,7 +268,6 @@ class ServentsPlugin(AppPlugin):
         device_config = device_config or self.__default_device_for_app
 
         await self._create_entity(
-            EntityType.SWITCH,
             entity_config,
             device_config,
             wait_for_creation=wait_for_creation,
@@ -327,7 +319,7 @@ class ServentsPlugin(AppPlugin):
                 servent_id=final_event,
                 name=button_name,
                 event=target_event,
-                event_data=target_event_data,
+                event_data=target_event_data or {},
                 device_class=device_class,
                 entity_category=entity_category,
                 disabled_by_default=disabled_by_default,
