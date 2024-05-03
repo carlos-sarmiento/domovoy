@@ -12,7 +12,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 importlab = "^0.8"
-watchdog = "^3.0.0"
+watchdog = "^4.0.0"
 coloredlogs = "^15.0.1"
 apscheduler = "^3.10.1"
 websockets = "^11.0.3"
