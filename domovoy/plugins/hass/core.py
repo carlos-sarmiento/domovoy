@@ -99,6 +99,7 @@ class HassCore(DomovoyService):
     __event_publisher: EventListener
     __hass_api: HassWebsocketApi
     __entity_state_cache: dict[str, EntityState]
+    __entity_state_set: set[str]
     __state_subscription_id: int | None = None
     __start_future: asyncio.Future[None] | None = None
     __resources: DomovoyServiceResources
@@ -112,6 +113,7 @@ class HassCore(DomovoyService):
     ) -> None:
         super().__init__(resources)
         self.__entity_state_cache = {}
+        self.__entity_state_set = set()
         self.__event_publisher = event_publisher
         self.__resources = resources
 
@@ -180,7 +182,7 @@ class HassCore(DomovoyService):
         for state in starting_states:
             entity_id: str = state["entity_id"]  # type: ignore
             # We need to validate this is later than what we already have
-            self.__entity_state_cache[entity_id] = EntityState.from_dict(state)
+            self.__update_entity_state_cache(entity_id, EntityState.from_dict(state))
 
         if self.__start_future is not None and not self.__start_future.done():
             self.__start_future.set_result(None)
@@ -260,13 +262,13 @@ class HassCore(DomovoyService):
                 entity_id=entity_id,
                 event_data=event_data,
             )
-            self.__entity_state_cache.pop(entity_id)
+            self.__pop_entity_state_cache(entity_id)
             return
 
         new_entity_data = EntityState.from_dict(event_data["new_state"])
 
         if entity_id not in self.__entity_state_cache:
-            self.__entity_state_cache[entity_id] = new_entity_data
+            self.__update_entity_state_cache(entity_id, new_entity_data)
             return
 
         if self.__entity_state_cache[entity_id].last_updated > new_entity_data.last_updated:
@@ -282,7 +284,15 @@ class HassCore(DomovoyService):
         if self.__entity_state_cache[entity_id].last_updated == new_entity_data.last_updated:
             return
 
-        self.__entity_state_cache[entity_id] = new_entity_data
+        self.__update_entity_state_cache(entity_id, new_entity_data)
+
+    def __update_entity_state_cache(self, entity_id: str, entity_data: EntityState) -> None:
+        self.__entity_state_cache[entity_id] = entity_data
+        self.__entity_state_set.add(entity_id)
+
+    def __pop_entity_state_cache(self, entity_id: str) -> None:
+        self.__entity_state_cache.pop(entity_id)
+        self.__entity_state_set.remove(entity_id)
 
     def get_state(self, entity_id: str) -> EntityState | None:
         return self.__entity_state_cache.get(entity_id, None)
@@ -299,6 +309,9 @@ class HassCore(DomovoyService):
 
     def get_all_entities(self) -> list[EntityState]:
         return list(self.__entity_state_cache.values())
+
+    def get_all_entity_ids(self) -> frozenset[str]:
+        return frozenset(self.__entity_state_set)
 
     async def fire_event(
         self,
