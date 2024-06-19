@@ -50,9 +50,6 @@ def generate_stub_file_for_synthetic_entities(
             "    def __init__(self) -> None: ...\n\n",
         )
 
-        text_file.write(
-            "entities: HassSyntheticPlatforms = ...\n\n",
-        )
         platform_to_class: dict[str, str] = {}
 
         for platform, _entities in sorted(platforms.items()):
@@ -61,6 +58,10 @@ def generate_stub_file_for_synthetic_entities(
             text_file.write(f"    {platform}: {class_name}\n")
 
         text_file.write("\n\n")
+
+        text_file.write(
+            "entities: HassSyntheticPlatforms = ...\n\n",
+        )
 
         for platform, entities in sorted(platforms.items()):
             text_file.write(

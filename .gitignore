@@ -159,7 +159,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-
 # Project Specifics
 *.code-workspace
 apps
@@ -168,6 +167,7 @@ all_services.json
 *config.yml
 test_apps
 domovoy/plugins/hass/synthetic.pyi
+domovoy/plugins/hass/entities.pyi
 logs
 storage
 remote
