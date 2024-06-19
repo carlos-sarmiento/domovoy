@@ -1,11 +1,13 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from domovoy.app import stop_domovoy
 from domovoy.applications import AppBase, AppConfigBase, EmptyAppConfig
+from domovoy.applications.types import Interval
 from domovoy.plugins.servents.enums import ButtonDeviceClass, EntityCategory
 
+from .entities import generate_stub_file_for_synthetic_entities  # type: ignore
 from .synthetic import (
     generate_stub_file_for_synthetic_services,  # type: ignore
 )
@@ -43,6 +45,50 @@ class HassSyntheticServiceStubUpdater(AppBase[HassSyntheticServiceStubUpdaterCon
             services_definitions,
             self.config.stub_path,
             save_domains_as_json=self.config.dump_hass_services_json,
+        )
+
+
+@dataclass
+class HassSyntheticEntitiesStubUpdaterConfig(AppConfigBase):
+    stub_path: str
+    update_frequency: Interval = field(default_factory=lambda: Interval(seconds=5))
+
+
+class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterConfig]):
+    __registered_entities: frozenset[str] = frozenset()
+
+    async def initialize(self) -> None:
+        self.__registered_entities: frozenset[str] = frozenset()
+        self.log.info("HassSyntheticEntitiesStubUpdater is initializing")
+        self.callbacks.run_every(self.config.update_frequency, self.update_stubs, "now")
+
+    async def update_stubs(self) -> None:
+        entity_ids = self.hass.get_all_entity_ids()
+
+        if entity_ids == self.__registered_entities:
+            self.log.debug("No updates to registered entities")
+            return
+
+        self.log.info("Updating Home Assitant Entities Stub File")
+        Path(self.config.stub_path).parent.mkdir(parents=True, exist_ok=True)
+
+        platforms: dict[str, set[str]] = {}
+
+        for entity_id in entity_ids:
+            split_id = entity_id.split(".")
+            platform = split_id[0]
+            entity = split_id[1]
+
+            if platform not in platforms:
+                platforms[platform] = set()
+
+            platforms[platform].add(entity)
+
+        self.__registered_entities = entity_ids
+
+        generate_stub_file_for_synthetic_entities(
+            platforms,
+            self.config.stub_path,
         )
 
 
