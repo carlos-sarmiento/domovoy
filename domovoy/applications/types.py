@@ -16,6 +16,7 @@ class Interval:
         Returns
         -------
             bool: True if at least one of the fields of the interval is non-zero.
+
         """
         return self.days != 0 or self.hours != 0 or self.minutes != 0 or self.seconds != 0 or self.milliseconds != 0
 
@@ -25,6 +26,7 @@ class Interval:
         Returns
         -------
             datetime.timedelta: The equivalent datetime.timedelta for the interval.
+
         """
         return datetime.timedelta(
             days=self.days,
@@ -40,5 +42,6 @@ class Interval:
         Returns
         -------
             float: The total duration of the interval.
+
         """
         return ((self.days * 24 + self.hours) * 60 + self.minutes) * 60 + self.seconds + (self.milliseconds / 1000)

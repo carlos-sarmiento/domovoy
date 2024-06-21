@@ -66,6 +66,7 @@ def register_app(
           config. Defaults to None.
         ignore (bool, optional): Whether this registration should be ignored and not actually ran into the system. Can
           be used to avoid an instance running without removing or commenting the code out. Defaults to False.
+
     """
     frm = inspect.stack()[1]
     mod = inspect.getmodule(frm[0])
@@ -122,6 +123,7 @@ def register_app_multiple(
           config. Defaults to None.
         ignore (bool, optional): Whether this registration should be ignored and not actually ran into the system. Can
           be used to avoid an instance running without removing or commenting the code out. Defaults to False.
+
     """
     frm = inspect.stack()[1]
     mod = inspect.getmodule(frm[0])
