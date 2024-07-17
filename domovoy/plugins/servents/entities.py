@@ -104,6 +104,9 @@ class ServEntSensor(ServEntEntity):
         state: float | str | datetime.datetime | None,
         attributes: dict | None = None,
     ) -> None:
+        if isinstance(state, datetime.datetime):
+            state = state.timestamp()
+
         return await super().set_to(state, attributes or {})
 
     def get_state(self) -> float | int | str | datetime.datetime:
