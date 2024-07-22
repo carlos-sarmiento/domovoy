@@ -189,13 +189,13 @@ cron = ["capturer (>=2.4)"]
 
 [[package]]
 name = "cron-converter"
-version = "1.2.0"
+version = "1.2.1"
 description = "Cron string parser and scheduler for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "cron_converter-1.2.0-py3-none-any.whl", hash = "sha256:25a32b57adfb11929dd7b82450fe8ed77a13b5cb6dfe6e56799f1de51222c568"},
-    {file = "cron_converter-1.2.0.tar.gz", hash = "sha256:4a825ec20a5f3d74c6647278e5ef08f7299870e89d4933914254d55505d6a695"},
+    {file = "cron_converter-1.2.1-py3-none-any.whl", hash = "sha256:4604e356c15a8fbe76a86bb42508f611ad3cade7dd65e2d6f601c2e0d5226ffc"},
+    {file = "cron_converter-1.2.1.tar.gz", hash = "sha256:6766c6ba44b8236201ac03030f314fd655343c1c4848ce216458e8d340066c59"},
 ]
 
 [package.dependencies]
@@ -976,4 +976,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "706867cb1d8e7cda6e1fc20ea604420da64b61b7460549da3ccfb6b52b664fa7"
+content-hash = "fc3c687b344d0958fe024a00b5ead00faf5b50409b471fef2ac53e2383a88fbc"
