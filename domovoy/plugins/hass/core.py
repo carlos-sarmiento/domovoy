@@ -147,9 +147,9 @@ class HassCore(DomovoyService):
 
                 if not is_hass_up:
                     count = 0
-                    _logcore.info("Waiting to make sure HA is fully initialized (max 60 seconds wait)")
+                    _logcore.info("Waiting to make sure HA is fully initialized (max 5 minutes wait)")
 
-                    while not is_hass_up and count < 60:
+                    while not is_hass_up and count < 300:
                         await asyncio.sleep(0.5)  # We are waiting for HASS to fully start
                         is_hass_up = await self.__is_hass_up()
                         count += 0.5
