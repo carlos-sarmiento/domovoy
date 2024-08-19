@@ -279,8 +279,8 @@ class HassPlugin(AppPlugin):
 
         return future
 
-    async def _get_cached_service_definitions(self) -> dict[str, ServiceDetails]:
-        if self.__cached_service_definitions is None:
+    async def _get_cached_service_definitions(self, *, reset: bool = False) -> dict[str, ServiceDetails]:
+        if self.__cached_service_definitions is None or reset is True:
             domains: dict[str, Any] = await self.get_service_definitions()
 
             service_definitions = {}
