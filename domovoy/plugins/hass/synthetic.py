@@ -29,6 +29,9 @@ class HassSyntheticServiceCall:
             full_name = f"{self.__domain}.{service}"
             service_definitions = await self.__hass._get_cached_service_definitions()  # noqa: SLF001
 
+            if full_name not in service_definitions:
+                service_definitions = await self.__hass._get_cached_service_definitions(reset=True)  # noqa: SLF001
+
             throw_on_error: bool = kwargs.pop("domovoy_throw_on_error", False)  # type: ignore
 
             if full_name in service_definitions and service_definitions[full_name].has_response:
