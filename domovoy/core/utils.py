@@ -64,17 +64,23 @@ def strip_none_and_enums_from_containers(data: T) -> T:
     return data
 
 
+def get_true_callback_if_functools(callback: Callable) -> Callable:
+    if isinstance(callback, functools.partial):
+        return callback.func
+
+    return callback
+
+
 def get_callback_true_name(callback: Callable) -> str:
+    callback = get_true_callback_if_functools(callback)
     try:
         return callback._true_name  # type: ignore[attr-defined]  # noqa: SLF001
     except AttributeError:
-        if isinstance(callback, functools.partial):
-            return get_callback_true_name(callback.func)
-
         return callback.__name__
 
 
 def get_callback_true_class(callback: Callable) -> str:
+    callback = get_true_callback_if_functools(callback)
     try:
         return callback._true_class  # type: ignore[attr-defined]  # noqa: SLF001
     except AttributeError:
@@ -82,8 +88,13 @@ def get_callback_true_class(callback: Callable) -> str:
 
 
 def get_callback_class(callback: Callable) -> str:
+    callback = get_true_callback_if_functools(callback)
     try:
-        return callback.__self__.__class__.__name__  # type: ignore[attr-defined]
+        if hasattr(callback, "__self__"):
+            return callback.__self__.__class__.__name__
+        if hasattr(callback, "__class__"):
+            return callback.__class__.__name__
+        return callback.__name__  # type: ignore[attr-defined]
     except AttributeError:
         return callback.__name__
 
