@@ -1,3 +1,4 @@
+import functools
 from collections.abc import Callable
 from datetime import datetime
 from enum import StrEnum
@@ -67,6 +68,9 @@ def get_callback_true_name(callback: Callable) -> str:
     try:
         return callback._true_name  # type: ignore[attr-defined]  # noqa: SLF001
     except AttributeError:
+        if isinstance(callback, functools.partial):
+            return get_callback_true_name(callback.func)
+
         return callback.__name__
 
 
