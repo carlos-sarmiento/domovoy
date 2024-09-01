@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY domovoy ./domovoy
 
+ENV PIP_ROOT_USER_ACTION=ignore
 ENV PYTHONPATH /usr/src/app:${PYTHONPATH}
 
 WORKDIR /config
