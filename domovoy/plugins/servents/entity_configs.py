@@ -82,7 +82,7 @@ class ServEntThresholdBinarySensorConfig(ServEntEntityConfig):
 @dataclass(kw_only=True)
 class ServEntSelectConfig(ServEntEntityConfig):
     entity_type: EntityType = EntityType.SELECT
-    options: Sequence[str] | None = None
+    options: Sequence[str]
 
 
 @dataclass(kw_only=True)
