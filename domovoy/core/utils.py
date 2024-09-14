@@ -91,7 +91,7 @@ def get_callback_class(callback: Callable) -> str:
     callback = get_true_callback_if_functools(callback)
     try:
         if hasattr(callback, "__self__"):
-            return callback.__self__.__class__.__name__
+            return callback.__self__.__class__.__name__  # type: ignore
         if hasattr(callback, "__class__"):
             return callback.__class__.__name__
         return callback.__name__  # type: ignore[attr-defined]

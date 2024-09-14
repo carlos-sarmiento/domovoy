@@ -608,7 +608,7 @@ class CallbacksPlugin(AppPlugin):
         async def timer_callback(callback_id: str) -> None:
             self._wrapper.logger.debug(
                 "Calling Timer Callback: {cls_name}.{func_name}",
-                cls_name=callback.__self__.__class__.__name__,
+                cls_name=callback.__self__.__class__.__name__,  # type: ignore
                 func_name=callback.__name__,
             )
 
