@@ -1,6 +1,7 @@
 import datetime
 import inspect
 import logging
+from collections.abc import MutableMapping
 from inspect import getfullargspec
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -31,12 +32,12 @@ class StyleAdapter(logging.LoggerAdapter):
     def __init__(self, logger: logging.Logger) -> None:
         self.logger = logger
 
-    def log(self, level: int, msg: str, *args: object, **kwargs: object) -> None:
+    def log(self, level: int, msg: object, *args: object, **kwargs: object) -> None:
         if self.isEnabledFor(level):
-            msg, log_kwargs = self.process(msg, kwargs)
+            msg, log_kwargs = self.process(str(msg), kwargs)
             self.logger._log(level, BraceMessage(msg, args, kwargs), (), **log_kwargs)  # noqa: SLF001
 
-    def process(self, msg: str, kwargs: dict[str, object]) -> tuple[str, dict[str, object]]:
+    def process(self, msg: str, kwargs: MutableMapping[str, object]) -> tuple[str, dict[str, object]]:
         return msg, {key: kwargs[key] for key in getfullargspec(self.logger._log).args[1:] if key in kwargs}  # noqa: SLF001
 
 
@@ -73,7 +74,7 @@ def __get_log_config(name: str, *, use_app_logger_default: bool) -> LoggingConfi
 
 def __get_extended_formatter(formatter: type[logging.Formatter]) -> type[logging.Formatter]:
     class Formatter(formatter):
-        def converter(self, timestamp: float) -> datetime.datetime:
+        def converter(self, timestamp: float) -> datetime.datetime:  # type: ignore
             try:
                 tz = get_main_config().get_timezone()
             except Exception:

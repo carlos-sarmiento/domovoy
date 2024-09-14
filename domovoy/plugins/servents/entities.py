@@ -99,7 +99,7 @@ class ServEntSensor(ServEntEntity):
     ) -> None:
         super().__init__(hass, EntityType.SENSOR, servent_id, config, device_config)
 
-    async def set_to(
+    async def set_to(  # type: ignore
         self,
         state: float | str | datetime.datetime | None,
         attributes: dict | None = None,
@@ -109,7 +109,7 @@ class ServEntSensor(ServEntEntity):
 
         return await super().set_to(state, attributes or {})
 
-    def get_state(self) -> float | int | str | datetime.datetime:
+    def get_state(self) -> float | int | str | datetime.datetime:  # type: ignore
         return parse_state(super().get_state())
 
 
@@ -129,10 +129,10 @@ class ServEntThresholdBinarySensor(ServEntEntity):
             device_config,
         )
 
-    async def set_to(self, _state: bool, _attributes: dict | None = None) -> None:  # noqa: FBT001
+    async def set_to(self, _state: bool, _attributes: dict | None = None) -> None:  # type: ignore # noqa: FBT001
         raise NotImplementedError("Threshold sensors cannot have their state set")
 
-    def get_state(self) -> bool | None:
+    def get_state(self) -> bool | None:  # type: ignore
         state = super().get_state()
         if state == "on":
             return True
@@ -165,10 +165,10 @@ class ServEntBinarySensor(ServEntEntity):
     async def set_off(self, attributes: dict | None = None) -> None:
         return await super().set_to(state=False, attributes=attributes)
 
-    async def set_to(self, state: bool, attributes: dict | None = None) -> None:  # noqa: FBT001
+    async def set_to(self, state: bool, attributes: dict | None = None) -> None:  # type: ignore # noqa: FBT001
         return await super().set_to(state=state, attributes=attributes)
 
-    async def get_state(self) -> bool | None:
+    async def get_state(self) -> bool | None:  # type: ignore
         state = super().get_state()
         if state == "on":
             return True
@@ -195,10 +195,10 @@ class ServEntSwitch(ServEntEntity):
     async def set_off(self, attributes: dict | None = None) -> None:
         return await super().set_to(state=False, attributes=attributes)
 
-    async def set_to(self, state: bool, attributes: dict | None = None) -> None:  # noqa: FBT001
+    async def set_to(self, state: bool, attributes: dict | None = None) -> None:  # type: ignore # noqa: FBT001
         return await super().set_to(state=state, attributes=attributes)
 
-    def get_state(self) -> bool | None:
+    def get_state(self) -> bool | None:  # type: ignore
         state = super().get_state()
         if state == "on":
             return True
@@ -224,10 +224,10 @@ class ServEntNumber(ServEntEntity):
     ) -> None:
         super().__init__(hass, EntityType.NUMBER, servent_id, config, device_config)
 
-    async def set_to(self, state: float, attributes: dict | None = None) -> None:
+    async def set_to(self, state: float, attributes: dict | None = None) -> None:  # type: ignore
         return await super().set_to(state, attributes)
 
-    def get_state(self) -> float | int | None:
+    def get_state(self) -> float | int | None:  # type: ignore
         state = parse_state(super().get_state())
 
         if isinstance(state, str):
@@ -246,7 +246,7 @@ class ServEntSelect(ServEntEntity):
     ) -> None:
         super().__init__(hass, EntityType.SELECT, servent_id, config, device_config)
 
-    async def set_to(
+    async def set_to(  # type: ignore
         self,
         state: str,
         attributes: dict[str, Any] | None = None,

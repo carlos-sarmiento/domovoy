@@ -18,8 +18,7 @@ _logcore = get_logger(__name__)
 
 class ReloadPythonFileWatcher(FileSystemEventHandler):
     class LoadOrReloadCallback(Protocol):
-        def __call__(self, filepath: str, *, is_deletion: bool) -> None:
-            ...
+        def __call__(self, filepath: str, *, is_deletion: bool) -> None: ...
 
     __timer_per_file: dict[str, threading.Timer]
 
@@ -50,19 +49,19 @@ class ReloadPythonFileWatcher(FileSystemEventHandler):
         _logcore.debug("Detected File Change: {filepath}", filepath=filepath)
         self.__module_load_callback(filepath, is_deletion=is_deletion)
 
-    def on_moved(self, event: FileMovedEvent) -> None:
+    def on_moved(self, event: FileMovedEvent) -> None:  # type: ignore
         super().on_moved(event)
         self.__process_event(event.src_path, is_deletion=True)
         self.__process_event(event.dest_path, is_deletion=False)
 
-    def on_created(self, event: FileCreatedEvent) -> None:
+    def on_created(self, event: FileCreatedEvent) -> None:  # type: ignore
         super().on_created(event)
         self.__process_event(event.src_path, is_deletion=False)
 
-    def on_deleted(self, event: FileDeletedEvent) -> None:
+    def on_deleted(self, event: FileDeletedEvent) -> None:  # type: ignore
         super().on_deleted(event)
         self.__process_event(event.src_path, is_deletion=True)
 
-    def on_modified(self, event: FileModifiedEvent) -> None:
+    def on_modified(self, event: FileModifiedEvent) -> None:  # type: ignore
         super().on_modified(event)
         self.__process_event(event.src_path, is_deletion=False)
