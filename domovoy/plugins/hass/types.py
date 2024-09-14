@@ -26,3 +26,6 @@ class HassEntity:
 
     def value(self) -> str:
         return self._entity_id
+
+
+EntityID = HassEntity | str
