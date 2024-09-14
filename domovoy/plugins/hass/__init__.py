@@ -14,7 +14,6 @@ from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
 
 from .core import EntityState, HassCore
-from .entities import HassSyntheticPlatforms
 from .exceptions import HassApiCommandError
 from .synthetic import HassSyntheticDomainsServiceCalls
 from .types import HassData, HassValue
@@ -44,7 +43,6 @@ class HassPlugin(AppPlugin):
         super().__init__(name, wrapper)
         self.__hass = hass_core
         self.services = HassSyntheticDomainsServiceCalls(self)
-        self.entities = HassSyntheticPlatforms()
 
     def prepare(self) -> None:
         super().prepare()
