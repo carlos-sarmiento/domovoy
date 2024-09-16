@@ -65,12 +65,8 @@ def generate_stub_file_for_synthetic_entities(
 
         text_file.write("from domovoy.plugins.hass.types import EntityID\n\n")
 
-        text_file.write(__build_class_hierarchy(platforms, "Str", "str"))
         text_file.write(__build_class_hierarchy(platforms, "Entity", "EntityID"))
 
-        text_file.write(
-            "entities_old: HassSyntheticPlatformsStr = ...\n",
-        )
         text_file.write(
             "entities: HassSyntheticPlatformsEntity = ...\n\n",
         )
