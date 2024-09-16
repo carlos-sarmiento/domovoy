@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Concatenate, ParamSpec
 
@@ -63,7 +63,7 @@ class HassPlugin(AppPlugin):
 
         return entity_state
 
-    def warn_if_entity_doesnt_exists(self, entity_id: EntityID | Sequence[EntityID] | None) -> None:
+    def warn_if_entity_doesnt_exists(self, entity_id: EntityID | list[EntityID] | None) -> None:
         if entity_id is None:
             return
 
@@ -81,7 +81,7 @@ class HassPlugin(AppPlugin):
         self,
         attribute: str,
         value: str | None,
-    ) -> Sequence[EntityID]:
+    ) -> list[EntityID]:
         return self.__hass.get_entity_id_by_attribute(attribute, value)
 
     def get_all_entities(self) -> list[EntityState]:
@@ -306,8 +306,8 @@ class HassPlugin(AppPlugin):
         return await self.__hass.send_raw_command(command_type, command_args)
 
 
-def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> Sequence[EntityID]:
-    if isinstance(val, str) or not isinstance(val, Sequence):
+def wrap_entity_id_as_list(val: EntityID | list[EntityID]) -> list[EntityID]:
+    if not isinstance(val, list):
         return [val]
 
     return val
