@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import hashlib
 from typing import Union
 
 
@@ -22,10 +23,12 @@ class EntityID:
         return f"HassEntity('{self._entity_id}')"
 
     def __hash__(self) -> int:
-        return self._entity_id.__hash__()
+        sha1 = hashlib.sha256(self._entity_id.encode())
+        hash_as_hex = sha1.hexdigest()
+        return int(hash_as_hex, 16)
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, EntityID) and self.__hash__() == other.__hash__()
+        return isinstance(other, EntityID) and self._entity_id == other._entity_id
 
     def get_platform(self) -> str:
         return self._platform
