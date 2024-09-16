@@ -65,7 +65,7 @@ def generate_stub_file_for_synthetic_entities(
         text_file.write(f"# Generated on {now.isoformat()}\n\n")
         text_file.write("# ruff: noqa\n\n")
 
-        text_file.write("from .types import HassEntity\n\n")
+        text_file.write("from domovoy.plugins.hass.types import HassEntity\n\n")
 
         text_file.write(__build_class_hierarchy(platforms, "Str", "str"))
         text_file.write(__build_class_hierarchy(platforms, "Entity", "HassEntity"))

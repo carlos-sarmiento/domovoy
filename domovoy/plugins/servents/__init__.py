@@ -30,6 +30,7 @@ from .entity_configs import (
     ServEntThresholdBinarySensorConfig,
 )
 from .enums import ButtonDeviceClass, EntityCategory
+from .exceptions import ServentInvalidConfigurationError
 
 P = ParamSpec("P")
 
@@ -96,11 +97,18 @@ class ServentsPlugin(AppPlugin):
     ) -> None:
         device_config = device_config or self.__default_device_for_app
 
-        if entity_config.app_name is None:
-            entity_config.app_name = self.__meta.get_app_name()
-
         if device_config.app_name is None:
-            device_config.app_name = self.__meta.get_app_name()
+            if not device_config.is_global:
+                device_config.app_name = self.__meta.get_app_name()
+            else:
+                raise ServentInvalidConfigurationError(
+                    "Device Config must include app_name if 'is_global' is set to true"
+                )
+
+        if device_config.is_global:
+            entity_config.app_name = device_config.app_name
+        elif entity_config.app_name is None:
+            entity_config.app_name = self.__meta.get_app_name()
 
         if device_config.is_global:
             entity_config.servent_id = f"global-{device_config.app_name}-{entity_config.servent_id}"
