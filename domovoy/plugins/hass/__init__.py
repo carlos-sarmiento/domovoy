@@ -9,7 +9,6 @@ from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppWrapper
 from domovoy.core.context import context_callback_id, context_logger
 from domovoy.core.logging import get_logger
-from domovoy.core.utils import wrap_entity_id_as_list
 from domovoy.plugins import callbacks
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
@@ -304,3 +303,9 @@ class HassPlugin(AppPlugin):
 
     async def send_raw_command(self, command_type: str, command_args: HassData) -> HassData | list[HassData]:
         return await self.__hass.send_raw_command(command_type, command_args)
+
+def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> Sequence[EntityID]:
+    if isinstance(val, str) or not isinstance(val, Sequence):
+        return [val]
+
+    return val

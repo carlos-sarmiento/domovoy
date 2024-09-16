@@ -48,11 +48,6 @@ def parse_state(state: str) -> int | float | str:
 T = TypeVar("T")
 
 
-def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> Sequence[EntityID]:
-    if isinstance(val, str) or not isinstance(val, Sequence):
-        return [val]
-
-    return val
 
 
 def strip_none_and_enums_from_containers(data: T) -> T:
