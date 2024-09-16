@@ -1,6 +1,8 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
+from domovoy.plugins.hass.types import EntityID
+
 from .enums import (
     BinarySensorDeviceClass,
     ButtonDeviceClass,
@@ -66,7 +68,7 @@ class ServEntBinarySensorConfig(ServEntEntityConfig):
 @dataclass(kw_only=True)
 class ServEntThresholdBinarySensorConfig(ServEntEntityConfig):
     entity_type: EntityType = EntityType.THRESHOLD_BINARY_SENSOR
-    entity_id: str
+    entity_id: EntityID
     device_class: BinarySensorDeviceClass | None = None
     lower: float | None = None
     upper: float | None = None
