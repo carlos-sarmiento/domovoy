@@ -287,6 +287,10 @@ class HassCore(DomovoyService):
         self.__update_entity_state_cache(entity_id, new_entity_data)
 
     def __update_entity_state_cache(self, entity_id: EntityID, entity_data: EntityState) -> None:
+        if isinstance(entity_id, str):
+            _logcore.warning("Tried to register a string as an EntityID: '{entity_id}'", entity_id=entity_id)
+            entity_id = EntityID(entity_id)
+
         self.__entity_state_cache[entity_id] = entity_data
         self.__entity_state_set.add(entity_id)
 

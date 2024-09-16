@@ -201,6 +201,10 @@ class CallbacksPlugin(AppPlugin):
     ) -> list[str]:
         context_logger.set(self._wrapper.logger)
         target_entity_id = entity_id
+        if isinstance(target_entity_id, str):
+            _logcore.warning("Passed target_entity_id as string: '{target_entity_id}'", entity_id=target_entity_id)
+            target_entity_id = EntityID(target_entity_id)
+
         if isinstance(target_entity_id, EntityID):
             target_entity_id = [target_entity_id]
 
@@ -226,7 +230,6 @@ class CallbacksPlugin(AppPlugin):
                     event_entity_id=event_entity_id,
                     target_entity_id=target_entity_id,
                 )
-                return
 
             new_state = event_data.get("new_state", {}) or {}
             old_state = event_data.get("old_state", {}) or {}
