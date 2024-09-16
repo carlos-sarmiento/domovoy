@@ -221,7 +221,10 @@ class CallbacksPlugin(AppPlugin):
 
             if event_entity_id not in target_entity_id:
                 self._wrapper.logger.warning(
-                    "Received callback for entity_id that should not be part of callback",
+                    "Received callback for entity_id that should not be part of"
+                    " callback. '{event_entity_id}' not in '{target_entity_id}'",
+                    event_entity_id=event_entity_id,
+                    target_entity_id=target_entity_id,
                 )
                 return
 
