@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import inspect
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, Concatenate, Literal, ParamSpec, TypeVar
 
 from astral.location import Location
@@ -125,7 +125,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_state(
         self,
-        entity_id: EntityID | Sequence[EntityID],
+        entity_id: EntityID | list[EntityID],
         callback: EntityListenerCallback,
         *,
         immediate: bool = False,
@@ -135,7 +135,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_attribute(
         self,
-        entity_id: EntityID | Sequence[EntityID],
+        entity_id: EntityID | list[EntityID],
         attribute: str,
         callback: EntityListenerCallback,
         *,
@@ -166,7 +166,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_state_extended(
         self,
-        entity_id: EntityID | Sequence[EntityID],
+        entity_id: EntityID | list[EntityID],
         callback: Callable[
             Concatenate[EntityID, str, HassValue, HassValue, P],
             None | Awaitable[None],
@@ -188,7 +188,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_attribute_extended(
         self,
-        entity_id: EntityID | Sequence[EntityID],
+        entity_id: EntityID | list[EntityID],
         attribute: str,
         callback: Callable[
             Concatenate[EntityID, str, HassValue, HassValue, P],
@@ -201,12 +201,12 @@ class CallbacksPlugin(AppPlugin):
     ) -> list[str]:
         context_logger.set(self._wrapper.logger)
         target_entity_id = entity_id
-        if isinstance(target_entity_id, str):
-            _logcore.warning("Passed target_entity_id as string: '{target_entity_id}'", entity_id=target_entity_id)
-            target_entity_id = EntityID(target_entity_id)
-
-        if isinstance(target_entity_id, EntityID):
+        if not isinstance(target_entity_id, list):
             target_entity_id = [target_entity_id]
+
+        for eid in target_entity_id:
+            if isinstance(eid, str):
+                raise TypeError("Passed entity_id as str and not as EntityID")
 
         self.__hass.warn_if_entity_doesnt_exists(target_entity_id)
 
@@ -628,8 +628,8 @@ class CallbacksPlugin(AppPlugin):
         )
 
 
-def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> Sequence[EntityID]:
-    if isinstance(val, str) or not isinstance(val, Sequence):
+def wrap_entity_id_as_list(val: EntityID | list[EntityID]) -> list[EntityID]:
+    if not isinstance(val, list):
         return [val]
 
     return val
