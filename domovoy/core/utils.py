@@ -1,10 +1,11 @@
 import functools
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from enum import StrEnum
 from typing import TypeVar
 
 from domovoy.core.configuration import MainConfig, get_main_config
+from domovoy.plugins.hass.types import EntityID
 
 
 def get_datetime_now_with_config_timezone() -> datetime:
@@ -43,6 +44,13 @@ def parse_state(state: str) -> int | float | str:
 
 
 T = TypeVar("T")
+
+
+def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> Sequence[EntityID]:
+    if isinstance(val, EntityID):
+        return [val]
+
+    return val
 
 
 def strip_none_and_enums_from_containers(data: T) -> T:

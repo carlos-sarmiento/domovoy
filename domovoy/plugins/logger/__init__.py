@@ -56,7 +56,7 @@ class LoggerPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def log_callback(callback_id: str) -> None:
-            inside_log_callback.set(True)  # noqa: FBT003
+            inside_log_callback.set(True)
             try:
                 self._wrapper.logger.debug(
                     "Calling Timer Callback: {cls_name}.{func_name}",
@@ -71,7 +71,7 @@ class LoggerPlugin(AppPlugin):
                 )
 
             finally:
-                inside_log_callback.set(False)  # noqa: FBT003
+                inside_log_callback.set(False)
 
         callback_id = f"logs-{uuid.uuid4().hex}"
 

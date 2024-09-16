@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 from domovoy.core.configuration import get_main_config
-from domovoy.plugins.hass.types import HassEntity
+from domovoy.plugins.hass.types import EntityID
 
 
 class HassSyntheticPlatformEntities:
@@ -14,12 +14,12 @@ class HassSyntheticPlatformEntities:
         self.__platform = platform
         self.__return_entity_cls = return_entity_cls
 
-    def __getattr__(self, entity: str) -> HassEntity | str:
+    def __getattr__(self, entity: str) -> EntityID | str:
         entity = entity.removeprefix("_")
         entity_id = f"{self.__platform}.{entity}"
 
         if self.__return_entity_cls:
-            return HassEntity(entity_id)
+            return EntityID(entity_id)
 
         return entity_id
 
@@ -40,9 +40,9 @@ class HassSyntheticPlatforms:
 
         return self.__defined_domains[name]
 
-    def __call__(self, entity_id: str) -> HassEntity | str:
+    def __call__(self, entity_id: str) -> EntityID | str:
         if self.__return_entity_cls:
-            return HassEntity(entity_id)
+            return EntityID(entity_id)
 
         return entity_id
 
@@ -65,23 +65,23 @@ def generate_stub_file_for_synthetic_entities(
         text_file.write(f"# Generated on {now.isoformat()}\n\n")
         text_file.write("# ruff: noqa\n\n")
 
-        text_file.write("from domovoy.plugins.hass.types import HassEntity\n\n")
+        text_file.write("from domovoy.plugins.hass.types import EntityID\n\n")
 
         text_file.write(__build_class_hierarchy(platforms, "Str", "str"))
-        text_file.write(__build_class_hierarchy(platforms, "Entity", "HassEntity"))
+        text_file.write(__build_class_hierarchy(platforms, "Entity", "EntityID"))
 
         text_file.write(
-            "entities: HassSyntheticPlatformsStr = ...\n",
+            "entities_old: HassSyntheticPlatformsStr = ...\n",
         )
         text_file.write(
-            "entities_new: HassSyntheticPlatformsEntity = ...\n\n",
+            "entities: HassSyntheticPlatformsEntity = ...\n\n",
         )
 
 
 def __build_class_hierarchy(
     platforms: dict[str, set[str]],
     postfix: str,
-    return_type: Literal["HassEntity", "str"],
+    return_type: Literal["EntityID", "str"],
 ) -> str:
     text_file = StringIO()
 
