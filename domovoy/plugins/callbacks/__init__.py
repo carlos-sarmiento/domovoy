@@ -217,7 +217,7 @@ class CallbacksPlugin(AppPlugin):
             event_data: dict[str, Any],
         ) -> None:
             context_logger.set(self._wrapper.logger)
-            event_entity_id = event_data["entity_id"]
+            event_entity_id = EntityID(event_data["entity_id"])
 
             if event_entity_id not in target_entity_id:
                 self._wrapper.logger.warning(

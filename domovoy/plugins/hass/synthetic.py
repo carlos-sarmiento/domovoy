@@ -100,6 +100,8 @@ def generate_stub_file_for_synthetic_services(
         text_file.write("from typing import Any\n")
         text_file.write("from datetime import datetime\n")
         text_file.write("from domovoy.plugins.hass import HassPlugin\n")
+        text_file.write("from domovoy.plugins.hass.types import EntityID\n")
+
         text_file.write("\n\n")
 
         text_file.write("class HassSyntheticDomainsServiceCalls:\n")
