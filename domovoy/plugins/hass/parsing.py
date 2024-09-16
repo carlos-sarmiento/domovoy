@@ -12,7 +12,7 @@ from domovoy.core.logging import get_logger
 from .exceptions import (
     HassApiParseError,
 )
-from .types import HassData
+from .types import EntityID, HassData
 
 pattern = re.compile("^\\d{4}-\\d{2}-\\d{2}")
 
@@ -55,8 +55,15 @@ def parse_message(message: Data, *, parse_datetimes: bool) -> HassData:
     return msg  # type: ignore
 
 
+def default(obj: object) -> str:
+    if isinstance(obj, EntityID):
+        return str(obj)
+
+    raise TypeError
+
+
 def encode_message(message: HassData) -> bytes:
     try:
-        return json.dumps(message)
+        return json.dumps(message, default=default)
     except TypeError as e:
         raise HassApiParseError(e) from e
