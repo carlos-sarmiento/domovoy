@@ -297,7 +297,7 @@ class HassCore(DomovoyService):
     def get_state(self, entity_id: EntityID) -> EntityState | None:
         return self.__entity_state_cache.get(entity_id, None)
 
-    def entity_exists_in_cache(self, entity_id: str) -> bool:
+    def entity_exists_in_cache(self, entity_id: EntityID) -> bool:
         return entity_id in self.__entity_state_cache
 
     def get_entity_id_by_attribute(self, attribute: str, value: PrimitiveHassValue | None) -> list[EntityID]:

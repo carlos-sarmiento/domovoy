@@ -70,7 +70,7 @@ class HassPlugin(AppPlugin):
         entity_id = wrap_entity_id_as_list(entity_id)
 
         for eid in entity_id:
-            if not self.__hass.entity_exists_in_cache(str(eid)):
+            if not self.__hass.entity_exists_in_cache(eid):
                 _missing_entities_logger.warning(
                     "[{app_name}] '{entity_id}' doesn't exist in Hass.",
                     entity_id=eid,
@@ -303,6 +303,7 @@ class HassPlugin(AppPlugin):
 
     async def send_raw_command(self, command_type: str, command_args: HassData) -> HassData | list[HassData]:
         return await self.__hass.send_raw_command(command_type, command_args)
+
 
 def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> Sequence[EntityID]:
     if isinstance(val, str) or not isinstance(val, Sequence):

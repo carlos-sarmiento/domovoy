@@ -76,6 +76,13 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
         platforms: dict[str, set[str]] = {}
 
         for entity_id in entity_ids:
+            if isinstance(entity_id, str):
+                self.log.warning(
+                    "Detected an string in a list that should only contain EntityIDs: '{entity_id}'",
+                    entity_id=entity_id,
+                )
+                entity_id = EntityID(entity_id)  # noqa: PLW2901
+
             platform = entity_id.get_platform()
             entity = entity_id.get_entity_name()
 
