@@ -21,7 +21,6 @@ from domovoy.core.utils import (
     get_datetime_now_with_config_timezone,
     is_datetime_aware,
     set_callback_true_information,
-    wrap_entity_id_as_list,
 )
 from domovoy.plugins import hass
 from domovoy.plugins.callbacks.entity_listener_callbacks import EntityListenerCallback
@@ -621,3 +620,10 @@ class CallbacksPlugin(AppPlugin):
             interval,
             start,
         )
+
+
+def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> Sequence[EntityID]:
+    if isinstance(val, str) or not isinstance(val, Sequence):
+        return [val]
+
+    return val
