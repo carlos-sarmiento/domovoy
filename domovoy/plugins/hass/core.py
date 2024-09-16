@@ -14,7 +14,7 @@ from domovoy.core.task_utils import run_and_forget_task
 
 from .api import HassApiConnectionState, HassWebsocketApi
 from .exceptions import HassApiCommandError
-from .types import HassData, PrimitiveHassValue
+from .types import EntityID, HassData, PrimitiveHassValue
 
 _logcore = get_logger(__name__)
 
@@ -23,7 +23,7 @@ P = ParamSpec("P")
 
 @dataclass(frozen=True)
 class EntityState:
-    entity_id: str
+    entity_id: EntityID
     state: str
     last_changed: datetime.datetime
     last_updated: datetime.datetime
@@ -34,7 +34,7 @@ class EntityState:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> EntityState:
         return EntityState(
-            entity_id=data["entity_id"],
+            entity_id=EntityID(data["entity_id"]),
             state=data["state"],
             last_changed=data["last_changed"],
             last_updated=data["last_updated"],
@@ -98,8 +98,8 @@ class EntityState:
 class HassCore(DomovoyService):
     __event_publisher: EventListener
     __hass_api: HassWebsocketApi
-    __entity_state_cache: dict[str, EntityState]
-    __entity_state_set: set[str]
+    __entity_state_cache: dict[EntityID, EntityState]
+    __entity_state_set: set[EntityID]
     __state_subscription_id: int | None = None
     __start_future: asyncio.Future[None] | None = None
     __resources: DomovoyServiceResources
@@ -180,7 +180,7 @@ class HassCore(DomovoyService):
         starting_states = await self.__hass_api.get_states()
 
         for state in starting_states:
-            entity_id: str = state["entity_id"]  # type: ignore
+            entity_id = EntityID(state["entity_id"])  # type: ignore
             # We need to validate this is later than what we already have
             self.__update_entity_state_cache(entity_id, EntityState.from_dict(state))
 
@@ -256,7 +256,7 @@ class HassCore(DomovoyService):
     async def __process_state_changed(self, event_data: dict[str, Any]) -> None:
         entity_id = event_data["entity_id"]
 
-        if event_data.get("new_state", None) is None:
+        if event_data.get("new_state") is None:
             _logcore.debug(
                 "No New State received for `state_changed` event for {entity_id}, event_data {event_data}",
                 entity_id=entity_id,
@@ -286,21 +286,21 @@ class HassCore(DomovoyService):
 
         self.__update_entity_state_cache(entity_id, new_entity_data)
 
-    def __update_entity_state_cache(self, entity_id: str, entity_data: EntityState) -> None:
+    def __update_entity_state_cache(self, entity_id: EntityID, entity_data: EntityState) -> None:
         self.__entity_state_cache[entity_id] = entity_data
         self.__entity_state_set.add(entity_id)
 
-    def __pop_entity_state_cache(self, entity_id: str) -> None:
+    def __pop_entity_state_cache(self, entity_id: EntityID) -> None:
         self.__entity_state_cache.pop(entity_id)
         self.__entity_state_set.remove(entity_id)
 
-    def get_state(self, entity_id: str) -> EntityState | None:
+    def get_state(self, entity_id: EntityID) -> EntityState | None:
         return self.__entity_state_cache.get(entity_id, None)
 
     def entity_exists_in_cache(self, entity_id: str) -> bool:
         return entity_id in self.__entity_state_cache
 
-    def get_entity_id_by_attribute(self, attribute: str, value: PrimitiveHassValue | None) -> list[str]:
+    def get_entity_id_by_attribute(self, attribute: str, value: PrimitiveHassValue | None) -> list[EntityID]:
         return [
             x.entity_id
             for x in self.__entity_state_cache.values()
@@ -310,7 +310,7 @@ class HassCore(DomovoyService):
     def get_all_entities(self) -> list[EntityState]:
         return list(self.__entity_state_cache.values())
 
-    def get_all_entity_ids(self) -> frozenset[str]:
+    def get_all_entity_ids(self) -> frozenset[EntityID]:
         return frozenset(self.__entity_state_set)
 
     async def fire_event(
@@ -336,7 +336,7 @@ class HassCore(DomovoyService):
         domain: str,
         service: str,
         service_data: HassData | None = None,
-        entity_id: str | list[str] | None = None,
+        entity_id: EntityID | list[EntityID] | None = None,
         return_response: bool = False,
     ) -> HassData | None:
         return await self.__hass_api.call_service(

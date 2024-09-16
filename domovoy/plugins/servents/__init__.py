@@ -102,7 +102,7 @@ class ServentsPlugin(AppPlugin):
                 device_config.app_name = self.__meta.get_app_name()
             else:
                 raise ServentInvalidConfigurationError(
-                    "Device Config must include app_name if 'is_global' is set to true"
+                    "Device Config must include app_name if 'is_global' is set to true",
                 )
 
         if device_config.is_global:

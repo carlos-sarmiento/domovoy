@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import inspect
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from typing import TYPE_CHECKING, Any, Concatenate, Literal, ParamSpec, TypeVar
 
 from astral.location import Location
@@ -21,11 +21,12 @@ from domovoy.core.utils import (
     get_datetime_now_with_config_timezone,
     is_datetime_aware,
     set_callback_true_information,
+    wrap_entity_id_as_list,
 )
 from domovoy.plugins import hass
 from domovoy.plugins.callbacks.entity_listener_callbacks import EntityListenerCallback
 from domovoy.plugins.callbacks.event_listener_callbacks import EventListenerCallback
-from domovoy.plugins.hass.types import HassValue
+from domovoy.plugins.hass.types import EntityID, HassValue
 from domovoy.plugins.plugins import AppPlugin
 
 if TYPE_CHECKING:
@@ -125,7 +126,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_state(
         self,
-        entity_id: str | list[str],
+        entity_id: EntityID | Sequence[EntityID],
         callback: EntityListenerCallback,
         *,
         immediate: bool = False,
@@ -135,7 +136,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_attribute(
         self,
-        entity_id: str | list[str],
+        entity_id: EntityID | Sequence[EntityID],
         attribute: str,
         callback: EntityListenerCallback,
         *,
@@ -145,7 +146,7 @@ class CallbacksPlugin(AppPlugin):
         signature = inspect.signature(callback)
         valid_params = set(signature.parameters.keys())
 
-        async def wrapper(entity_id: str, attribute: str, old: HassValue, new: HassValue) -> None:
+        async def wrapper(entity_id: EntityID, attribute: str, old: HassValue, new: HassValue) -> None:
             call_args = {}
             if "entity_id" in valid_params:
                 call_args["entity_id"] = entity_id
@@ -166,9 +167,9 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_state_extended(
         self,
-        entity_id: str | list[str],
+        entity_id: EntityID | Sequence[EntityID],
         callback: Callable[
-            Concatenate[str, str, HassValue, HassValue, P],
+            Concatenate[EntityID, str, HassValue, HassValue, P],
             None | Awaitable[None],
         ],
         immediate: bool = False,  # noqa: FBT001, FBT002
@@ -188,10 +189,10 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_attribute_extended(
         self,
-        entity_id: str | list[str],
+        entity_id: EntityID | Sequence[EntityID],
         attribute: str,
         callback: Callable[
-            Concatenate[str, str, HassValue, HassValue, P],
+            Concatenate[EntityID, str, HassValue, HassValue, P],
             None | Awaitable[None],
         ],
         immediate: bool = False,  # noqa: FBT001, FBT002
@@ -201,7 +202,7 @@ class CallbacksPlugin(AppPlugin):
     ) -> list[str]:
         context_logger.set(self._wrapper.logger)
         target_entity_id = entity_id
-        if isinstance(target_entity_id, str):
+        if isinstance(target_entity_id, EntityID):
             target_entity_id = [target_entity_id]
 
         self.__hass.warn_if_entity_doesnt_exists(target_entity_id)
@@ -280,7 +281,7 @@ class CallbacksPlugin(AppPlugin):
 
             @self._wrapper.handle_exception_and_logging(callback)
             async def immediate_callback(callback_id: str) -> None:
-                all_eid = [entity_id] if not isinstance(entity_id, list) else entity_id
+                all_eid = wrap_entity_id_as_list(entity_id)
                 all_callbacks: list[Awaitable[None]] = []
                 for eid in all_eid:
                     eid_state = self.__hass.get_full_state(eid)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from typing import Any, Concatenate, ParamSpec
 
@@ -9,6 +9,7 @@ from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppWrapper
 from domovoy.core.context import context_callback_id, context_logger
 from domovoy.core.logging import get_logger
+from domovoy.core.utils import wrap_entity_id_as_list
 from domovoy.plugins import callbacks
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
@@ -16,7 +17,7 @@ from domovoy.plugins.plugins import AppPlugin
 from .core import EntityState, HassCore
 from .exceptions import HassApiCommandError
 from .synthetic import HassSyntheticDomainsServiceCalls
-from .types import HassData, HassValue
+from .types import EntityID, HassData, HassValue
 
 P = ParamSpec("P")
 
@@ -48,11 +49,14 @@ class HassPlugin(AppPlugin):
         super().prepare()
         self.__callbacks = self._wrapper.get_pluginx(callbacks.CallbacksPlugin)
 
-    def get_state(self, entity_id: str) -> str:
+    def get_state(self, entity_id: EntityID) -> str:
         full_state = self.get_full_state(entity_id)
         return full_state.state
 
-    def get_full_state(self, entity_id: str) -> EntityState:
+    def get_full_state(self, entity_id: EntityID) -> EntityState:
+        if isinstance(entity_id, str):
+            entity_id = EntityID(entity_id)
+
         entity_state = self.__hass.get_state(entity_id)
 
         if entity_state is None:
@@ -60,15 +64,14 @@ class HassPlugin(AppPlugin):
 
         return entity_state
 
-    def warn_if_entity_doesnt_exists(self, entity_id: str | list[str] | None) -> None:
+    def warn_if_entity_doesnt_exists(self, entity_id: EntityID | Sequence[EntityID] | None) -> None:
         if entity_id is None:
             return
 
-        if isinstance(entity_id, str):
-            entity_id = [entity_id]
+        entity_id = wrap_entity_id_as_list(entity_id)
 
         for eid in entity_id:
-            if not self.__hass.entity_exists_in_cache(eid):
+            if not self.__hass.entity_exists_in_cache(str(eid)):
                 _missing_entities_logger.warning(
                     "[{app_name}] '{entity_id}' doesn't exist in Hass.",
                     entity_id=eid,
@@ -79,13 +82,13 @@ class HassPlugin(AppPlugin):
         self,
         attribute: str,
         value: str | None,
-    ) -> list[str]:
+    ) -> Sequence[EntityID]:
         return self.__hass.get_entity_id_by_attribute(attribute, value)
 
     def get_all_entities(self) -> list[EntityState]:
         return self.__hass.get_all_entities()
 
-    def get_all_entity_ids(self) -> frozenset[str]:
+    def get_all_entity_ids(self) -> frozenset[EntityID]:
         return self.__hass.get_all_entity_ids()
 
     async def fire_event(
@@ -159,7 +162,7 @@ class HassPlugin(AppPlugin):
         domain = service_name_segments[0]
         service = service_name_segments[1]
 
-        entity_id: str | list[str] | None = None
+        entity_id: EntityID | list[EntityID] | None = None
         if "entity_id" in kwargs and ("domovoy_drop_target" not in kwargs or not kwargs["domovoy_drop_target"]):
             # We add the ignore because there is no easy way
             # to restrict the typing of kwargs until python 3.12
@@ -167,12 +170,13 @@ class HassPlugin(AppPlugin):
 
             if (
                 entity_id is None
-                or (isinstance(entity_id, list) and not all(isinstance(sub, str) for sub in entity_id))
-                or (not isinstance(entity_id, str) and not isinstance(entity_id, list))
+                or (isinstance(entity_id, list) and not all(isinstance(sub, EntityID) for sub in entity_id))
+                or (not isinstance(entity_id, EntityID) and not isinstance(entity_id, list))
             ):
                 self._wrapper.logger.error(
                     "Cannot call service `{service_name}`. The `entity_id` key has an invalid type."
-                    " Only `str` or `list[str]` are allowed. If passing a list, make sure all the elements are str",
+                    " Only `EntityID` or `list[EntityID]` are allowed. If passing a list, make sure "
+                    "all the elements are EntityID",
                     service_name=service_name,
                 )
                 return None
@@ -183,9 +187,9 @@ class HassPlugin(AppPlugin):
             kwargs.pop("domovoy_drop_target")
 
         if "service_data_entity_id" in kwargs:
-            val = kwargs["service_data_entity_id"]
+            val = EntityID(str(kwargs["service_data_entity_id"]))
             kwargs.pop("service_data_entity_id")
-            self.warn_if_entity_doesnt_exists(str(val) if val else None)
+            self.warn_if_entity_doesnt_exists(val if val else None)
             kwargs["entity_id"] = val
 
         self.warn_if_entity_doesnt_exists(entity_id)
@@ -218,10 +222,10 @@ class HassPlugin(AppPlugin):
 
     async def wait_for_state_to_be(
         self,
-        entity_id: str,
+        entity_id: EntityID,
         states: str | list[str],
         duration: Interval | None = None,
-        timeout: Interval | None = None,
+        timeout: Interval | None = None,  # noqa: ASYNC109
     ) -> None:
         if timeout is None:
             await self.__wait_for_state_to_be_implementation(
@@ -239,7 +243,7 @@ class HassPlugin(AppPlugin):
 
     def __wait_for_state_to_be_implementation(
         self,
-        entity_id: str,
+        entity_id: EntityID,
         states: str | list[str],
         duration: Interval | None = None,
     ) -> asyncio.Future[None]:
@@ -249,7 +253,7 @@ class HassPlugin(AppPlugin):
             states = [states]
 
         async def state_callback(
-            entity: str,
+            entity: EntityID,
             _attribute: str,
             _old: HassValue,
             new: HassValue,

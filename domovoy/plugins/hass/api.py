@@ -18,7 +18,7 @@ from .exceptions import (
     HassApiParseError,
 )
 from .parsing import encode_message, parse_message
-from .types import HassData
+from .types import EntityID, HassData
 
 # Horrible hack to not have to encode the json output of orjson into unicode only
 # to have it decoded again.
@@ -56,8 +56,7 @@ class HassWebsocketApi:
     __connection_state_callback: Callable[[HassApiConnectionState], Awaitable[None]]
     __connection_state_task: list[asyncio.Task[None]]
 
-    async def __dummy_callback(*_args: object, **_kwargs: object) -> None:
-        ...
+    async def __dummy_callback(*_args: object, **_kwargs: object) -> None: ...
 
     def __init__(
         self,
@@ -542,7 +541,7 @@ class HassWebsocketApi:
         domain: str,
         service: str,
         service_data: HassData | None = None,
-        entity_id: str | list[str] | None = None,
+        entity_id: EntityID | list[EntityID] | None = None,
         return_response: bool = False,
     ) -> HassData | None:
         _logcore.debug(
@@ -562,7 +561,7 @@ class HassWebsocketApi:
             cmd["service_data"] = service_data
 
         if entity_id is not None:
-            cmd["target"] = {"entity_id": entity_id}  # type: ignore
+            cmd["target"] = {"entity_id": entity_id} # type: ignore
 
         response = await self.__send_command(cmd)
 

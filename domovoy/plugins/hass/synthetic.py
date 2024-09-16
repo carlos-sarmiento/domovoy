@@ -12,8 +12,7 @@ if TYPE_CHECKING:
 
 
 class HassServiceCall(Protocol):
-    async def __call__(self, **kwargs: HassValueStrict) -> dict[str, Any] | None:
-        ...
+    async def __call__(self, **kwargs: HassValueStrict) -> dict[str, Any] | None: ...
 
 
 class HassSyntheticServiceCall:
@@ -126,7 +125,7 @@ def generate_stub_file_for_synthetic_services(
                 arguments: dict[str, str] = {}
 
                 if "target" in details and "entity" in details["target"]:
-                    arguments["entity_id"] = "str | list[str]"
+                    arguments["entity_id"] = "EntityID | list[EntityID]"
 
                 if "fields" in details:
                     for field, field_params in details["fields"].items():
@@ -156,12 +155,12 @@ def generate_stub_file_for_synthetic_services(
                             if "datetime" in field_params["selector"]:
                                 typing += " | datetime"
                             if "entity" in field_params["selector"]:
-                                typing += " | str | list[str]"
+                                typing += " | EntityID | list[EntityID]"
                             if "select" in field_params["selector"]:
                                 typing += " | str"
 
                         elif field.endswith("_id"):
-                            typing = "str | list[str]"
+                            typing = "EntityID | list[EntityID] | str | list[str]"
 
                         if "required" not in field_params or not field_params["required"]:
                             typing += " | None = None"

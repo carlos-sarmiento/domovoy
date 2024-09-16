@@ -5,7 +5,7 @@ from domovoy.core.errors import DomovoyError
 from domovoy.core.utils import parse_state
 from domovoy.plugins.hass import HassPlugin
 from domovoy.plugins.hass.core import EntityState
-from domovoy.plugins.hass.types import HassData, HassValue
+from domovoy.plugins.hass.types import EntityID, HassData, HassValue
 
 from .entity_configs import (
     ServEntBinarySensorConfig,
@@ -48,7 +48,7 @@ class ServEntEntity:
             attributes=attributes or {},  # type: ignore
         )
 
-    def get_entity_id(self) -> str:
+    def get_entity_id(self) -> EntityID:
         entity_id = self.__hass.get_entity_id_by_attribute(
             "servent_id",
             self.entity_config.servent_id,

@@ -1,10 +1,10 @@
 from typing import Any
 
 from domovoy.core.errors import DomovoyLogOnlyOnDebugWhenUncaughtError
+from domovoy.plugins.hass.types import EntityID
 
 
-class HassError(Exception):
-    ...
+class HassError(Exception): ...
 
 
 class HassApiAuthenticationError(HassError):
@@ -14,20 +14,17 @@ class HassApiAuthenticationError(HassError):
         )
 
 
-class HassApiParseError(HassError):
-    ...
+class HassApiParseError(HassError): ...
 
 
-class HassApiConnectionError(HassError, DomovoyLogOnlyOnDebugWhenUncaughtError):
-    ...
+class HassApiConnectionError(HassError, DomovoyLogOnlyOnDebugWhenUncaughtError): ...
 
 
-class HassApiConnectionResetError(HassApiConnectionError):
-    ...
+class HassApiConnectionResetError(HassApiConnectionError): ...
 
 
 class HassUnknownEntityError(HassError):
-    def __init__(self, entity_id: str) -> None:
+    def __init__(self, entity_id: EntityID) -> None:
         super().__init__(f"Entity ID: {entity_id} was not found.")
 
 
@@ -46,7 +43,7 @@ class HassApiCommandError(HassError):
         full_response: dict[str, Any],
         original_command: dict[str, Any],
     ) -> None:
-        message = full_response["message"] if "message" in full_response else message
+        message = full_response.get("message", message)
         super().__init__(
             "Received Error from HASS:"
             f"{message}. Code: {code}. Command ID: {command_id}. "

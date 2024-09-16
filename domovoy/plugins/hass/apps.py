@@ -5,6 +5,7 @@ from typing import Any
 from domovoy.app import stop_domovoy
 from domovoy.applications import AppBase, AppConfigBase, EmptyAppConfig
 from domovoy.applications.types import Interval
+from domovoy.plugins.hass.types import EntityID
 from domovoy.plugins.servents.enums import ButtonDeviceClass, EntityCategory
 
 from .entities import generate_stub_file_for_synthetic_entities  # type: ignore
@@ -55,10 +56,10 @@ class HassSyntheticEntitiesStubUpdaterConfig(AppConfigBase):
 
 
 class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterConfig]):
-    __registered_entities: frozenset[str] = frozenset()
+    __registered_entities: frozenset[EntityID] = frozenset()
 
     async def initialize(self) -> None:
-        self.__registered_entities: frozenset[str] = frozenset()
+        self.__registered_entities: frozenset[EntityID] = frozenset()
         self.log.info("HassSyntheticEntitiesStubUpdater is initializing")
         self.callbacks.run_every(self.config.update_frequency, self.update_stubs, "now")
 
@@ -75,9 +76,8 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
         platforms: dict[str, set[str]] = {}
 
         for entity_id in entity_ids:
-            split_id = entity_id.split(".")
-            platform = split_id[0]
-            entity = split_id[1]
+            platform = entity_id.get_platform()
+            entity = entity_id.get_entity_name()
 
             if platform not in platforms:
                 platforms[platform] = set()
