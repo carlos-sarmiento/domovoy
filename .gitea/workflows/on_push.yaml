@@ -1,0 +1,30 @@
+name: Build And Push on Master
+run-name: ${{ gitea.actor }} is runs ci pipeline
+on: [push]
+
+jobs:
+  publish:
+    runs-on: cth-ubuntu-latest
+    if: gitea.ref == 'refs/heads/master'
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: https://github.com/docker/setup-buildx-action@v3
+        with:
+          config-inline: |
+            [registry."${{ secrets.GIT_URL }}"]
+              http = true
+              insecure = true
+      - name: Login to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.GIT_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.PACKAGE_PUSH_TOKEN }}
+      - name: Build and push Docker image
+        uses: https://github.com/docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: "${{ secrets.GIT_URL}}/${{ secrets.GIT_USERNAME }}/domovoy:${{gitea.sha}},${{ secrets.GIT_URL}}/${{ secrets.GIT_USERNAME }}/domovoy:latest"
