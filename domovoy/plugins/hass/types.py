@@ -6,6 +6,9 @@ from typing import Union
 
 class EntityID:
     def __init__(self, entity_id: str) -> None:
+        if isinstance(entity_id, EntityID):
+            entity_id = str(entity_id)
+
         self._entity_id: str = entity_id
         split = entity_id.split(".")
 
