@@ -175,8 +175,9 @@ class HassPlugin(AppPlugin):
                 self._wrapper.logger.error(
                     "Cannot call service `{service_name}`. The `entity_id` key has an invalid type."
                     " Only `EntityID` or `list[EntityID]` are allowed. If passing a list, make sure "
-                    "all the elements are EntityID",
+                    "all the elements are EntityID. {entity_id}",
                     service_name=service_name,
+                    entity_id=entity_id,
                 )
                 return None
 
