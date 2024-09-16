@@ -253,8 +253,8 @@ class HassCore(DomovoyService):
                 )
         await self.__event_publisher.publish_event(event_type, event_data)
 
-    async def __process_state_changed(self, event_data: dict[str, Any]) -> None:
-        entity_id = event_data["entity_id"]
+    async def __process_state_changed(self, event_data: dict[str, HassData]) -> None:
+        entity_id = EntityID(str(event_data["entity_id"]))
 
         if event_data.get("new_state") is None:
             _logcore.debug(
