@@ -8,6 +8,12 @@ jobs:
     if: gitea.ref == 'refs/heads/master'
     steps:
       - uses: https://github.com/actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - name: Install poetry
+        run: pipx install poetry
+      - run: poetry export > docker_requirements.txt
       - name: Set up Docker Buildx
         uses: https://github.com/docker/setup-buildx-action@v3
         with:
