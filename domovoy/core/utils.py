@@ -2,10 +2,12 @@ import functools
 from collections.abc import Callable, Sequence
 from datetime import datetime
 from enum import StrEnum
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from domovoy.core.configuration import MainConfig, get_main_config
-from domovoy.plugins.hass.types import EntityID
+
+if TYPE_CHECKING:
+    from domovoy.plugins.hass.types import EntityID
 
 
 def get_datetime_now_with_config_timezone() -> datetime:
@@ -47,7 +49,7 @@ T = TypeVar("T")
 
 
 def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> Sequence[EntityID]:
-    if isinstance(val, EntityID):
+    if isinstance(val, str) or not isinstance(val, Sequence):
         return [val]
 
     return val
