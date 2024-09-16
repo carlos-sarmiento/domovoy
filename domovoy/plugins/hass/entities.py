@@ -47,9 +47,7 @@ class HassSyntheticPlatforms:
         return entity_id
 
 
-entities = HassSyntheticPlatforms(return_entity_cls=False)
-
-entities_new = HassSyntheticPlatforms(return_entity_cls=True)
+entities = HassSyntheticPlatforms(return_entity_cls=True)
 
 
 def __to_camel_case(snake_str: str) -> str:
