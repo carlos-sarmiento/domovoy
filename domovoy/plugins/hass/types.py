@@ -18,7 +18,7 @@ class EntityID:
     def __str__(self) -> str:
         return self._entity_id
 
-    def __repl__(self) -> str:
+    def __repr__(self) -> str:
         return f"HassEntity('{self._entity_id}')"
 
     def __hash__(self) -> int:
