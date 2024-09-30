@@ -27,7 +27,7 @@ orjson = "^3.10.6"
 idna = "^3.7"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.6.3"
+ruff = "^0.6.8"
 types-pytz = "^2024.1.0.20240417"
 
 [build-system]
