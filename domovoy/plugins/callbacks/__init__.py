@@ -73,10 +73,10 @@ class CallbacksPlugin(AppPlugin):
             if "data" in valid_params:
                 call_args["data"] = data
 
-            if inspect.iscoroutinefunction(callback):
-                await callback(**call_args)
-            else:
-                callback(**call_args)
+            result = callback(**call_args)
+
+            if inspect.isawaitable(result):
+                await result
 
         set_callback_true_information(wrapper, callback)
         return self.listen_event_extended(events, wrapper, oneshot)
@@ -156,10 +156,10 @@ class CallbacksPlugin(AppPlugin):
             if "new" in valid_params:
                 call_args["new"] = new
 
-            if inspect.iscoroutinefunction(callback):
-                await callback(**call_args)
-            else:
-                callback(**call_args)
+            result = callback(**call_args)
+
+            if inspect.isawaitable(result):
+                await result
 
         set_callback_true_information(wrapper, callback)
         return self.listen_attribute_extended(entity_id, attribute, wrapper, immediate, oneshot)
