@@ -38,8 +38,7 @@ TStrOrInt = TypeVar("TStrOrInt", bound=int | str)
 
 
 class EmptyAppBase(AppBase[EmptyAppConfig]):
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
     async def initialize(self) -> None:
         raise NotImplementedError("EmptyAppBase Cannot be used")
@@ -261,10 +260,11 @@ class AppWrapper:
         ) -> None:
             try:
                 self.__callback_called(callback_id)
-                if inspect.iscoroutinefunction(callback):
-                    await callback(*args, **kwargs)
-                else:
-                    callback(*args, **kwargs)
+                result = callback(*args, **kwargs)
+
+                if inspect.isawaitable(result):
+                    await result
+
             except Exception:
                 self.__callback_failed(callback_id)
                 raise
