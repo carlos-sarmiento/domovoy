@@ -23,7 +23,7 @@ astral = "^3.2"
 aiohttp = "^3.10.5"
 strawberry-graphql = "^0.241.0"
 cron-converter = "^1.2.1"
-orjson = "^3.10.6"
+orjson = "^3.10.10"
 idna = "^3.7"
 
 [tool.poetry.group.dev.dependencies]
