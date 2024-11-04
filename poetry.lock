@@ -234,13 +234,13 @@ test = ["python-dateutil"]
 
 [[package]]
 name = "dataclass-wizard"
-version = "0.22.3"
+version = "0.25.0"
 description = "Marshal dataclasses to/from JSON. Use field properties with initial values. Construct a dataclass schema with JSON input."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dataclass-wizard-0.22.3.tar.gz", hash = "sha256:4c46591782265058f1148cfd1f54a3a91221e63986fdd04c9d59f4ced61f4424"},
-    {file = "dataclass_wizard-0.22.3-py2.py3-none-any.whl", hash = "sha256:63751203e54b9b9349212cc185331da73c1adc99c51312575eb73bb5c00c1962"},
+    {file = "dataclass-wizard-0.25.0.tar.gz", hash = "sha256:0524932a93e7b7667421d701c951df10226c93ae69b2481f82cff7a399946584"},
+    {file = "dataclass_wizard-0.25.0-py2.py3-none-any.whl", hash = "sha256:179fcbc047a0acd006a49967ed304d28fdcc7503eacd6adbd8f167cc24c6af6c"},
 ]
 
 [package.extras]
@@ -1026,4 +1026,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "b736141acd1f09a36e8bf905665cb38f01ff5406d90ca392f7ca836f72a5b12e"
+content-hash = "c969763185c895a1051fb74c0e7c388627bf94093a9a98769a63dae85cab6e20"
