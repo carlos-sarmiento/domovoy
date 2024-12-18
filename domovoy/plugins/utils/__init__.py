@@ -72,6 +72,10 @@ class UtilsPlugin(AppPlugin):
     def datetime_to_local_timezone(self, dt: datetime.datetime) -> datetime.datetime:
         return dt.astimezone(get_main_config().get_timezone())
 
+    def parse_timestamp_to_local_timezone(self, timestamp: float) -> datetime.datetime:
+        naive_dt = datetime.datetime.fromtimestamp(timestamp, tz=datetime.UTC)
+        return self.datetime_to_local_timezone(naive_dt)
+
     def now(self, *, tz: datetime.tzinfo | None = None) -> datetime.datetime:
         if tz is None:
             tz = get_main_config().get_timezone()
