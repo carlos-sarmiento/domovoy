@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
 from domovoy.core.configuration import get_main_config
+from domovoy.plugins.hass.domains import get_typestr_for_domain
 from domovoy.plugins.hass.parsing import encode_message
 from domovoy.plugins.hass.types import HassValueStrict
 
@@ -70,6 +71,41 @@ class HassSyntheticDomainsServiceCalls:
         return self.__defined_domains[name]
 
 
+def __generate_type_for_target(entity_details: list | dict) -> str:
+    if isinstance(entity_details, list):
+        entity_details = entity_details[0] if entity_details else {}
+    elif not isinstance(entity_details, dict):
+        entity_details = {}
+
+    domains: list[str] = entity_details.get("domain", None)
+
+    final_type = "EntityID"
+
+    if domains:
+        final_type = " | ".join([get_typestr_for_domain(x) for x in domains])
+
+    return f"{final_type} | Sequence[{final_type}]"
+
+
+def __generate_type_for_entity_selector(selector_details: dict | None) -> str:
+    internal_type = "EntityID"
+    multiple = True
+
+    if selector_details:
+        multiple: bool = selector_details.get("multiple", False)
+        domains = {get_typestr_for_domain(x["domain"]) for x in selector_details.get("filter", []) if "domain" in x}
+
+        if domains:
+            internal_type = " | ".join(domains)
+
+    typing = internal_type
+
+    if multiple:
+        typing += f" | Sequence[{internal_type}]"
+
+    return typing
+
+
 def generate_stub_file_for_synthetic_services(
     domains: dict[str, Any],
     destination: str,
@@ -102,7 +138,8 @@ def generate_stub_file_for_synthetic_services(
         text_file.write("from collections.abc import Sequence\n\n")
 
         text_file.write("from domovoy.plugins.hass import HassPlugin\n")
-        text_file.write("from domovoy.plugins.hass.types import EntityID\n\n")
+        text_file.write("from domovoy.plugins.hass.types import EntityID\n")
+        text_file.write("from domovoy.plugins.hass.domains import *\n\n")
 
         text_file.write("class HassSyntheticDomainsServiceCalls:\n")
         text_file.write(
@@ -127,7 +164,7 @@ def generate_stub_file_for_synthetic_services(
                 arguments: dict[str, str] = {}
 
                 if "target" in details and "entity" in details["target"]:
-                    arguments["entity_id"] = "EntityID | Sequence[EntityID]"
+                    arguments["entity_id"] = __generate_type_for_target(details["target"]["entity"])
 
                 if "fields" in details:
                     for field, field_params in details["fields"].items():
@@ -157,7 +194,10 @@ def generate_stub_file_for_synthetic_services(
                             if "datetime" in field_params["selector"]:
                                 typing += " | datetime"
                             if "entity" in field_params["selector"]:
-                                typing += " | EntityID | Sequence[EntityID]"
+                                typing += (
+                                    f" | {__generate_type_for_entity_selector( field_params["selector"]["entity"])}"
+                                )
+
                             if "select" in field_params["selector"]:
                                 typing += " | str"
 

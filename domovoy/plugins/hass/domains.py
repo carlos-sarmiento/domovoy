@@ -1,3 +1,6 @@
+import inspect
+import sys
+
 from .types import EntityID
 
 
@@ -119,3 +122,21 @@ class WeatherEntity(EntityID): ...
 
 
 class ZoneEntity(EntityID): ...
+
+
+__defined_classes = {
+    x[0]
+    for x in inspect.getmembers(
+        sys.modules[__name__],
+        lambda member: inspect.isclass(member) and member.__module__ == __name__,
+    )
+}
+
+
+def __to_camel_case(snake_str: str) -> str:
+    return "".join(x.capitalize() for x in snake_str.lower().split("_"))
+
+
+def get_typestr_for_domain(domain: str) -> str:
+    entity_class_name = f"{__to_camel_case(domain)}Entity"
+    return entity_class_name if entity_class_name in __defined_classes else "EntityID"

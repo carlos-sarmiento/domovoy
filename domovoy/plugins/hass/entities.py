@@ -1,16 +1,10 @@
 import datetime
-import inspect
 from io import StringIO
 from pathlib import Path
 
 from domovoy.core.configuration import get_main_config
-from domovoy.plugins.hass import domains as defined_domains_cls
+from domovoy.plugins.hass.domains import get_typestr_for_domain
 from domovoy.plugins.hass.types import EntityID
-
-defined_domain_classes = set()
-for name, obj in inspect.getmembers(defined_domains_cls):
-    if inspect.isclass(obj):
-        defined_domain_classes.add(name)
 
 
 class HassSyntheticDomain:
@@ -98,8 +92,7 @@ def __build_class_hierarchy(
             f"class HassSynthetic{__to_camel_case(domain)}Domain:\n",
         )
 
-        entity_class_name = f"{__to_camel_case(domain)}Entity"
-        return_type_for_domain = entity_class_name if entity_class_name in defined_domain_classes else return_type
+        return_type_for_domain = get_typestr_for_domain(domain)
 
         for entity_base in sorted(entities):
             field_name = entity_base
