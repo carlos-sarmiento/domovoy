@@ -99,10 +99,10 @@ def generate_stub_file_for_synthetic_services(
         text_file.write("from __future__ import annotations\n")
         text_file.write("from typing import Any\n")
         text_file.write("from datetime import datetime\n")
-        text_file.write("from domovoy.plugins.hass import HassPlugin\n")
-        text_file.write("from domovoy.plugins.hass.types import EntityID\n")
+        text_file.write("from collections.abc import Sequence\n\n")
 
-        text_file.write("\n\n")
+        text_file.write("from domovoy.plugins.hass import HassPlugin\n")
+        text_file.write("from domovoy.plugins.hass.types import EntityID\n\n")
 
         text_file.write("class HassSyntheticDomainsServiceCalls:\n")
         text_file.write(
@@ -127,7 +127,7 @@ def generate_stub_file_for_synthetic_services(
                 arguments: dict[str, str] = {}
 
                 if "target" in details and "entity" in details["target"]:
-                    arguments["entity_id"] = "EntityID | list[EntityID]"
+                    arguments["entity_id"] = "EntityID | Sequence[EntityID]"
 
                 if "fields" in details:
                     for field, field_params in details["fields"].items():
@@ -157,12 +157,12 @@ def generate_stub_file_for_synthetic_services(
                             if "datetime" in field_params["selector"]:
                                 typing += " | datetime"
                             if "entity" in field_params["selector"]:
-                                typing += " | EntityID | list[EntityID]"
+                                typing += " | EntityID | Sequence[EntityID]"
                             if "select" in field_params["selector"]:
                                 typing += " | str"
 
                         elif field.endswith("_id"):
-                            typing = "EntityID | list[EntityID] | str | list[str]"
+                            typing = "EntityID | Sequence[EntityID] | str | Sequence[str]"
 
                         if "required" not in field_params or not field_params["required"]:
                             typing += " | None = None"

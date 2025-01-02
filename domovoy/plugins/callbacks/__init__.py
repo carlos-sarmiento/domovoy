@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import inspect
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from typing import TYPE_CHECKING, Any, Concatenate, Literal, ParamSpec, TypeVar
 
 from astral.location import Location
@@ -125,7 +125,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_state(
         self,
-        entity_id: EntityID | list[EntityID],
+        entity_id: EntityID | Sequence[EntityID],
         callback: EntityListenerCallback,
         *,
         immediate: bool = False,
@@ -135,7 +135,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_attribute(
         self,
-        entity_id: EntityID | list[EntityID],
+        entity_id: EntityID | Sequence[EntityID],
         attribute: str,
         callback: EntityListenerCallback,
         *,
@@ -188,7 +188,7 @@ class CallbacksPlugin(AppPlugin):
 
     def listen_attribute_extended(
         self,
-        entity_id: EntityID | list[EntityID],
+        entity_id: EntityID | Sequence[EntityID],
         attribute: str,
         callback: Callable[
             Concatenate[EntityID, str, HassValue, HassValue, P],
@@ -201,7 +201,7 @@ class CallbacksPlugin(AppPlugin):
     ) -> list[str]:
         context_logger.set(self._wrapper.logger)
         target_entity_id = entity_id
-        if not isinstance(target_entity_id, list):
+        if not isinstance(target_entity_id, Sequence):
             target_entity_id = [target_entity_id]
 
         for eid in target_entity_id:
@@ -628,8 +628,8 @@ class CallbacksPlugin(AppPlugin):
         )
 
 
-def wrap_entity_id_as_list(val: EntityID | list[EntityID]) -> list[EntityID]:
-    if not isinstance(val, list):
-        return [val]
+def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> list[EntityID]:
+    if isinstance(val, Sequence):
+        return list(val)
 
-    return val
+    return [val]
