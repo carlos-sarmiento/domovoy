@@ -124,8 +124,8 @@ class WeatherEntity(EntityID): ...
 class ZoneEntity(EntityID): ...
 
 
-__defined_classes = {
-    x[0]
+__defined_classes: dict[str, type[EntityID]] = {
+    x[0]: x[1]
     for x in inspect.getmembers(
         sys.modules[__name__],
         lambda member: inspect.isclass(member) and member.__module__ == __name__,
@@ -140,3 +140,8 @@ def __to_camel_case(snake_str: str) -> str:
 def get_typestr_for_domain(domain: str) -> str:
     entity_class_name = f"{__to_camel_case(domain)}Entity"
     return entity_class_name if entity_class_name in __defined_classes else "EntityID"
+
+
+def get_type_for_domain(domain: str) -> type[EntityID]:
+    entity_class_name = f"{__to_camel_case(domain)}Entity"
+    return __defined_classes.get(entity_class_name, EntityID)
