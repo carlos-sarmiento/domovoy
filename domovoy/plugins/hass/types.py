@@ -4,17 +4,27 @@ import datetime
 from typing import Union
 from warnings import deprecated
 
+from domovoy.core.logging import get_logger
+from domovoy.plugins.hass.domains import get_type_for_domain
+
+_logcore = get_logger(__name__)
+
 
 class EntityID:
-    def __init__(self, entity_id: str) -> None:
+    def __init__(self, entity_id: str | EntityID) -> None:
         if isinstance(entity_id, EntityID):
-            entity_id = str(entity_id)
+            self._entity_id = entity_id._entity_id  # noqa: SLF001
+            self._domain = entity_id._domain  # noqa: SLF001
+            self._entity_name: str = entity_id._entity_name  # noqa: SLF001
+        else:
+            self._entity_id: str = entity_id
+            split = entity_id.split(".")
 
-        self._entity_id: str = entity_id
-        split = entity_id.split(".")
+            self._domain = split[0]
+            self._entity_name = split[1]
 
-        self._domain = split[0]
-        self._entity_name = split[1]
+        if self.__class__ != get_type_for_domain(self._domain):
+            _logcore.warning("Created an Entity instance with the wrong domain: {entity}", entity=self)
 
     def __str__(self) -> str:
         return self._entity_id
