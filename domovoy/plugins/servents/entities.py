@@ -1,10 +1,19 @@
 import datetime
-from typing import Any
+from abc import ABC
+from typing import Any, Generic, TypeVar
 
 from domovoy.core.errors import DomovoyError
 from domovoy.core.utils import parse_state
 from domovoy.plugins.hass import HassPlugin
 from domovoy.plugins.hass.core import EntityState
+from domovoy.plugins.hass.domains import (
+    BinarySensorEntity,
+    ButtonEntity,
+    NumberEntity,
+    SelectEntity,
+    SensorEntity,
+    SwitchEntity,
+)
 from domovoy.plugins.hass.types import EntityID, HassData, HassValue
 
 from .entity_configs import (
@@ -21,8 +30,10 @@ from .entity_configs import (
 from .enums import EntityType
 from .exceptions import ServentMissingRegistrationError
 
+T = TypeVar("T", bound=EntityID)
 
-class ServEntEntity:
+
+class ServEntEntity(ABC, Generic[T]):
     def __init__(
         self,
         hass: HassPlugin,
@@ -30,6 +41,7 @@ class ServEntEntity:
         servent_id: str,
         config: ServEntEntityConfig,
         device_config: ServEntDeviceConfig,
+        entity_id_type: type[T],
     ) -> None:
         self.name = "ServEntEntity"
         self.__hass = hass
@@ -37,6 +49,7 @@ class ServEntEntity:
         self.id = servent_id
         self.entity_config = config
         self.device_config = device_config
+        self.entity_id_type = entity_id_type
 
     async def set_to(self, state: HassValue, attributes: dict[str, object] | None = None) -> None:
         if attributes is not None and not isinstance(attributes, dict):
@@ -48,14 +61,14 @@ class ServEntEntity:
             attributes=attributes or {},  # type: ignore
         )
 
-    def get_entity_id(self) -> EntityID:
+    def get_entity_id(self) -> T:
         entity_id = self.__hass.get_entity_id_by_attribute(
             "servent_id",
             self.entity_config.servent_id,
         )
 
         if entity_id:
-            return entity_id[0]
+            return self.entity_id_type(str(entity_id[0]))
 
         raise ServentMissingRegistrationError(
             "Servent Entity hasn't been registered in the system. Check if it has been disabled in HA",
@@ -76,7 +89,7 @@ class ServEntEntity:
         return full_state.attributes
 
     def get_full_state(self) -> EntityState:
-        entity_id = self.get_entity_id()
+        entity_id: EntityID = self.get_entity_id()
 
         if entity_id:
             full_state = self.__hass.get_full_state(entity_id)
@@ -89,7 +102,7 @@ class ServEntEntity:
         )
 
 
-class ServEntSensor(ServEntEntity):
+class ServEntSensor(ServEntEntity[SensorEntity]):
     def __init__(
         self,
         hass: HassPlugin,
@@ -97,7 +110,7 @@ class ServEntSensor(ServEntEntity):
         config: ServEntSensorConfig,
         device_config: ServEntDeviceConfig,
     ) -> None:
-        super().__init__(hass, EntityType.SENSOR, servent_id, config, device_config)
+        super().__init__(hass, EntityType.SENSOR, servent_id, config, device_config, SensorEntity)
 
     async def set_to(  # type: ignore
         self,
@@ -113,7 +126,7 @@ class ServEntSensor(ServEntEntity):
         return parse_state(super().get_state())
 
 
-class ServEntThresholdBinarySensor(ServEntEntity):
+class ServEntThresholdBinarySensor(ServEntEntity[BinarySensorEntity]):
     def __init__(
         self,
         hass: HassPlugin,
@@ -127,6 +140,7 @@ class ServEntThresholdBinarySensor(ServEntEntity):
             servent_id,
             config,
             device_config,
+            BinarySensorEntity,
         )
 
     async def set_to(self, _state: bool, _attributes: dict | None = None) -> None:  # type: ignore # noqa: FBT001
@@ -143,7 +157,7 @@ class ServEntThresholdBinarySensor(ServEntEntity):
         return None
 
 
-class ServEntBinarySensor(ServEntEntity):
+class ServEntBinarySensor(ServEntEntity[BinarySensorEntity]):
     def __init__(
         self,
         hass: HassPlugin,
@@ -157,6 +171,7 @@ class ServEntBinarySensor(ServEntEntity):
             servent_id,
             config,
             device_config,
+            BinarySensorEntity,
         )
 
     async def set_on(self, attributes: dict | None = None) -> None:
@@ -179,7 +194,7 @@ class ServEntBinarySensor(ServEntEntity):
         return None
 
 
-class ServEntSwitch(ServEntEntity):
+class ServEntSwitch(ServEntEntity[SwitchEntity]):
     def __init__(
         self,
         hass: HassPlugin,
@@ -187,7 +202,7 @@ class ServEntSwitch(ServEntEntity):
         config: ServEntSwitchConfig,
         device_config: ServEntDeviceConfig,
     ) -> None:
-        super().__init__(hass, EntityType.SWITCH, servent_id, config, device_config)
+        super().__init__(hass, EntityType.SWITCH, servent_id, config, device_config, SwitchEntity)
 
     async def set_on(self, attributes: dict | None = None) -> None:
         return await super().set_to(state=True, attributes=attributes)
@@ -214,7 +229,7 @@ class ServEntSwitch(ServEntEntity):
         return self.get_state() is False
 
 
-class ServEntNumber(ServEntEntity):
+class ServEntNumber(ServEntEntity[NumberEntity]):
     def __init__(
         self,
         hass: HassPlugin,
@@ -222,7 +237,7 @@ class ServEntNumber(ServEntEntity):
         config: ServEntNumberConfig,
         device_config: ServEntDeviceConfig,
     ) -> None:
-        super().__init__(hass, EntityType.NUMBER, servent_id, config, device_config)
+        super().__init__(hass, EntityType.NUMBER, servent_id, config, device_config, NumberEntity)
 
     async def set_to(self, state: float, attributes: dict | None = None) -> None:  # type: ignore
         return await super().set_to(state, attributes)
@@ -236,7 +251,7 @@ class ServEntNumber(ServEntEntity):
         return state
 
 
-class ServEntSelect(ServEntEntity):
+class ServEntSelect(ServEntEntity[SelectEntity]):
     def __init__(
         self,
         hass: HassPlugin,
@@ -244,7 +259,7 @@ class ServEntSelect(ServEntEntity):
         config: ServEntSelectConfig,
         device_config: ServEntDeviceConfig,
     ) -> None:
-        super().__init__(hass, EntityType.SELECT, servent_id, config, device_config)
+        super().__init__(hass, EntityType.SELECT, servent_id, config, device_config, SelectEntity)
 
     async def set_to(  # type: ignore
         self,
@@ -254,7 +269,7 @@ class ServEntSelect(ServEntEntity):
         return await super().set_to(state, attributes)
 
 
-class ServEntButton(ServEntEntity):
+class ServEntButton(ServEntEntity[ButtonEntity]):
     def __init__(
         self,
         hass: HassPlugin,
@@ -262,4 +277,4 @@ class ServEntButton(ServEntEntity):
         config: ServEntButtonConfig,
         device_config: ServEntDeviceConfig,
     ) -> None:
-        super().__init__(hass, EntityType.BUTTON, servent_id, config, device_config)
+        super().__init__(hass, EntityType.BUTTON, servent_id, config, device_config, ButtonEntity)
