@@ -25,6 +25,7 @@ from domovoy.core.utils import (
 from domovoy.plugins import hass
 from domovoy.plugins.callbacks.entity_listener_callbacks import EntityListenerCallback
 from domovoy.plugins.callbacks.event_listener_callbacks import EventListenerCallback
+from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
 from domovoy.plugins.hass.types import EntityID, HassValue
 from domovoy.plugins.plugins import AppPlugin
 
@@ -221,7 +222,7 @@ class CallbacksPlugin(AppPlugin):
             event_data: dict[str, Any],
         ) -> None:
             context_logger.set(self._wrapper.logger)
-            event_entity_id = EntityID(event_data["entity_id"])
+            event_entity_id = get_type_instance_for_entity_id(event_data["entity_id"])
 
             if event_entity_id not in target_entity_id:
                 self._wrapper.logger.warning(

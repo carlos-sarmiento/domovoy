@@ -5,6 +5,7 @@ from typing import Any
 from domovoy.app import stop_domovoy
 from domovoy.applications import AppBase, AppConfigBase, EmptyAppConfig
 from domovoy.applications.types import Interval
+from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
 from domovoy.plugins.hass.types import EntityID
 from domovoy.plugins.servents.enums import ButtonDeviceClass, EntityCategory
 
@@ -73,7 +74,7 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
         self.log.info("Updating Home Assitant Entities Stub File")
         Path(self.config.stub_path).parent.mkdir(parents=True, exist_ok=True)
 
-        platforms: dict[str, set[str]] = {}
+        domains: dict[str, set[str]] = {}
 
         for entity_id in entity_ids:
             if isinstance(entity_id, str):
@@ -81,20 +82,20 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
                     "Detected an string in a list that should only contain EntityIDs: '{entity_id}'",
                     entity_id=entity_id,
                 )
-                entity_id = EntityID(entity_id)  # noqa: PLW2901
+                entity_id = get_type_instance_for_entity_id(entity_id)  # noqa: PLW2901
 
-            platform = entity_id.get_platform()
+            domain = entity_id.get_domain()
             entity = entity_id.get_entity_name()
 
-            if platform not in platforms:
-                platforms[platform] = set()
+            if domain not in domains:
+                domains[domain] = set()
 
-            platforms[platform].add(entity)
+            domains[domain].add(entity)
 
         self.__registered_entities = entity_ids
 
         generate_stub_file_for_synthetic_entities(
-            platforms,
+            domains,
             self.config.stub_path,
         )
 

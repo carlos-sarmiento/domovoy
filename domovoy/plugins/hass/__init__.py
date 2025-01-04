@@ -10,6 +10,7 @@ from domovoy.core.app_infra import AppWrapper
 from domovoy.core.context import context_callback_id, context_logger
 from domovoy.core.logging import get_logger
 from domovoy.plugins import callbacks
+from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
 
@@ -54,7 +55,7 @@ class HassPlugin(AppPlugin):
 
     def get_full_state(self, entity_id: EntityID) -> EntityState:
         if isinstance(entity_id, str):
-            entity_id = EntityID(entity_id)
+            entity_id = get_type_instance_for_entity_id(entity_id)
 
         entity_state = self.__hass.get_state(entity_id)
 
@@ -187,7 +188,7 @@ class HassPlugin(AppPlugin):
             kwargs.pop("domovoy_drop_target")
 
         if "service_data_entity_id" in kwargs:
-            val = EntityID(str(kwargs["service_data_entity_id"]))
+            val = get_type_instance_for_entity_id(str(kwargs["service_data_entity_id"]))
             kwargs.pop("service_data_entity_id")
             self.warn_if_entity_doesnt_exists(val if val else None)
             kwargs["entity_id"] = val

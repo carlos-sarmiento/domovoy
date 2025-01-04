@@ -11,6 +11,7 @@ from domovoy.core.logging import get_logger
 from domovoy.core.services.event_listener import EventListener
 from domovoy.core.services.service import DomovoyService, DomovoyServiceResources
 from domovoy.core.task_utils import run_and_forget_task
+from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
 
 from .api import HassApiConnectionState, HassWebsocketApi
 from .exceptions import HassApiCommandError
@@ -34,7 +35,7 @@ class EntityState:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> EntityState:
         return EntityState(
-            entity_id=EntityID(data["entity_id"]),
+            entity_id=get_type_instance_for_entity_id(data["entity_id"]),
             state=data["state"],
             last_changed=data["last_changed"],
             last_updated=data["last_updated"],
@@ -180,7 +181,7 @@ class HassCore(DomovoyService):
         starting_states = await self.__hass_api.get_states()
 
         for state in starting_states:
-            entity_id = EntityID(state["entity_id"])  # type: ignore
+            entity_id = get_type_instance_for_entity_id(state["entity_id"])  # type: ignore
             # We need to validate this is later than what we already have
             self.__update_entity_state_cache(entity_id, EntityState.from_dict(state))
 
@@ -254,7 +255,7 @@ class HassCore(DomovoyService):
         await self.__event_publisher.publish_event(event_type, event_data)
 
     async def __process_state_changed(self, event_data: dict[str, HassData]) -> None:
-        entity_id = EntityID(str(event_data["entity_id"]))
+        entity_id = get_type_instance_for_entity_id(str(event_data["entity_id"]))
 
         if event_data.get("new_state") is None:
             _logcore.debug(
@@ -289,7 +290,7 @@ class HassCore(DomovoyService):
     def __update_entity_state_cache(self, entity_id: EntityID, entity_data: EntityState) -> None:
         if isinstance(entity_id, str):
             _logcore.warning("Tried to register a string as an EntityID: '{entity_id}'", entity_id=entity_id)
-            entity_id = EntityID(entity_id)
+            entity_id = get_type_instance_for_entity_id(entity_id)
 
         self.__entity_state_cache[entity_id] = entity_data
         self.__entity_state_set.add(entity_id)
