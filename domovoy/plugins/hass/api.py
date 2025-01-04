@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum
 
 import websockets.frames
-from websockets.client import WebSocketClientProtocol, connect
+from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 from domovoy.core.logging import get_logger
@@ -47,8 +47,8 @@ class HassWebsocketApi:
     ]
     __event_callbacks: dict[int, EventListenerCallable | TriggerListenerCallable]
     __current_op_id = 2
-    __msg_receive_task: asyncio.Task[None]
-    __msg_send_task: asyncio.Task[None]
+    __msg_receive_task: asyncio.Task[None] | None = None
+    __msg_send_task: asyncio.Task[None] | None = None
     __is_running: bool = False
     __uri: str = ""
     __access_token: str
@@ -163,6 +163,7 @@ class HassWebsocketApi:
                 future.set_exception(e)
 
         except ConnectionClosed as e:
+            _logcore.critical(e)
             _logcore.info("Disconnected from Home Assistant Websocket API")
 
             if not self.__is_running:
@@ -192,13 +193,13 @@ class HassWebsocketApi:
         _logcore.info("Stopping Home Assistant API")
 
         self.__is_running = False
-        if not self.__msg_receive_task.cancelled():
+        if self.__msg_receive_task and not self.__msg_receive_task.cancelled():
             self.__msg_receive_task.cancel()
 
-        if not self.__msg_send_task.cancelled():
+        if self.__msg_send_task and not self.__msg_send_task.cancelled():
             self.__msg_send_task.cancel()
 
-    async def hass_message_receiver(self, websocket: WebSocketClientProtocol) -> None:
+    async def hass_message_receiver(self, websocket: ClientConnection) -> None:
         try:
             async for message_raw in websocket:
                 message = parse_message(message_raw, parse_datetimes=self.__parse_datetimes)
@@ -330,7 +331,7 @@ class HassWebsocketApi:
             _logcore.exception("Failure on Hass API Receiver:", e)
             return
 
-    async def producer_handler(self, websocket: WebSocketClientProtocol) -> None:
+    async def producer_handler(self, websocket: ClientConnection) -> None:
         try:
             while True:
                 while len(self.__cmd_queue) > 0:
@@ -339,7 +340,7 @@ class HassWebsocketApi:
                     try:
                         encoded_message = encode_message(message)
                         _logcore.debug("Sending message to hass")
-                        await websocket.send(encoded_message)
+                        await websocket.send(encoded_message, text=True)
                     except HassApiParseError as e:
                         (cmd, future) = self.__in_flight_ops[message_id]
                         self.__in_flight_ops.pop(message_id)
@@ -364,7 +365,7 @@ class HassWebsocketApi:
 
     async def __authenticate(
         self,
-        websocket: WebSocketClientProtocol,
+        websocket: ClientConnection,
         access_token: str,
     ) -> None:
         _logcore.info("Authenticating with Home Assistant")
@@ -382,6 +383,7 @@ class HassWebsocketApi:
 
         await websocket.send(
             encode_message({"type": "auth", "access_token": access_token}),
+            text=True,
         )
 
         auth_response = await websocket.recv()
@@ -561,7 +563,7 @@ class HassWebsocketApi:
             cmd["service_data"] = service_data
 
         if entity_id is not None:
-            cmd["target"] = {"entity_id": entity_id} # type: ignore
+            cmd["target"] = {"entity_id": entity_id}  # type: ignore
 
         response = await self.__send_command(cmd)
 

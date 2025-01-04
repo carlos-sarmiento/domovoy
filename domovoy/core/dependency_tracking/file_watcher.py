@@ -51,17 +51,17 @@ class ReloadPythonFileWatcher(FileSystemEventHandler):
 
     def on_moved(self, event: FileMovedEvent) -> None:  # type: ignore
         super().on_moved(event)
-        self.__process_event(event.src_path, is_deletion=True)
-        self.__process_event(event.dest_path, is_deletion=False)
+        self.__process_event(str(event.src_path), is_deletion=True)
+        self.__process_event(str(event.dest_path), is_deletion=False)
 
     def on_created(self, event: FileCreatedEvent) -> None:  # type: ignore
         super().on_created(event)
-        self.__process_event(event.src_path, is_deletion=False)
+        self.__process_event(str(event.src_path), is_deletion=False)
 
     def on_deleted(self, event: FileDeletedEvent) -> None:  # type: ignore
         super().on_deleted(event)
-        self.__process_event(event.src_path, is_deletion=True)
+        self.__process_event(str(event.src_path), is_deletion=True)
 
     def on_modified(self, event: FileModifiedEvent) -> None:  # type: ignore
         super().on_modified(event)
-        self.__process_event(event.src_path, is_deletion=False)
+        self.__process_event(str(event.src_path), is_deletion=False)
