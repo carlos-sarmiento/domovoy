@@ -5,7 +5,6 @@ from collections import deque
 from collections.abc import Awaitable, Callable
 from enum import StrEnum
 
-import websockets.frames
 from websockets.asyncio.client import ClientConnection, connect
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
@@ -19,12 +18,6 @@ from .exceptions import (
 )
 from .parsing import encode_message, parse_message
 from .types import EntityID, HassData
-
-# Horrible hack to not have to encode the json output of orjson into unicode only
-# to have it decoded again.
-# Home assistant only accepts text frames and websockets doesn't offer the capability
-# to pass a text frame as bytes yet
-websockets.frames.OP_BINARY = websockets.frames.OP_TEXT
 
 _logcore = get_logger(__name__)
 _messages_logcore = get_logger(f"{__name__}.messages")
