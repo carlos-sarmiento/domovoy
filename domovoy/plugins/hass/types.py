@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 from typing import Union
+from warnings import deprecated
 
 
 class EntityID:
@@ -12,14 +13,14 @@ class EntityID:
         self._entity_id: str = entity_id
         split = entity_id.split(".")
 
-        self._platform = split[0]
+        self._domain = split[0]
         self._entity_name = split[1]
 
     def __str__(self) -> str:
         return self._entity_id
 
     def __repr__(self) -> str:
-        return f"HassEntity('{self._entity_id}')"
+        return f"{self.__class__.__name__}('{self._entity_id}')"
 
     def __hash__(self) -> int:
         return self._entity_id.__hash__()
@@ -27,8 +28,12 @@ class EntityID:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, EntityID) and self.__hash__() == other.__hash__()
 
+    @deprecated("use get_domain instead")
     def get_platform(self) -> str:
-        return self._platform
+        return self._domain
+
+    def get_domain(self) -> str:
+        return self._domain
 
     def get_entity_name(self) -> str:
         return self._entity_name
