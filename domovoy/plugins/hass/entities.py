@@ -3,7 +3,7 @@ from io import StringIO
 from pathlib import Path
 
 from domovoy.core.configuration import get_main_config
-from domovoy.plugins.hass.domains import get_typestr_for_domain
+from domovoy.plugins.hass.domains import get_type_for_domain, get_typestr_for_domain
 from domovoy.plugins.hass.types import EntityID
 
 
@@ -17,7 +17,7 @@ class HassSyntheticDomain:
         entity = entity.removeprefix("_")
         entity_id = f"{self.__domain}.{entity}"
 
-        return EntityID(entity_id)
+        return get_type_for_domain(self.__domain)(entity_id)
 
 
 class HassSyntheticDomains:
@@ -35,7 +35,7 @@ class HassSyntheticDomains:
         return self.__defined_domains[name]
 
     def __call__(self, entity_id: str) -> EntityID:
-        return EntityID(entity_id)
+        return get_type_for_domain(EntityID(entity_id).get_platform())(entity_id)
 
 
 entities = HassSyntheticDomains()
