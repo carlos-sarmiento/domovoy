@@ -23,6 +23,9 @@ class HassApiConnectionError(HassError, DomovoyLogOnlyOnDebugWhenUncaughtError):
 class HassApiConnectionResetError(HassApiConnectionError): ...
 
 
+class HassApiInvalidValueError(HassError): ...
+
+
 class HassUnknownEntityError(HassError):
     def __init__(self, entity_id: EntityID) -> None:
         super().__init__(f"Entity ID: {entity_id} was not found.")
