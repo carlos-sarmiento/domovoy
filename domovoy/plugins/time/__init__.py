@@ -1,8 +1,5 @@
 import asyncio
 import datetime
-from collections.abc import Awaitable, Callable
-from typing import ParamSpec, TypeVar
-from warnings import deprecated
 
 import pytz
 from dateutil.parser import parse
@@ -10,71 +7,19 @@ from dateutil.parser import parse
 from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppWrapper
 from domovoy.core.configuration import get_main_config
-from domovoy.core.utils import as_float, as_int, get_callback_name
 from domovoy.plugins.plugins import AppPlugin
 
-TFloat = TypeVar("TFloat", bound=float | None)
-TInt = TypeVar("TInt", bound=float | None)
 
-P = ParamSpec("P")
-T = TypeVar("T")
-
-
-class UtilsPlugin(AppPlugin):
+class TimePlugin(AppPlugin):
     def __init__(self, name: str, wrapper: AppWrapper) -> None:
         super().__init__(name, wrapper)
 
-    def parse_float(self, val: object, default: TFloat = None) -> float | TFloat:
-        return as_float(val, default)  # type: ignore
-
-    def parse_int(self, val: object, default: TInt = None) -> int | TInt:
-        return as_int(val, default)  # type: ignore
-
-    def parse_int_or_float(self, val: object) -> int | float | None:
-        as_int = self.parse_int(val)
-        if as_int is not None:
-            return as_int
-
-        as_float = self.parse_float(val)
-        if as_float is not None:
-            return as_float
-
-        return None
-
-    def run_async(
-        self,
-        callback: Callable[P, Awaitable[T]],
-        *args: P.args,
-        **kwargs: P.kwargs,
-    ) -> asyncio.Task[T]:
-        async def callback_wrapper() -> T:
-            return await callback(*args, **kwargs)
-
-        return asyncio.get_event_loop().create_task(
-            callback_wrapper(),
-            name=get_callback_name(callback),
-        )
-
-    def run_in_executor(
-        self,
-        callback: Callable[P, T],
-        *args: P.args,
-        **kwargs: P.kwargs,
-    ) -> asyncio.Future[T]:
-        def callback_wrapper() -> T:
-            return callback(*args, **kwargs)
-
-        return asyncio.get_event_loop().run_in_executor(None, callback_wrapper)
-
-    @deprecated("use time plugin")
     async def sleep_for(self, interval: Interval) -> None:
         await asyncio.sleep(interval.total_seconds())
 
-    @deprecated("use time plugin")
     def parse_date(self, string: str) -> datetime.datetime:
         return parse(string)
 
-    @deprecated("use time plugin")
     def timedelta_from_now(
         self,
         date: datetime.datetime | str,
@@ -98,43 +43,35 @@ class UtilsPlugin(AppPlugin):
 
         return now - date
 
-    @deprecated("use time plugin")
     def datetime_to_local_timezone(self, dt: datetime.datetime) -> datetime.datetime:
         return dt.astimezone(get_main_config().get_timezone())
 
-    @deprecated("use time plugin")
     def parse_timestamp_to_local_timezone(self, timestamp: float) -> datetime.datetime:
         naive_dt = datetime.datetime.fromtimestamp(timestamp, tz=datetime.UTC)
         return self.datetime_to_local_timezone(naive_dt)
 
-    @deprecated("use time plugin")
     def now(self, *, tz: datetime.tzinfo | None = None) -> datetime.datetime:
         if tz is None:
             tz = get_main_config().get_timezone()
         return datetime.datetime.now(tz=tz)
 
-    @deprecated("use time plugin")
     def today(self, *, tz: datetime.tzinfo | None = None) -> datetime.date:
         return self.now(tz=tz).date()
 
-    @deprecated("use time plugin")
     def make_datetime_aware(self, *, dt: datetime.datetime, tz: datetime.tzinfo | None = None) -> datetime.datetime:
         if tz is None:
             tz = get_main_config().get_timezone()
 
         return dt.replace(tzinfo=tz)
 
-    @deprecated("use time plugin")
     def is_datetime_aware(self, dt: datetime.datetime) -> bool:
         return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
-    @deprecated("use time plugin")
     def is_now_between_dawn_and_dusk(self) -> bool:
         return self.is_between_dawn_and_dusk(
             datetime.datetime.now(tz=get_main_config().get_timezone()),
         )
 
-    @deprecated("use time plugin")
     def is_between_dawn_and_dusk(self, dt: datetime.datetime) -> bool:
         astral_location = get_main_config().get_astral_location()
 

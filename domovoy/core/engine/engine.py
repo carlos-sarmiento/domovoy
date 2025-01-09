@@ -33,6 +33,7 @@ from domovoy.plugins.hass.core import HassCore
 from domovoy.plugins.logger import LoggerPlugin
 from domovoy.plugins.meta import MetaPlugin
 from domovoy.plugins.servents import ServentsPlugin
+from domovoy.plugins.time import TimePlugin
 from domovoy.plugins.utils import UtilsPlugin
 
 _logcore = get_logger(__name__)
@@ -215,6 +216,9 @@ class AppEngine:
         utils = UtilsPlugin("utils", wrapper)
         wrapper.register_plugin(utils, utils.name)
 
+        time = TimePlugin("time", wrapper)
+        wrapper.register_plugin(time, time.name)
+
         _logcore.debug(
             "Preparing all plugins for app {app_name}",
             app_name=app_registration.app_name,
@@ -234,6 +238,7 @@ class AppEngine:
             hass,
             servents,
             utils,
+            time,
         )
 
         self.__active_apps[app_registration.app_path].append(wrapper)
