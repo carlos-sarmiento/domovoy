@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from domovoy.plugins.logger import LoggerPlugin
     from domovoy.plugins.meta import MetaPlugin
     from domovoy.plugins.servents import ServentsPlugin
+    from domovoy.plugins.time import TimePlugin
     from domovoy.plugins.utils import UtilsPlugin
 
 
@@ -29,6 +30,7 @@ class AppBaseWithoutConfig:
     servents: ServentsPlugin
     log: LoggerPlugin
     utils: UtilsPlugin
+    time: TimePlugin
 
     def __init__(
         self,
@@ -38,6 +40,7 @@ class AppBaseWithoutConfig:
         hass: HassPlugin,
         servents: ServentsPlugin,
         utils: UtilsPlugin,
+        time: TimePlugin,
     ) -> None:
         self.hass = hass
         self.callbacks = scheduler
@@ -45,6 +48,7 @@ class AppBaseWithoutConfig:
         self.meta = meta
         self.log = log
         self.utils = utils
+        self.time = time
 
     async def initialize(self) -> None:
         """Initialize the App when it is started.
@@ -73,8 +77,9 @@ class AppBase(Generic[TConfig], AppBaseWithoutConfig):
         hass: HassPlugin,
         servents: ServentsPlugin,
         utils: UtilsPlugin,
+        time: TimePlugin,
     ) -> None:
-        super().__init__(meta, log, scheduler, hass, servents, utils)
+        super().__init__(meta, log, scheduler, hass, servents, utils, time)
         self.config = config
 
     async def initialize(self) -> None:
