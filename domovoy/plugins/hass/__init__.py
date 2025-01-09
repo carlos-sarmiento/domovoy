@@ -17,7 +17,7 @@ from domovoy.plugins.plugins import AppPlugin
 from .core import EntityState, HassCore
 from .exceptions import HassApiCommandError
 from .synthetic import HassSyntheticDomainsServiceCalls
-from .types import EntityID, HassData, HassValue, HassValueStrict
+from .types import EntityID, HassData, HassValue, PrimitiveHassValue
 
 P = ParamSpec("P")
 
@@ -49,7 +49,7 @@ class HassPlugin(AppPlugin):
         super().prepare()
         self.__callbacks = self._wrapper.get_pluginx(callbacks.CallbacksPlugin)
 
-    def get_state(self, entity_id: EntityID) -> HassValueStrict:
+    def get_state(self, entity_id: EntityID) -> PrimitiveHassValue:
         full_state = self.get_full_state(entity_id)
         return full_state.state
 
