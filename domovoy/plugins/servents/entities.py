@@ -14,7 +14,8 @@ from domovoy.plugins.hass.domains import (
     SensorEntity,
     SwitchEntity,
 )
-from domovoy.plugins.hass.types import EntityID, HassData, HassValue
+from domovoy.plugins.hass.exceptions import HassApiInvalidValueError
+from domovoy.plugins.hass.types import EntityID, HassData, HassValue, HassValueStrict
 
 from .entity_configs import (
     ServEntBinarySensorConfig,
@@ -74,10 +75,10 @@ class ServEntEntity(ABC, Generic[T]):
             "Servent Entity hasn't been registered in the system. Check if it has been disabled in HA",
         )
 
-    def get_state(self) -> str:
+    def get_state(self) -> HassValueStrict:
         return self.get_raw_state()
 
-    def get_raw_state(self) -> str:
+    def get_raw_state(self) -> HassValueStrict:
         try:
             full_state = self.get_full_state()
             return full_state.state
@@ -123,7 +124,16 @@ class ServEntSensor(ServEntEntity[SensorEntity]):
         return await super().set_to(state, attributes or {})
 
     def get_state(self) -> float | int | str | datetime.datetime:  # type: ignore
-        return parse_state(super().get_state())
+        state = super().get_state()
+
+        if isinstance(state, str):
+            state = parse_state(state)
+
+        elif not isinstance(state, float | int | str | datetime.datetime):
+            msg = f"State of type `{type(state)}` is not valid for a ServentSensor Entity"
+            raise HassApiInvalidValueError(msg)
+
+        return state
 
 
 class ServEntThresholdBinarySensor(ServEntEntity[BinarySensorEntity]):
@@ -243,9 +253,9 @@ class ServEntNumber(ServEntEntity[NumberEntity]):
         return await super().set_to(state, attributes)
 
     def get_state(self) -> float | int | None:  # type: ignore
-        state = parse_state(super().get_state())
+        state = super().get_state()
 
-        if isinstance(state, str):
+        if not isinstance(state, float | int):
             return None
 
         return state

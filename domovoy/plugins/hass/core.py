@@ -15,7 +15,7 @@ from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
 
 from .api import HassApiConnectionState, HassWebsocketApi
 from .exceptions import HassApiCommandError
-from .types import EntityID, HassData, PrimitiveHassValue
+from .types import EntityID, HassData, HassValueStrict, PrimitiveHassValue
 
 _logcore = get_logger(__name__)
 
@@ -25,7 +25,7 @@ P = ParamSpec("P")
 @dataclass(frozen=True)
 class EntityState:
     entity_id: EntityID
-    state: str
+    state: HassValueStrict
     last_changed: datetime.datetime
     last_updated: datetime.datetime
     raw_data: HassData
@@ -53,7 +53,7 @@ class EntityState:
 
     def has_been_in_state_for_at_least(
         self,
-        target_states: str | list[str],
+        target_states: HassValueStrict | list[HassValueStrict],
         interval: Interval,
         *,
         log_calculations: bool = False,
