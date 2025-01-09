@@ -255,6 +255,9 @@ class ServEntNumber(ServEntEntity[NumberEntity]):
     def get_state(self) -> float | int | None:  # type: ignore
         state = super().get_state()
 
+        if isinstance(state, str):
+            state = parse_state(state)
+
         if not isinstance(state, float | int):
             return None
 
