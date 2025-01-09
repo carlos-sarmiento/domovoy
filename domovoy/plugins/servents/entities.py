@@ -15,7 +15,7 @@ from domovoy.plugins.hass.domains import (
     SwitchEntity,
 )
 from domovoy.plugins.hass.exceptions import HassApiInvalidValueError
-from domovoy.plugins.hass.types import EntityID, HassData, HassValue, HassValueStrict
+from domovoy.plugins.hass.types import EntityID, HassData, HassValue, PrimitiveHassValue
 
 from .entity_configs import (
     ServEntBinarySensorConfig,
@@ -75,10 +75,10 @@ class ServEntEntity(ABC, Generic[T]):
             "Servent Entity hasn't been registered in the system. Check if it has been disabled in HA",
         )
 
-    def get_state(self) -> HassValueStrict:
+    def get_state(self) -> PrimitiveHassValue:
         return self.get_raw_state()
 
-    def get_raw_state(self) -> HassValueStrict:
+    def get_raw_state(self) -> PrimitiveHassValue:
         try:
             full_state = self.get_full_state()
             return full_state.state

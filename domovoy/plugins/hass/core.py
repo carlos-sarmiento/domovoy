@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, ParamSpec
 
@@ -15,7 +15,7 @@ from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
 
 from .api import HassApiConnectionState, HassWebsocketApi
 from .exceptions import HassApiCommandError
-from .types import EntityID, HassData, HassValueStrict, PrimitiveHassValue
+from .types import EntityID, HassData, PrimitiveHassValue
 
 _logcore = get_logger(__name__)
 
@@ -25,7 +25,7 @@ P = ParamSpec("P")
 @dataclass(frozen=True)
 class EntityState:
     entity_id: EntityID
-    state: HassValueStrict
+    state: PrimitiveHassValue
     last_changed: datetime.datetime
     last_updated: datetime.datetime
     raw_data: HassData
@@ -53,7 +53,7 @@ class EntityState:
 
     def has_been_in_state_for_at_least(
         self,
-        target_states: HassValueStrict | list[HassValueStrict],
+        target_states: PrimitiveHassValue | Sequence[PrimitiveHassValue],
         interval: Interval,
         *,
         log_calculations: bool = False,
@@ -63,8 +63,7 @@ class EntityState:
 
         entity_state = self.state
 
-        if not isinstance(target_states, list):
-            target_states = [target_states]
+        target_states = list(target_states) if isinstance(target_states, Sequence) else [target_states]
 
         if entity_state not in target_states:
             return False
