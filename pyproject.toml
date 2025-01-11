@@ -26,6 +26,7 @@ cron-converter = ">=1.2.1"
 orjson = ">=3.10.6"
 idna = ">=3.7"
 pytz = "^2024.2"
+requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = ">=0.6.3"
