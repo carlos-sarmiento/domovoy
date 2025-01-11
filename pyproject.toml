@@ -29,7 +29,7 @@ pytz = "^2024.2"
 requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
-ruff = ">=0.6.3"
+ruff = ">=0.9.1"
 types-pytz = ">=2024.1.0.20240417"
 pyright = "^1.1.391"
 
