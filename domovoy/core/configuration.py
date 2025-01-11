@@ -54,12 +54,21 @@ class AstralConfig:
 
 
 @dataclass
+class HttpLoggingConfig:
+    application: str
+    username: str
+    password: str
+    url: str
+
+
+@dataclass
 class LoggingConfig:
     log_level: str | None = "info"
     output_filename: str | None = None
     write_to_stdout: bool | None = True
     formatter: str | None = "[%(asctime)s][%(levelname)s][%(name)s]  %(message)s"
     formatter_with_app_name: str | None = "[%(asctime)s][%(levelname)s][%(name)s][%(app_name)s]  %(message)s"
+    http_sink: HttpLoggingConfig | None = None
 
     def get_actual_output_stream(self) -> TextIO | None:
         if self.write_to_stdout is None or self.write_to_stdout is True:
@@ -96,6 +105,7 @@ class LoggingConfig:
             write_to_stdout=self.write_to_stdout,
             formatter=self.formatter,
             formatter_with_app_name=self.formatter_with_app_name,
+            http_sink=self.http_sink,
         )
 
         if b.log_level is not None:
@@ -112,6 +122,9 @@ class LoggingConfig:
 
         if b.formatter_with_app_name is not None:
             result.formatter_with_app_name = b.formatter_with_app_name
+
+        if b.http_sink is not None:
+            result.http_sink = b.http_sink
 
         return result
 

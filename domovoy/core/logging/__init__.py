@@ -12,6 +12,7 @@ import pytz
 from domovoy.core.configuration import LoggingConfig, get_main_config
 from domovoy.core.context import context_logger
 from domovoy.core.errors import DomovoyError
+from domovoy.core.logging.http_json import JsonHtttpHandler
 
 
 class BraceMessage:
@@ -27,18 +28,40 @@ class BraceMessage:
         except BaseException:
             return str(self.fmt)
 
+    def __repr__(self) -> str:
+        try:
+            return self.fmt.format(*self.args, **self.kwargs)
+
+        except BaseException:
+            return str(self.fmt)
+
 
 class StyleAdapter(logging.LoggerAdapter):
     def __init__(self, logger: logging.Logger) -> None:
-        self.logger = logger
+        super().__init__(logger, {}, merge_extra=True)
 
     def log(self, level: int, msg: object, *args: object, **kwargs: object) -> None:
         if self.isEnabledFor(level):
             msg, log_kwargs = self.process(str(msg), kwargs)
             self.logger._log(level, BraceMessage(msg, args, kwargs), (), **log_kwargs)  # noqa: SLF001
+            log_kwargs["extra"] = {}
 
     def process(self, msg: str, kwargs: MutableMapping[str, object]) -> tuple[str, dict[str, object]]:
-        return msg, {key: kwargs[key] for key in getfullargspec(self.logger._log).args[1:] if key in kwargs}  # noqa: SLF001
+        log_kwargs = getfullargspec(self.logger._log).args[1:]  # noqa: SLF001
+        main_args = {key: kwargs[key] for key in log_kwargs if key in kwargs}
+
+        extra = dict(main_args.get("extra", {}))  # type: ignore
+        ad = {"_additionalArgs": {key: kwargs[key] for key in kwargs if key not in log_kwargs} | extra}
+
+        if "extra" in main_args:
+            main_args["extra"] = {**extra, **ad}
+        else:
+            main_args["extra"] = ad
+
+        return (
+            msg,
+            main_args,
+        )
 
 
 _log_config: dict[str, logging.LoggerAdapter[logging.Logger]] = {}
@@ -54,19 +77,21 @@ def __get_log_config(name: str, *, use_app_logger_default: bool) -> LoggingConfi
     try:
         config = get_main_config()
 
+        base_config = config.logs.get("_base", _default_config)
+
         if use_app_logger_default and "_apps_default" in config.logs:
-            default_config = config.logs["_apps_default"]
+            final_config = config.logs["_apps_default"]
 
         elif "_default" in config.logs:
-            default_config = config.logs["_default"]
+            final_config = config.logs["_default"]
 
         else:
-            default_config = _default_config
+            final_config = _default_config
 
         if name in config.logs:
-            return default_config + config.logs[name]
+            final_config = final_config + config.logs[name]
 
-        return default_config
+        return base_config + final_config
 
     except DomovoyError:
         return _default_config
@@ -103,7 +128,7 @@ def __build_logger(
 ) -> logging.LoggerAdapter[logging.Logger]:
     config = __get_log_config(logger_name, use_app_logger_default=use_app_logger_default)
     logger = logging.getLogger(logger_name)
-    logger.setLevel(config.get_numeric_log_level())
+    logger.setLevel(logging.DEBUG)
     logger.propagate = False
 
     formatter = (
@@ -117,6 +142,7 @@ def __build_logger(
         handler.setFormatter(
             __get_extended_formatter(coloredlogs.ColoredFormatter)(formatter),
         )
+        handler.setLevel(config.get_numeric_log_level())
         logger.addHandler(handler)
 
     if config.output_filename:
@@ -129,6 +155,17 @@ def __build_logger(
             maxBytes=5_000_000,
         )
         handler.setFormatter(__get_extended_formatter(logging.Formatter)(formatter))
+        handler.setLevel(config.get_numeric_log_level())
+
+        logger.addHandler(handler)
+
+    if config.http_sink:
+        handler = JsonHtttpHandler(
+            application=config.http_sink.application,
+            url=config.http_sink.url,
+            username=config.http_sink.username,
+            password=config.http_sink.password,
+        )
         logger.addHandler(handler)
 
     _log_config[logger_name] = StyleAdapter(logger)
