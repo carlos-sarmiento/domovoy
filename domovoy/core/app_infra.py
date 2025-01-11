@@ -93,6 +93,9 @@ class AppWrapper:
     event_callbacks: dict[str, EventCallbackRegistration] = field(default_factory=dict)
     plugins: dict[type, dict[str, AppPlugin]] = field(default_factory=dict)
 
+    def get_app_name_for_logs(self) -> str:
+        return f"{type(self.app).__name__}.{self.app_name}"
+
     def get_pluginx(self, plugin_type: type[T], name: str | None = None) -> T:
         plugin = self.get_plugin(plugin_type, name)
 
