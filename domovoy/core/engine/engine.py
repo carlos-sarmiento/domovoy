@@ -128,12 +128,13 @@ class AppEngine:
         config: AppConfigBase | None,
         logging_config_name: str | None,
     ) -> None:
-        _logcore.info("Registering app: {app_name} in AppEngine", app_name=app_name)
+        app_name_for_log = f"{app_class.__name__}.{app_name}"
+        _logcore.info("Registering app: {app_name} in AppEngine", app_name=app_name_for_log)
 
         if app_name in self.__active_app_by_name:
             _logcore.error(
                 "{app_name} is already registered. Choose a different name.",
-                app_name=app_name,
+                app_name=app_name_for_log,
             )
             return
 
@@ -153,15 +154,15 @@ class AppEngine:
 
     async def __start_app(self, app_name: str) -> None:
         # Needs Validation
+        app_registration = self.__app_registrations[app_name]
         try:
-            app_registration = self.__app_registrations[app_name]
             wrapper = self.__build_app_instance(app_registration)
             await self.__initialize_app(wrapper)
         except Exception as e:
             _logcore.exception(
                 "Error when initializing app: {app_name}",
                 e,
-                app_name=app_name,
+                app_name=f"{app_registration.app_class.__name__}.{app_registration.app_name}",
             )
 
     def __build_app_instance(self, app_registration: AppRegistration) -> AppWrapper:
@@ -250,7 +251,7 @@ class AppEngine:
         context_logger.set(wrapper.logger)
         _logcore.info(
             "Calling initialize() for {app_name}",
-            app_name=wrapper.app_name,
+            app_name=wrapper.get_app_name_for_logs(),
         )
         wrapper.status = AppStatus.INITIALIZING
         await super(wrapper.app.__class__, wrapper.app).initialize()
@@ -259,13 +260,13 @@ class AppEngine:
         self.__callback_register.register_all_callbacks(wrapper)
         _logcore.debug(
             "Initialization complete for {app_name}",
-            app_name=wrapper.app_name,
+            app_name=wrapper.get_app_name_for_logs(),
         )
 
     async def __finalize_app(self, wrapper: AppWrapper) -> None:
         _logcore.info(
             "Calling finalize() for {app_name}",
-            app_name=wrapper.app_name,
+            app_name=wrapper.get_app_name_for_logs(),
         )
         try:
             await wrapper.app.finalize()
@@ -273,20 +274,20 @@ class AppEngine:
             _logcore.exception(
                 "Error while calling finalize() for app {app_name}",
                 e,
-                app_name=wrapper.app_name,
+                app_name=wrapper.get_app_name_for_logs(),
             )
 
-    async def __terminate_app(self, app_name: str) -> None:
+    async def __terminate_app(self, app_name: str, app_name_for_logs: str) -> None:
         # Needs Validation
         _logcore.debug(
             "Terminating {app_name}",
-            app_name=app_name,
+            app_name=app_name_for_logs,
         )
 
         if app_name not in self.__active_app_by_name:
             _logcore.warning(
                 "Tried to terminate {app_name} but it is not running",
-                app_name=app_name,
+                app_name=app_name_for_logs,
             )
             return
 
@@ -297,24 +298,28 @@ class AppEngine:
         self.__callback_register.cancel_all_callbacks(wrapper)
         await self.__finalize_app(wrapper)
         wrapper.status = AppStatus.TERMINATED
+        app_name_for_logs = wrapper.get_app_name_for_logs()
         self.__clear_app_instance(wrapper)
         _logcore.debug(
             "Terminated {app_name}",
-            app_name=app_name,
+            app_name=app_name_for_logs,
         )
 
     async def __reload_app(self, app_name: str) -> None:
+        wrapper = self.__active_app_by_name.get(app_name, None)
+        app_name_for_logs = wrapper.get_app_name_for_logs() if wrapper else f"Unknown.{app_name}"
+
         _logcore.info(
             "Reloading app: {app_name}",
-            app_name=app_name,
+            app_name=app_name_for_logs,
         )
-        await self.__terminate_app(app_name)
+        await self.__terminate_app(app_name, app_name_for_logs)
         await self.__start_app(app_name)
 
     def __clear_app_instance(self, wrapper: AppWrapper) -> None:
         _logcore.debug(
             "Clearing registrations for {app_name}",
-            app_name=wrapper.app_name,
+            app_name=wrapper.get_app_name_for_logs(),
         )
         self.__active_app_by_name.pop(wrapper.app_name)
         self.__active_apps[wrapper.filepath].remove(wrapper)
@@ -362,7 +367,7 @@ class AppEngine:
                 apps_to_terminate=len(apps_to_terminate),
             )
 
-            app_terminations = [self.__terminate_app(app_name) for app_name in apps_to_terminate]
+            app_terminations = [self.__terminate_app(app_name, app_name) for app_name in apps_to_terminate]
             await asyncio.gather(*app_terminations)
 
         return app_termination_callback
@@ -394,17 +399,20 @@ class AppEngine:
             _logcore.warning("Called termination on an empty app list")
 
         for app_name in app_names_to_terminate:
-            await self.__terminate_app(app_name)
+            wrapper = self.__active_app_by_name.get(app_name, None)
+            app_name_for_logs = wrapper.get_app_name_for_logs() if wrapper else f"Unknown.{app_name}"
+
+            await self.__terminate_app(app_name, app_name_for_logs)
 
             if remove_from_app_registry:
                 _logcore.debug(
                     "Removing app {app_name} from registrations",
-                    app_name=app_name,
+                    app_name=app_name_for_logs,
                 )
                 if app_name not in self.__app_registrations:
                     _logcore.debug(
                         "Attempted to remove non-existing app registration for `{app_name}`",
-                        app_name=app_name,
+                        app_name=app_name_for_logs,
                     )
                     continue
 
