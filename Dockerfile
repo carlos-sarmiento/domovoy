@@ -1,16 +1,15 @@
-FROM python:3.13
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm
 
 WORKDIR /usr/src/app
 
-COPY docker_requirements.txt ./requirements.txt
+COPY pyproject.toml uv.lock README.md  ./
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv pip install --system -r pyproject.toml
 
 COPY domovoy ./domovoy
 
-ENV PIP_ROOT_USER_ACTION=ignore
-ENV PYTHONPATH /usr/src/app:${PYTHONPATH}
+RUN uv pip install --system -e .
 
 WORKDIR /config
 
-CMD [ "python", "/usr/src/app/domovoy/cli.py", "--config", "/config/config.yml" ]
+CMD [ "uv", "run", "/usr/src/app/domovoy/cli.py", "--config", "/config/config.yml" ]
