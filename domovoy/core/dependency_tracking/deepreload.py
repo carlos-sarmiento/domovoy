@@ -110,25 +110,17 @@ def get_parent(globals, level):
         try:
             dot = name.rindex(".", 0, dot)
         except ValueError as e:
-            raise ValueError(
-                "attempted relative import beyond top-level " "package"
-            ) from e
+            raise ValueError("attempted relative import beyond top-level package") from e
     name = name[:dot]
 
     try:
         parent = sys.modules[name]
     except BaseException as e:
         if orig_level < 1:
-            warn(
-                "Parent module '%.200s' not found while handling absolute "
-                "import" % name
-            )
+            warn("Parent module '%.200s' not found while handling absolute import" % name)
             parent = None
         else:
-            raise SystemError(
-                "Parent module '%.200s' not loaded, cannot "
-                "perform relative import" % name
-            ) from e
+            raise SystemError("Parent module '%.200s' not loaded, cannot perform relative import" % name) from e
 
     # We expect, but can't guarantee, if parent != None, that:
     # - parent.__name__ == name
@@ -196,7 +188,7 @@ def import_submodule(mod, subname, fullname):
     if fullname in found_now and fullname in sys.modules:
         m = sys.modules[fullname]
     else:
-        _logcore.debug("Reloading {module_name}", module_name=fullname)
+        _logcore.trace("Reloading {module_name}", module_name=fullname)
         found_now[fullname] = 1
         oldm = sys.modules.get(fullname, None)
         try:

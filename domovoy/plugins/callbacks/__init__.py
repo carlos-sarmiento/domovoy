@@ -412,7 +412,7 @@ class CallbacksPlugin(AppPlugin):
             datetime.datetime.now(tz=get_main_config().get_timezone()).date(),
         )
 
-        self._wrapper.logger.debug(
+        self._wrapper.logger.trace(
             "Datetime for next `{sun_event}` sun event: {sun_event_datetime}. Delta: {delta}",
             sun_event=sun_event,
             sun_event_datetime=sun_event_datetime,
@@ -438,7 +438,7 @@ class CallbacksPlugin(AppPlugin):
                 tomorrow,
             )
 
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Datetime for next `{sun_event}` sun event: {sun_event_datetime}. Delta: {delta}",
                 sun_event=sun_event,
                 sun_event_datetime=new_sun_event_datetime,
@@ -605,7 +605,7 @@ class CallbacksPlugin(AppPlugin):
         elif isinstance(start, str):
             start = parse(start)
 
-        self._wrapper.logger.debug(
+        self._wrapper.logger.trace(
             "Configuring run_every callback with interval: `{interval}` starting at `{start}`",
             interval=interval,
             start=start,

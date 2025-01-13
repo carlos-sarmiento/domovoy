@@ -245,7 +245,7 @@ def get_logger_for_app(
     logger_name: str,
     app_name: str,
 ) -> LoggerAdapterWithTrace[logging.Logger | LoggerAdapterWithTrace]:
-    _logcore.debug(
+    _logcore.trace(
         "Loading Logger with AppName: logger_name: {logger_name} - app_name: {app_name}",
         logger_name=logger_name,
         app_name=app_name,

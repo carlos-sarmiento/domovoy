@@ -68,7 +68,7 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
         entity_ids = self.hass.get_all_entity_ids()
 
         if entity_ids == self.__registered_entities:
-            self.log.debug("No updates to registered entities")
+            self.log.trace("No updates to registered entities")
             return
 
         self.log.info("Updating Home Assitant Entities Stub File")

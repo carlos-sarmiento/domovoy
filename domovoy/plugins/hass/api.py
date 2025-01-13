@@ -81,7 +81,7 @@ class HassWebsocketApi:
         self,
         connection_state: HassApiConnectionState,
     ) -> None:
-        _logcore.debug(
+        _logcore.trace(
             "Notifying connection state update: `{state}`",
             state=connection_state,
         )
@@ -130,16 +130,16 @@ class HassWebsocketApi:
             )  # type: ignore
 
             for task in completed:
-                _logcore.debug("Task `{task}` completed", task=task)
+                _logcore.trace("Task `{task}` completed", task=task)
 
             for task in pending:
                 task.cancel()
-                _logcore.debug("Task `{task}` is cancelled", task=task)
+                _logcore.trace("Task `{task}` is cancelled", task=task)
 
-            _logcore.debug("Hass API Tasks have been cancelled.")
+            _logcore.trace("Hass API Tasks have been cancelled.")
 
             for op_id in list(self.__in_flight_ops.keys()):
-                _logcore.debug("Cancelling Pending Future with ID `{id}`", id=op_id)
+                _logcore.trace("Cancelling Pending Future with ID `{id}`", id=op_id)
 
                 _, in_flight_future = self.__in_flight_ops[op_id]
 
@@ -250,13 +250,13 @@ class HassWebsocketApi:
                             timeout=5,
                         )
                     except asyncio.exceptions.CancelledError:
-                        _logcore.debug(
+                        _logcore.trace(
                             "Cancelled Error for callback to Message ID: `{id}`",
                             id=message_id,
                         )
 
                     except TimeoutError:
-                        _logcore.debug(
+                        _logcore.trace(
                             "Timeout Error for callback to Message ID: `{id}`",
                             id=message_id,
                         )
@@ -317,7 +317,7 @@ class HassWebsocketApi:
                 future.set_result(message)
 
         except asyncio.CancelledError:
-            _logcore.debug("hass_message_receiver() was cancelled")
+            _logcore.trace("hass_message_receiver() was cancelled")
             return
 
         except Exception as e:
@@ -349,7 +349,7 @@ class HassWebsocketApi:
             return
 
         except ConnectionClosedError as e:
-            _logcore.debug("Failure on Hass API Sender:", e)
+            _logcore.trace("Failure on Hass API Sender:", e)
             return
 
         except Exception as e:

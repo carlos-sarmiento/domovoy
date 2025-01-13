@@ -58,7 +58,7 @@ class LoggerPlugin(AppPlugin):
         async def log_callback(callback_id: str) -> None:
             inside_log_callback.set(True)  # noqa: FBT003
             try:
-                self._wrapper.logger.debug(
+                self._wrapper.logger.trace(
                     "Calling Timer Callback: {cls_name}.{func_name}",
                     cls_name=callback.__self__.__class__.__name__,  # type: ignore
                     func_name=callback.__name__,
@@ -103,6 +103,26 @@ class LoggerPlugin(AppPlugin):
             )
             self.__running_callbacks.add(task)
             task.add_done_callback(lambda t: self.__running_callbacks.remove(t))
+
+    def trace(
+        self,
+        msg: object,
+        *args: object,
+        exc_info: Any = None,  # noqa: ANN401
+        stack_info: bool = False,
+        stacklevel: int = 1,
+        extra: Mapping[str, object] | None = None,
+        **kwargs: object,
+    ) -> None:
+        self._wrapper.logger.trace(
+            msg,
+            *args,
+            exc_info=exc_info,
+            stack_info=stack_info,
+            stacklevel=stacklevel,
+            extra=extra,
+            **kwargs,
+        )
 
     def debug(
         self,

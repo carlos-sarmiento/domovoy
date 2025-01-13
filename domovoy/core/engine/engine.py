@@ -172,7 +172,7 @@ class AppEngine:
         if app_registration.app_path not in self.__active_apps:
             self.__active_apps[app_registration.app_path] = []
 
-        _logcore.debug(
+        _logcore.trace(
             "Initializing AppWrapper for {app_name}",
             app_name=app_registration.get_app_name_for_logs(),
         )
@@ -189,7 +189,7 @@ class AppEngine:
             ),
         )
 
-        _logcore.debug(
+        _logcore.trace(
             "Initializing Modules for {app_name}",
             app_name=app_registration.get_app_name_for_logs(),
         )
@@ -223,13 +223,13 @@ class AppEngine:
         time = TimePlugin("time", wrapper)
         wrapper.register_plugin(time, time.name)
 
-        _logcore.debug(
+        _logcore.trace(
             "Preparing all plugins for app {app_name}",
             app_name=app_registration.get_app_name_for_logs(),
         )
         wrapper.prepare_all_plugins()
 
-        _logcore.debug(
+        _logcore.trace(
             "Creating instance of class {class_name} for app {app_name}",
             app_name=app_registration.get_app_name_for_logs(),
             class_name=app_registration.app_class.__name__,
@@ -261,7 +261,7 @@ class AppEngine:
         await wrapper.app.initialize()
         wrapper.status = AppStatus.RUNNING
         self.__callback_register.register_all_callbacks(wrapper)
-        _logcore.debug(
+        _logcore.trace(
             "Initialization complete for {app_name}",
             app_name=wrapper.get_app_name_for_logs(),
         )
@@ -282,7 +282,7 @@ class AppEngine:
 
     async def __terminate_app(self, app_name: str, app_name_for_logs: str) -> None:
         # Needs Validation
-        _logcore.debug(
+        _logcore.trace(
             "Terminating {app_name}",
             app_name=app_name_for_logs,
         )
@@ -303,7 +303,7 @@ class AppEngine:
         wrapper.status = AppStatus.TERMINATED
         app_name_for_logs = wrapper.get_app_name_for_logs()
         self.__clear_app_instance(wrapper)
-        _logcore.debug(
+        _logcore.trace(
             "Terminated {app_name}",
             app_name=app_name_for_logs,
         )
@@ -320,7 +320,7 @@ class AppEngine:
         await self.__start_app(app_name)
 
     def __clear_app_instance(self, wrapper: AppWrapper) -> None:
-        _logcore.debug(
+        _logcore.trace(
             "Clearing registrations for {app_name}",
             app_name=wrapper.get_app_name_for_logs(),
         )
@@ -333,7 +333,7 @@ class AppEngine:
         *,
         remove_from_registry: bool = True,
     ) -> None:
-        _logcore.debug(
+        _logcore.trace(
             "Building list of apps for termination from path(s): {paths}",
             paths=paths,
         )
@@ -408,12 +408,12 @@ class AppEngine:
             await self.__terminate_app(app_name, app_name_for_logs)
 
             if remove_from_app_registry:
-                _logcore.debug(
+                _logcore.trace(
                     "Removing app {app_name} from registrations",
                     app_name=app_name_for_logs,
                 )
                 if app_name not in self.__app_registrations:
-                    _logcore.debug(
+                    _logcore.warning(
                         "Attempted to remove non-existing app registration for `{app_name}`",
                         app_name=app_name_for_logs,
                     )

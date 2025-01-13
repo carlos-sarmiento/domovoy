@@ -46,7 +46,7 @@ class ReloadPythonFileWatcher(FileSystemEventHandler):
         self.__timer_per_file[path] = timer
 
     def __notify(self, filepath: str, *, is_deletion: bool) -> None:
-        _logcore.debug("Detected File Change: {filepath}", filepath=filepath)
+        _logcore.trace("Detected File Change: {filepath}", filepath=filepath)
         self.__module_load_callback(filepath, is_deletion=is_deletion)
 
     def on_moved(self, event: FileMovedEvent) -> None:  # type: ignore

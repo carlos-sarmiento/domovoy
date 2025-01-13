@@ -118,7 +118,7 @@ class HassPlugin(AppPlugin):
             subscription_id: int,
             trigger_vars: HassData,
         ) -> None:
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Calling Listen Trigger Callback: {cls_name}.{func_name} from callback_id: {subscription_id}",
                 cls_name=callback.__self__.__class__.__name__,  # type: ignore
                 func_name=callback.__name__,

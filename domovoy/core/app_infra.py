@@ -200,14 +200,14 @@ class AppWrapper:
                     )
 
                 except asyncio.exceptions.CancelledError as e:
-                    logger.debug(
+                    logger.trace(
                         "Cancelled Loop error for {app_name}",
                         e,
                         app_name=self.get_app_name_for_logs(),
                     )
 
                 except DomovoyLogOnlyOnDebugWhenUncaughtError as e:
-                    logger.debug(
+                    logger.trace(
                         "Debug Log only Uncaught Exception",
                         e,
                         exc_info=True,

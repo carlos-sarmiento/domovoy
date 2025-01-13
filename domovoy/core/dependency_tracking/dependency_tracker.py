@@ -108,7 +108,7 @@ class DependencyTracker:
     async def unload_from_app_registry(self, path: str) -> None:
         files_to_unload = self.__get_files_to_unload(path)
 
-        _logcore.debug(
+        _logcore.trace(
             "Calling App Registry to unload modules due to File change: {path} - {files_to_unload}",
             path=path,
             files_to_unload=files_to_unload,
@@ -116,7 +116,7 @@ class DependencyTracker:
         await self.__app_registry.terminate_app_from_files(files_to_unload)
 
     def load_or_reload_filepath(self, path: str) -> None:
-        _logcore.debug(
+        _logcore.trace(
             "Preparing to (re)load: {path} with {app_path}",
             path=path,
             app_path=self.__app_path,
@@ -168,7 +168,7 @@ class DependencyTracker:
             final_deps: list[str] = [import_graph.format(x) for x in (deps or [])]
             final_deps = [x for x in final_deps if x.startswith(self.__app_path)]
 
-            _logcore.debug("Identified dependencies: {final_deps}", final_deps=final_deps)
+            _logcore.trace("Identified dependencies: {final_deps}", final_deps=final_deps)
 
             if final_deps:
                 for dep in final_deps:
@@ -309,7 +309,7 @@ class DependencyTracker:
             _logcore.exception("Error while importing modules", e)
 
     def __reload_nodes(self, nodes: list[ModuleTrackingRecord]) -> None:
-        _logcore.debug("Reloading Modules: {nodes}", nodes=nodes)
+        _logcore.trace("Reloading Modules: {nodes}", nodes=nodes)
 
         try:
             importlib.invalidate_caches()
@@ -363,11 +363,11 @@ class DependencyTracker:
         return self.__dependencies[module_fs_path]
 
     def __get_files_to_unload(self, path: str) -> list[str]:
-        _logcore.debug("Calculating files to unload for {path}", path=path)
-        node = self.__get_module_tracking_record(path)
+        _logcore.trace("Calculating files to unload for {path}", path=path)
+        node: ModuleTrackingRecord = self.__get_module_tracking_record(path)
         nodes = self.__build_recursive_list_of_importers_of_node(node)
         files_to_unload = [x[0].path for x in nodes]
-        _logcore.debug("Files to unload: {files}", files=files_to_unload)
+        _logcore.trace("Files to unload: {files}", files=files_to_unload)
         return files_to_unload
 
     def __notify_file_changed(self, filepath: str, *, is_deletion: bool) -> None:
