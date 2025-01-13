@@ -18,12 +18,10 @@ def default(obj: object) -> str:
 
 def actual_emit(self: JsonHtttpHandler, record: logging.LogRecord) -> None:
     raw = record.__dict__
-    application = self.application
 
     args = raw.get("_additionalArgs", {})
 
     data = {
-        "application": application,
         "logger_name": record.name,
         "args": args,
         "level": record.levelname,
@@ -47,9 +45,8 @@ def actual_emit(self: JsonHtttpHandler, record: logging.LogRecord) -> None:
 
 
 class JsonHtttpHandler(logging.Handler):
-    def __init__(self, application: str, url: str, username: str, password: str) -> None:
+    def __init__(self, url: str, username: str, password: str) -> None:
         self.url = url
-        self.application = application
         self.token = base64.b64encode(bytes(username + ":" + password, "utf-8")).decode("utf-8")
 
         # sets up a session with the server
