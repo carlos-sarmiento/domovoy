@@ -8,4 +8,6 @@ COPY domovoy ./domovoy
 
 RUN uv sync --frozen
 
-CMD [ "uv", "run", "domovoy/cli.py", "--config", "/config/config.yml" ]
+WORKDIR /config
+
+CMD [ "uv", "run", "/usr/src/app/domovoy/cli.py", "--project", "/usr/src/app/", "--config", "/config/config.yml" ]
