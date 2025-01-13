@@ -95,7 +95,7 @@ class CallbackRegister(DomovoyService):
     ) -> None:
         _logcore.debug(
             "Registering all callbacks for {app_name}",
-            app_name=app_wrapper.app_name,
+            app_name=app_wrapper.get_app_name_for_logs(),
         )
 
         for registration in app_wrapper.scheduler_callbacks.values():
@@ -118,13 +118,13 @@ class CallbackRegister(DomovoyService):
                 callback_name=get_callback_true_name(registration.callback),
                 callback_class=get_callback_true_class(registration.callback),
                 callback_id=registration.id,
-                app_name=app_wrapper.app_name,
+                app_name=app_wrapper.get_app_name_for_logs(),
             )
             return
 
         c_logger().debug(
             "Adding Callback for {app_name} with ID: {callback_id}. Callback Name: {callback_name}",
-            app_name=app_wrapper.app_name,
+            app_name=app_wrapper.get_app_name_for_logs(),
             callback_id=registration.id,
             callback_name=registration.callback.__name__,
         )
@@ -149,12 +149,14 @@ class CallbackRegister(DomovoyService):
                 "Tried to re-register callback {callback_name} with id {callback_id} for app: {app_name}",
                 callback_name=get_callback_true_name(registration.callback),
                 callback_id=registration.id,
-                app_name=app_wrapper.app_name,
+                app_name=app_wrapper.get_app_name_for_logs(),
             )
             return  # should throw
 
         c_logger().debug(
-            f"Adding Callback for {app_wrapper.app_name} with ID: {registration.id}",
+            "Adding Callback for {app_name} with ID: {registration_id}",
+            app_name=app_wrapper.get_app_name_for_logs(),
+            registration_id=registration.id,
         )
 
         self.__event_listener.add_listener(
@@ -173,14 +175,14 @@ class CallbackRegister(DomovoyService):
         c_logger().debug(
             "Cancelling callback with id {callback_id} for app {app_name}",
             callback_id=callback_id,
-            app_name=app_wrapper.app_name,
+            app_name=app_wrapper.get_app_name_for_logs(),
         )
 
         if callback_id not in app_wrapper.scheduler_callbacks:
             c_logger().error(
                 "ID {callback_id} for app {app_name} not found in the app's existing callbacks",
                 callback_id=callback_id,
-                app_name=app_wrapper.app_name,
+                app_name=app_wrapper.get_app_name_for_logs(),
             )
             return
 
@@ -191,7 +193,7 @@ class CallbackRegister(DomovoyService):
                 "Tried to cancel callback with ID {callback_id} for app {app_name}, but"
                 " the callback was never registered",
                 callback_id=callback_id,
-                app_name=app_wrapper.app_name,
+                app_name=app_wrapper.get_app_name_for_logs(),
             )
             return
 
@@ -215,14 +217,14 @@ class CallbackRegister(DomovoyService):
         c_logger().debug(
             "Cancelling callback with id {callback_id} for app {app_name}",
             callback_id=callback_id,
-            app_name=app_wrapper.app_name,
+            app_name=app_wrapper.get_app_name_for_logs(),
         )
 
         if callback_id not in app_wrapper.event_callbacks:
             c_logger().error(
                 "Cancelling callback with id {callback_id} for app {app_name}",
                 callback_id=callback_id,
-                app_name=app_wrapper.app_name,
+                app_name=app_wrapper.get_app_name_for_logs(),
             )
             return
 
@@ -233,7 +235,7 @@ class CallbackRegister(DomovoyService):
                 "Tried to cancel callback with ID {callback_id} for app {app_name}, but"
                 " the callback was never registered",
                 callback_id=callback_id,
-                app_name=app_wrapper.app_name,
+                app_name=app_wrapper.get_app_name_for_logs(),
             )
             return
 
@@ -246,7 +248,7 @@ class CallbackRegister(DomovoyService):
     ) -> None:
         _logcore.debug(
             "Cancelling all callbacks for {app_name}",
-            app_name=app_wrapper.app_name,
+            app_name=app_wrapper.get_app_name_for_logs(),
         )
 
         for x in app_wrapper.scheduler_callbacks.values():
@@ -276,7 +278,7 @@ class CallbackRegister(DomovoyService):
         c_logger().error(
             "Callback with id {callback_id} is not registered for app {app_name}",
             callback_id=callback_id,
-            app_name=app_wrapper.app_name,
+            app_name=app_wrapper.get_app_name_for_logs(),
         )
 
     def add_scheduler_callback(
@@ -289,7 +291,7 @@ class CallbackRegister(DomovoyService):
     ) -> str:
         c_logger().debug(
             "Adding Scheduler Callback for app {app_name}",
-            app_name=app_wrapper.app_name,
+            app_name=app_wrapper.get_app_name_for_logs(),
         )
 
         if reuse_callback_id is None:
@@ -334,7 +336,7 @@ class CallbackRegister(DomovoyService):
     ) -> str:
         c_logger().debug(
             "Adding Event Callback for app {app_name}",
-            app_name=app_wrapper.app_name,
+            app_name=app_wrapper.get_app_name_for_logs(),
         )
         callback_id = f"event-{uuid.uuid4().hex}"
 

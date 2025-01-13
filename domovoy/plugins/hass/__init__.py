@@ -75,7 +75,7 @@ class HassPlugin(AppPlugin):
                 _missing_entities_logger.warning(
                     "[{app_name}] '{entity_id}' doesn't exist in Hass.",
                     entity_id=eid,
-                    app_name=self._wrapper.app_name,
+                    app_name=self._wrapper.get_app_name_for_logs(),
                 )
 
     def get_entity_id_by_attribute(

@@ -175,7 +175,7 @@ class AppWrapper:
                     _logcore.warning(
                         "Tried to call {function_name} on app `{app_name}` when app's status was `{status}`."
                         " -- args: {pargs} -- kwargs: {pkwargs}",
-                        app_name=self.app_name,
+                        app_name=self.get_app_name_for_logs(),
                         status=self.status,
                         function_name=func.__name__,
                         pargs=args,
@@ -203,7 +203,7 @@ class AppWrapper:
                     logger.debug(
                         "Cancelled Loop error for {app_name}",
                         e,
-                        app_name=self.app_name,
+                        app_name=self.get_app_name_for_logs(),
                     )
 
                 except DomovoyLogOnlyOnDebugWhenUncaughtError as e:
@@ -217,7 +217,7 @@ class AppWrapper:
                     logger.exception(
                         "Uncaught Exception in: {app_name}",
                         e,
-                        app_name=self.app_name,
+                        app_name=self.get_app_name_for_logs(),
                     )
 
             set_callback_true_information(wrapper, true_callback)
