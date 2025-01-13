@@ -165,13 +165,13 @@ def __build_logger(
             username=config.http_sink.username,
             password=config.http_sink.password,
         )
-        handler.setLevel(config.get_numeric_log_level())
+        handler.setLevel(logging.DEBUG)
         logger.addHandler(handler)
 
     _log_config[logger_name] = StyleAdapter(logger)
 
-    if config.get_numeric_log_level() > logging.DEBUG:
-        _log_config[logger_name].debug = _dummy_logger_function
+    # if config.get_numeric_log_level() > logging.DEBUG:
+    #     _log_config[logger_name].debug = _dummy_logger_function
 
     return _log_config[logger_name]
 
