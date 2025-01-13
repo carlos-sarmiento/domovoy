@@ -93,7 +93,7 @@ class CallbackRegister(DomovoyService):
         self,
         app_wrapper: AppWrapper,
     ) -> None:
-        _logcore.debug(
+        _logcore.trace(
             "Registering all callbacks for {app_name}",
             app_name=app_wrapper.get_app_name_for_logs(),
         )
@@ -122,7 +122,7 @@ class CallbackRegister(DomovoyService):
             )
             return
 
-        c_logger().debug(
+        c_logger().trace(
             "Adding Callback for {app_name} with ID: {callback_id}. Callback Name: {callback_name}",
             app_name=app_wrapper.get_app_name_for_logs(),
             callback_id=registration.id,
@@ -153,7 +153,7 @@ class CallbackRegister(DomovoyService):
             )
             return  # should throw
 
-        c_logger().debug(
+        c_logger().trace(
             "Adding Callback for {app_name} with ID: {registration_id}",
             app_name=app_wrapper.get_app_name_for_logs(),
             registration_id=registration.id,
@@ -172,7 +172,7 @@ class CallbackRegister(DomovoyService):
         app_wrapper: AppWrapper,
         callback_id: str,
     ) -> None:
-        c_logger().debug(
+        c_logger().trace(
             "Cancelling callback with id {callback_id} for app {app_name}",
             callback_id=callback_id,
             app_name=app_wrapper.get_app_name_for_logs(),
@@ -189,7 +189,7 @@ class CallbackRegister(DomovoyService):
         registration = app_wrapper.scheduler_callbacks[callback_id]
 
         if not registration.is_registered:
-            c_logger().debug(
+            c_logger().warning(
                 "Tried to cancel callback with ID {callback_id} for app {app_name}, but"
                 " the callback was never registered",
                 callback_id=callback_id,
@@ -214,7 +214,7 @@ class CallbackRegister(DomovoyService):
         app_wrapper: AppWrapper,
         callback_id: str,
     ) -> None:
-        c_logger().debug(
+        c_logger().trace(
             "Cancelling callback with id {callback_id} for app {app_name}",
             callback_id=callback_id,
             app_name=app_wrapper.get_app_name_for_logs(),
@@ -246,7 +246,7 @@ class CallbackRegister(DomovoyService):
         self,
         app_wrapper: AppWrapper,
     ) -> None:
-        _logcore.debug(
+        _logcore.trace(
             "Cancelling all callbacks for {app_name}",
             app_name=app_wrapper.get_app_name_for_logs(),
         )
@@ -289,7 +289,7 @@ class CallbackRegister(DomovoyService):
         start: datetime.datetime | None,
         reuse_callback_id: str | None = None,
     ) -> str:
-        c_logger().debug(
+        c_logger().trace(
             "Adding Scheduler Callback for app {app_name}",
             app_name=app_wrapper.get_app_name_for_logs(),
         )
@@ -334,7 +334,7 @@ class CallbackRegister(DomovoyService):
         callback: Callable[P, Awaitable[None]],
         events: str | list[str],
     ) -> str:
-        c_logger().debug(
+        c_logger().trace(
             "Adding Event Callback for app {app_name}",
             app_name=app_wrapper.get_app_name_for_logs(),
         )
