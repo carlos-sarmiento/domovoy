@@ -199,7 +199,7 @@ class HassWebsocketApi:
 
                 message_id: int = message["id"]  # type: ignore
                 message_type = message["type"]
-                _messages_logcore.debug(
+                _messages_logcore.trace(  # type: ignore
                     "Received Message from Hass. ID: {id} Type: {type}: Message: {message}",
                     id=message_id,
                     type=message_type,
@@ -208,7 +208,7 @@ class HassWebsocketApi:
 
                 if message_type == "event":
                     if message_id not in self.__event_callbacks:
-                        _logcore.debug(
+                        _logcore.warning(
                             "Received an Event without a registered Callback. Callback ID: `{id}`",
                             id=message_id,
                         )
@@ -222,7 +222,7 @@ class HassWebsocketApi:
                         event_type_or_subscription_id: str = event["event_type"]  # type: ignore
                         data: HassData = event["data"]  # type: ignore
 
-                        _messages_logcore.debug(
+                        _messages_logcore.trace(  # type: ignore
                             "Calling Callback for event {event_type} with data {event_data}",
                             event_type=event_type_or_subscription_id,
                             event_data=data,
@@ -230,7 +230,7 @@ class HassWebsocketApi:
 
                         entity_id = data.get("entity_id", None)
 
-                        _messages_logcore.debug(
+                        _messages_logcore.trace(  # type: ignore
                             f"Received from listener with id: {message_id} "
                             f"a `{event_type_or_subscription_id}` event for {entity_id}. {data}",
                         )
@@ -239,7 +239,7 @@ class HassWebsocketApi:
                         event_type_or_subscription_id: int = message_id
                         data = event["variables"].get("trigger", {})  # type: ignore
 
-                        _messages_logcore.debug(
+                        _messages_logcore.trace(  # type: ignore
                             "Calling Callback for trigger with data {trigger_data}",
                             trigger_data=data,
                         )
@@ -271,7 +271,7 @@ class HassWebsocketApi:
                     continue
 
                 if message_id not in self.__in_flight_ops:
-                    _logcore.debug(
+                    _logcore.warning(
                         "Received a response for ID {id} that does not have an in-flight command. Ignoring...",
                         id=message_id,
                     )
@@ -332,7 +332,7 @@ class HassWebsocketApi:
                     message_id: int = message["id"]  # type: ignore
                     try:
                         encoded_message = encode_message(message)
-                        _logcore.debug("Sending message to hass")
+                        _logcore.trace("Sending message to hass")  # type: ignore
                         await websocket.send(encoded_message, text=True)
                     except HassApiParseError as e:
                         (cmd, future) = self.__in_flight_ops[message_id]
@@ -409,7 +409,7 @@ class HassWebsocketApi:
         self,
         command: HassData,
     ) -> asyncio.Future[HassData]:
-        _logcore.debug("Queueing Command to HA: {command}", command=command)
+        _logcore.trace("Queueing Command to HA: {command}", command=command)  # type: ignore
 
         # create Future
         future = asyncio.get_event_loop().create_future()
@@ -432,7 +432,7 @@ class HassWebsocketApi:
         callback: Callable[[str, HassData], Awaitable[None]],
         event_type: str | None = None,
     ) -> int:
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Calling subscribe_event with event: {event_type}",
             event_type=event_type,
         )
@@ -448,7 +448,7 @@ class HassWebsocketApi:
 
         self.__event_callbacks[subscription_id] = callback
 
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Received Response for subscribe_event call for event: {event_type}. Response: {response}",
             event_type=event_type,
             response=response,
@@ -460,7 +460,7 @@ class HassWebsocketApi:
         callback: Callable[[int, HassData], Awaitable[None]],
         trigger: HassData,
     ) -> int:
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Calling subscribe_trigger with trigger: {trigger}",
             trigger=trigger,
         )
@@ -473,7 +473,7 @@ class HassWebsocketApi:
 
         self.__event_callbacks[subscription_id] = callback
 
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Received Response for subscribe_trigger call for event: {trigger}. Response: {response}",
             trigger=trigger,
             response=response,
@@ -481,7 +481,7 @@ class HassWebsocketApi:
         return response["id"]  # type: ignore
 
     async def unsubscribe_events(self, subscription_id: int) -> bool:
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Calling unsubscribe_events with subscription_id: {subscription_id}",
             subscription_id=subscription_id,
         )
@@ -489,7 +489,7 @@ class HassWebsocketApi:
             {"type": "unsubscribe_events", "subscription": subscription_id},
         )
 
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Received Response for unsubscribe_events call for subscription_id: {subscription_id}."
             " Response: {response}",
             subscription_id=subscription_id,
@@ -507,7 +507,7 @@ class HassWebsocketApi:
         event_type: str,
         event_data: HassData | None = None,
     ) -> HassData:
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Calling fire_event with event: {event_type} and data: {event_data}",
             event_type=event_type,
             event_data=event_data,
@@ -520,7 +520,7 @@ class HassWebsocketApi:
 
         response = await self.__send_command(cmd)
 
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Received Response for fire_event call for event: {event_type} and data: {event_data}."
             " Response: {response}",
             event_type=event_type,
@@ -539,7 +539,7 @@ class HassWebsocketApi:
         entity_id: EntityID | list[EntityID] | None = None,
         return_response: bool = False,
     ) -> HassData | None:
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             f"Calling call_service for {domain}.{service}",
             domain=domain,
             service=service,
@@ -560,7 +560,7 @@ class HassWebsocketApi:
 
         response = await self.__send_command(cmd)
 
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Received Response for call_service call for {domain}.{service}: {response}",
             domain=domain,
             service=service,

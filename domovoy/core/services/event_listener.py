@@ -42,20 +42,20 @@ class EventListener(DomovoyService):
         self.__is_running = False
 
     async def publish_event(self, event_name: str, event_data: dict[str, Any]) -> None:
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Publishing event: {event_name} with data: {event_data}",
             event_name=event_name,
             event_data=event_data,
         )
 
         if not self.__is_running:
-            _logcore.debug(
+            _logcore.error(
                 "Attempted to publish an event, but the EventListener is not running",
             )
             return
 
         if event_name not in self.__registered_callbacks_by_event:
-            _logcore.debug(
+            _logcore.trace(  # type: ignore
                 "No listeners are registered for event: {event_name}",
                 event_name=event_name,
             )
@@ -67,7 +67,7 @@ class EventListener(DomovoyService):
             callback.callable(callback.id, event_name, event_data) for callback in callbacks.values()
         ]
 
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Gathering all async callbacks for event {event_name}",
             event_name=event_name,
         )
