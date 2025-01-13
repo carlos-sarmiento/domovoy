@@ -161,11 +161,11 @@ def __build_logger(
 
     if config.http_sink:
         handler = JsonHtttpHandler(
-            application=config.http_sink.application,
             url=config.http_sink.url,
             username=config.http_sink.username,
             password=config.http_sink.password,
         )
+        handler.setLevel(config.get_numeric_log_level())
         logger.addHandler(handler)
 
     _log_config[logger_name] = StyleAdapter(logger)
