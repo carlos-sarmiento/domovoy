@@ -42,7 +42,7 @@ class EventListener(DomovoyService):
         self.__is_running = False
 
     async def publish_event(self, event_name: str, event_data: dict[str, Any]) -> None:
-        _logcore.trace(  # type: ignore
+        _logcore.trace(
             "Publishing event: {event_name} with data: {event_data}",
             event_name=event_name,
             event_data=event_data,
@@ -55,7 +55,7 @@ class EventListener(DomovoyService):
             return
 
         if event_name not in self.__registered_callbacks_by_event:
-            _logcore.trace(  # type: ignore
+            _logcore.trace(
                 "No listeners are registered for event: {event_name}",
                 event_name=event_name,
             )
@@ -67,7 +67,7 @@ class EventListener(DomovoyService):
             callback.callable(callback.id, event_name, event_data) for callback in callbacks.values()
         ]
 
-        _logcore.trace(  # type: ignore
+        _logcore.trace(
             "Gathering all async callbacks for event {event_name}",
             event_name=event_name,
         )
@@ -82,7 +82,7 @@ class EventListener(DomovoyService):
         callback: Callable[[str, str, dict[str, Any]], Awaitable[None]],
         listener_id: str | None = None,
     ) -> str:
-        _logcore.trace(  # type: ignore
+        _logcore.trace(
             "Adding a listener for event(s): {events}",
             events=events,
         )
@@ -105,7 +105,7 @@ class EventListener(DomovoyService):
         return listener_id
 
     def remove_listener(self, listener_id: str) -> None:
-        _logcore.trace(  # type: ignore
+        _logcore.trace(
             "Removing listener with id: {listener_id}",
             listener_id=listener_id,
         )

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import inspect
 import sys
-from logging import Logger, LoggerAdapter
 
 from domovoy.core.logging import get_logger
 
-_logcore: LoggerAdapter[Logger] = get_logger(__name__)
+_logcore = get_logger(__name__)
 
 
 class EntityID:

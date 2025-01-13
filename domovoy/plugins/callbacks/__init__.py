@@ -516,7 +516,7 @@ class CallbacksPlugin(AppPlugin):
 
             current_time = datetime.datetime.now(tz=get_main_config().get_timezone())
 
-            _logcore.trace(  # type: ignore
+            _logcore.trace(
                 "DT check: true_start: {true_start} [isAware: {true_start_aware}]"
                 " -- current_time: {current_time} [isAware: {current_time_aware}] ",
                 true_start=true_start,

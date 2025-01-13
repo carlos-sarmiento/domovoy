@@ -24,7 +24,7 @@ from domovoy.core.errors import (
     DomovoyLogOnlyOnDebugWhenUncaughtError,
     DomovoyUnknownPluginError,
 )
-from domovoy.core.logging import get_logger
+from domovoy.core.logging import LoggerAdapterWithTrace, get_logger
 from domovoy.core.utils import get_callback_name, set_callback_true_information
 from domovoy.plugins.plugins import AppPlugin
 
@@ -85,7 +85,7 @@ class AppWrapper:
     module_name: str
     class_name: str
     status: AppStatus
-    logger: logging.LoggerAdapter[Any]
+    logger: LoggerAdapterWithTrace[Any]
     app: AppBase[Any] = field(default_factory=lambda: EmptyAppBase())
     scheduler_callbacks: dict[str, SchedulerCallbackRegistration] = field(
         default_factory=dict,
@@ -135,7 +135,7 @@ class AppWrapper:
 
     def register_plugin(self, plugin: AppPlugin, name: str) -> None:
         plugin_type = type(plugin)
-        _logcore.trace(  # type: ignore
+        _logcore.trace(
             "Registering plugin of type {plugin_type} with name {name}",
             plugin_type=plugin_type,
             name=name,
@@ -186,7 +186,7 @@ class AppWrapper:
                 context_logger.set(logger)
                 context_callback_id.set(callback_id)
 
-                _logcore.trace(  # type: ignore
+                _logcore.trace(
                     "Calling {function_name} -- args: {pargs} -- kwargs: {pkwargs}",
                     function_name=func.__name__,
                     pargs=args,

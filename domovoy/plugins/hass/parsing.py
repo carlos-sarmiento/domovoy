@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import re
-from logging import Logger, LoggerAdapter
 from typing import TypeVar
 
 import orjson as json
@@ -20,7 +19,7 @@ pattern = re.compile("^\\d{4}-\\d{2}-\\d{2}")
 
 T = TypeVar("T")
 
-_logcore: LoggerAdapter[Logger] = get_logger("hass_parsing")
+_logcore = get_logger("hass_parsing")
 
 
 def __decode_response(msg: T) -> T:
