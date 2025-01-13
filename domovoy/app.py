@@ -19,7 +19,7 @@ _is_running = False
 
 def stop_domovoy() -> None:
     global _is_running
-    _logcore.critical("Received Signal from App to stop Domovoy")
+    _logcore.info("Received Signal from App to stop Domovoy")
     _is_running = False
 
 
@@ -30,7 +30,7 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
     dependency_tracker = None
 
     try:
-        _logcore.critical("Starting Domovoy")
+        _logcore.info("Starting Domovoy")
 
         _logcore.debug("Inserting App path into Python PATH")
         app_path = get_main_config().app_path
@@ -38,7 +38,7 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
 
         parent_app_path = (app_path / os.pardir).resolve()
 
-        _logcore.warning(
+        _logcore.debug(
             "Inserting Parent Path: `{parent_app_path}` of App Path: `{app_path}` to PYTHON_PATH",
             parent_app_path=parent_app_path,
             app_path=app_path,
@@ -85,7 +85,7 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
 
             await asyncio.gather(*pending_tasks, return_exceptions=True)
 
-        _logcore.critical("Domovoy Terminated")
+        _logcore.info("Domovoy Terminated")
 
 
 async def loop_until_exit() -> None:
