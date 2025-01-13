@@ -29,7 +29,7 @@ def install_requirements() -> None:
     for file in files:
         _logcore.info("Processing package dependencies from: {file}", file=file)
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-r", str(file)],
+            ["uv", "pip", "install", "--system", "-r", str(file)],
             capture_output=True,
             text=True,
             check=False,
