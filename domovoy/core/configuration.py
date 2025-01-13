@@ -55,7 +55,6 @@ class AstralConfig:
 
 @dataclass
 class HttpLoggingConfig:
-    application: str
     username: str
     password: str
     url: str
