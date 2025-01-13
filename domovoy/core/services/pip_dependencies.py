@@ -35,8 +35,7 @@ def install_requirements() -> None:
             check=False,
         )
 
-        if result.stdout:
-            _logcore.info(f"{file}\n" + result.stdout)
+        _logcore.info(f"{file} -- stdout:\n" + result.stdout)
 
         if result.returncode != 0 or result.stderr:
-            _logcore.error(f"{file}\n" + result.stderr)
+            _logcore.error(f"{file} -- return code: {result.returncode}\n" + result.stderr)
