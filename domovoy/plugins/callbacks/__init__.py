@@ -100,7 +100,7 @@ class CallbacksPlugin(AppPlugin):
             event: str,
             event_data: dict[str, Any],
         ) -> None:
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Calling Listen Event Callback: {cls_name}.{func_name} from callback_id: {callback_id}",
                 cls_name=callback.__self__.__class__.__name__ if inspect.ismethod(callback) else callback.__class__,
                 func_name=callback.__name__,
@@ -255,7 +255,7 @@ class CallbacksPlugin(AppPlugin):
 
             callback_cls_name = get_callback_class(callback)
 
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Calling Entity Callback: {cls_name}.{func_name}",
                 cls_name=callback_cls_name,
                 func_name=get_callback_true_name(callback),
@@ -423,7 +423,7 @@ class CallbacksPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def scheduled_callback(callback_id: str) -> None:
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Calling Sun Event Callback: {cls_name}.{func_name}",
                 cls_name=get_callback_class(callback),
                 func_name=callback.__name__,
@@ -480,7 +480,7 @@ class CallbacksPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def scheduled_callback(callback_id: str) -> None:
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Calling Timer Callback: {callback_name}",
                 callback_name=get_callback_name(callback),
             )
@@ -613,7 +613,7 @@ class CallbacksPlugin(AppPlugin):
 
         @self._wrapper.handle_exception_and_logging(callback)
         async def timer_callback(callback_id: str) -> None:
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Calling Timer Callback: {cls_name}.{func_name}",
                 cls_name=callback.__self__.__class__.__name__,  # type: ignore
                 func_name=callback.__name__,
