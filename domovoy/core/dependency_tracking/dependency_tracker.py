@@ -122,7 +122,7 @@ class DependencyTracker:
             app_path=self.__app_path,
         )
 
-        _logcore.debug("Building Import Graph for File")
+        _logcore.trace("Building Import Graph for File")  # type: ignore
         import_graph = ImportGraph.create(
             environment.Environment(
                 environment.path_from_pythonpath(""),
@@ -132,23 +132,23 @@ class DependencyTracker:
             trim=True,
         )
 
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Detected Dependencies for {path}: {deps}",
             path=path,
             deps=import_graph.sorted_source_files(),
         )
 
-        _logcore.debug("Filtering dependencies to tracked files only")
+        _logcore.trace("Filtering dependencies to tracked files only")  # type: ignore
         for node, deps in import_graph.deps_list():
             current_module_path = import_graph.format(node)
             if not current_module_path.startswith(self.__app_path):
-                _logcore_ignore_paths.debug(
+                _logcore_ignore_paths.trace(  # type: ignore
                     "Ignoring path: {current_module_path}. It is outside apps director",
                     current_module_path=current_module_path,
                 )
                 continue
 
-            _logcore.debug(
+            _logcore.trace(  # type: ignore
                 "Should Import path: {current_module_path}",
                 current_module_path=current_module_path,
             )
@@ -156,7 +156,7 @@ class DependencyTracker:
             current_mtr = self.__get_module_tracking_record(current_module_path)
 
             for imp in current_mtr.imports:
-                _logcore.debug(
+                _logcore.trace(  # type: ignore
                     "Removing {imp} as being imported by {current_mtr}",
                     imp=imp,
                     current_mtr=current_mtr,
@@ -182,7 +182,7 @@ class DependencyTracker:
         nodes_to_reload = self.__build_recursive_list_of_importers_of_node(root)
 
         if _logcore.getEffectiveLevel() < logging.DEBUG:
-            _logcore.debug(
+            _logcore.trace(  # type: ignore
                 "Depdency Graph: {graph}",
                 graph=self.render_dependency_graph(),
             )
@@ -253,7 +253,7 @@ class DependencyTracker:
                 imp,
                 depth=depth + 1,
             )
-            _logcore.debug(
+            _logcore.trace(  # type: ignore
                 "Dependencies of {node}: {importers}",
                 node=node,
                 importers=importers,
@@ -274,7 +274,7 @@ class DependencyTracker:
                 imp,
                 depth=depth + 1,
             )
-            _logcore.debug(
+            _logcore.trace(  # type: ignore
                 "Importers of {node}: {importers}",
                 node=node,
                 importers=importers,
@@ -284,7 +284,7 @@ class DependencyTracker:
         return nodes
 
     def __load_nodes(self, nodes: list[ModuleTrackingRecord]) -> None:
-        _logcore.debug("Attempting to Load Modules: {nodes}", nodes=nodes)
+        _logcore.trace("Attempting to Load Modules: {nodes}", nodes=nodes)  # type: ignore
 
         try:
             importlib.invalidate_caches()

@@ -15,6 +15,26 @@ from domovoy.core.errors import DomovoyError
 from domovoy.core.logging.http_json import JsonHtttpHandler
 
 
+def __add_trace_logging_level(level_num: int) -> None:
+    if hasattr(logging, "trace"):
+        return
+
+    def _log_for_level(self, *args, **kwargs) -> None:  # noqa: ANN001, ANN002, ANN003
+        if self.isEnabledFor(level_num):
+            self._log(level_num, args, **kwargs)
+
+    def _log_to_root(*args, **kwargs) -> None:  # noqa:   ANN002, ANN003
+        logging.log(level_num, *args, **kwargs)
+
+    logging.addLevelName(level_num, "trace")
+    setattr(logging, "trace", level_num)  # noqa: B010
+    setattr(logging.getLoggerClass(), "trace", _log_for_level)  # noqa: B010
+    setattr(logging, "trace", _log_to_root)  # noqa: B010
+
+
+__add_trace_logging_level(logging.DEBUG - 5)
+
+
 class BraceMessage:
     def __init__(self, fmt: str, args: tuple[object, ...], kwargs: dict[str, object]) -> None:
         self.fmt = fmt
@@ -45,6 +65,9 @@ class StyleAdapter(logging.LoggerAdapter):
             msg, log_kwargs = self.process(str(msg), kwargs)
             self.logger._log(level, BraceMessage(msg, args, kwargs), (), **log_kwargs)  # noqa: SLF001
             log_kwargs["extra"] = {}
+
+    def trace(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        self.logger.trace(*args, **kwargs)
 
     def process(self, msg: str, kwargs: MutableMapping[str, object]) -> tuple[str, dict[str, object]]:
         log_kwargs = getfullargspec(self.logger._log).args[1:]  # noqa: SLF001
@@ -131,18 +154,21 @@ def __build_logger(
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
 
+    configured_log_level = config.get_numeric_log_level()
+
     formatter = (
         config.formatter
         if not include_app_name or config.formatter_with_app_name is None
         else config.formatter_with_app_name
     )
 
-    if config.write_to_stdout:
-        handler = logging.StreamHandler(config.get_actual_output_stream())
-        handler.setFormatter(
-            __get_extended_formatter(coloredlogs.ColoredFormatter)(formatter),
+    if config.http_sink:
+        handler = JsonHtttpHandler(
+            url=config.http_sink.url,
+            username=config.http_sink.username,
+            password=config.http_sink.password,
         )
-        handler.setLevel(config.get_numeric_log_level())
+        handler.setLevel(logging.DEBUG)
         logger.addHandler(handler)
 
     if config.output_filename:
@@ -155,23 +181,19 @@ def __build_logger(
             maxBytes=5_000_000,
         )
         handler.setFormatter(__get_extended_formatter(logging.Formatter)(formatter))
-        handler.setLevel(config.get_numeric_log_level())
+        handler.setLevel(configured_log_level)
 
         logger.addHandler(handler)
 
-    if config.http_sink:
-        handler = JsonHtttpHandler(
-            url=config.http_sink.url,
-            username=config.http_sink.username,
-            password=config.http_sink.password,
+    if config.write_to_stdout:
+        handler = logging.StreamHandler(config.get_actual_output_stream())
+        handler.setFormatter(
+            __get_extended_formatter(coloredlogs.ColoredFormatter)(formatter),
         )
-        handler.setLevel(logging.DEBUG)
+        handler.setLevel(configured_log_level)
         logger.addHandler(handler)
 
     _log_config[logger_name] = StyleAdapter(logger)
-
-    # if config.get_numeric_log_level() > logging.DEBUG:
-    #     _log_config[logger_name].debug = _dummy_logger_function
 
     return _log_config[logger_name]
 

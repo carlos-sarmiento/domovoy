@@ -25,8 +25,8 @@ def actual_emit(self: JsonHtttpHandler, record: logging.LogRecord) -> None:
         "logger_name": record.name,
         "args": args,
         "level": record.levelname,
-        "time": record.asctime,
-        "message": record.message,
+        "time": raw.get("asctime", raw.get("created", None)),
+        "message": raw.get("message", raw.get("msg", "")),
     }
 
     if "app_name" in args:

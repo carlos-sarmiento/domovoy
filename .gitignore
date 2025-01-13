@@ -172,3 +172,4 @@ logs
 storage
 remote
 connect.sh
+server.py
