@@ -187,7 +187,7 @@ class AppWrapper:
                 context_logger.set(logger)
                 context_callback_id.set(callback_id)
 
-                _logcore.debug(
+                _logcore.trace(  # type: ignore
                     "Calling {function_name} -- args: {pargs} -- kwargs: {pkwargs}",
                     function_name=func.__name__,
                     pargs=args,
