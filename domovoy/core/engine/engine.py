@@ -49,6 +49,9 @@ class AppRegistration:
     config: AppConfigBase
     logging_config_name: str
 
+    def get_app_name_for_logs(self) -> str:
+        return f"{self.app_class.__name__}.{self.app_name}"
+
 
 class AppEngine:
     __active_apps: dict[str, list[AppWrapper]]
@@ -162,7 +165,7 @@ class AppEngine:
             _logcore.exception(
                 "Error when initializing app: {app_name}",
                 e,
-                app_name=f"{app_registration.app_class.__name__}.{app_registration.app_name}",
+                app_name=app_registration.get_app_name_for_logs(),
             )
 
     def __build_app_instance(self, app_registration: AppRegistration) -> AppWrapper:
@@ -171,7 +174,7 @@ class AppEngine:
 
         _logcore.debug(
             "Initializing AppWrapper for {app_name}",
-            app_name=app_registration.app_name,
+            app_name=app_registration.get_app_name_for_logs(),
         )
         wrapper = AppWrapper(
             config=app_registration.config,
@@ -182,13 +185,13 @@ class AppEngine:
             status=AppStatus.CREATED,
             logger=get_logger_for_app(
                 app_registration.logging_config_name,
-                f"{app_registration.app_class.__name__}.{app_registration.app_name}",
+                app_registration.get_app_name_for_logs(),
             ),
         )
 
         _logcore.debug(
             "Initializing Modules for {app_name}",
-            app_name=app_registration.app_name,
+            app_name=app_registration.get_app_name_for_logs(),
         )
 
         logmodule = LoggerPlugin("log", wrapper)
@@ -222,13 +225,13 @@ class AppEngine:
 
         _logcore.debug(
             "Preparing all plugins for app {app_name}",
-            app_name=app_registration.app_name,
+            app_name=app_registration.get_app_name_for_logs(),
         )
         wrapper.prepare_all_plugins()
 
         _logcore.debug(
             "Creating instance of class {class_name} for app {app_name}",
-            app_name=app_registration.app_name,
+            app_name=app_registration.get_app_name_for_logs(),
             class_name=app_registration.app_class.__name__,
         )
         wrapper.app = app_registration.app_class(
