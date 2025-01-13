@@ -4,10 +4,12 @@ WORKDIR /usr/src/app
 
 COPY pyproject.toml uv.lock README.md  ./
 
+RUN uv pip install --system -r pyproject.toml
+
 COPY domovoy ./domovoy
 
-RUN uv sync --frozen
+RUN uv pip install --system -e .
 
 WORKDIR /config
 
-CMD [ "uv", "run", "/usr/src/app/domovoy/cli.py", "--project", "/usr/src/app/", "--config", "/config/config.yml" ]
+CMD [ "uv", "run", "/usr/src/app/domovoy/cli.py", "--config", "/config/config.yml" ]
