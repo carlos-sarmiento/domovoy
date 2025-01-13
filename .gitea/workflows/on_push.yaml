@@ -13,6 +13,7 @@ jobs:
           python-version: "3.13"
       - name: Install poetry
         run: pipx install poetry && pipx ensurepath && pipx inject poetry poetry-plugin-export
+      - run: /root/.local/bin/poetry lock
       - run: /root/.local/bin/poetry export > docker_requirements.txt
       - name: Set up Docker Buildx
         uses: https://github.com/docker/setup-buildx-action@v3
