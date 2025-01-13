@@ -13,6 +13,7 @@ from domovoy.core.configuration import LoggingConfig, get_main_config
 from domovoy.core.context import context_logger
 from domovoy.core.errors import DomovoyError
 from domovoy.core.logging.http_json import JsonHtttpHandler
+from domovoy.core.logging.logger_adapter_with_trace import LoggerAdapterWithTrace
 
 
 def __add_trace_logging_level(level_num: int) -> None:
@@ -56,7 +57,7 @@ class BraceMessage:
             return str(self.fmt)
 
 
-class StyleAdapter(logging.LoggerAdapter):
+class StyleAdapter(LoggerAdapterWithTrace):
     def __init__(self, logger: logging.Logger) -> None:
         super().__init__(logger, {}, merge_extra=True)
 
@@ -65,9 +66,6 @@ class StyleAdapter(logging.LoggerAdapter):
             msg, log_kwargs = self.process(str(msg), kwargs)
             self.logger._log(level, BraceMessage(msg, args, kwargs), (), **log_kwargs)  # noqa: SLF001
             log_kwargs["extra"] = {}
-
-    def trace(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
-        self.logger.trace(*args, **kwargs)
 
     def process(self, msg: str, kwargs: MutableMapping[str, object]) -> tuple[str, dict[str, object]]:
         log_kwargs = getfullargspec(self.logger._log).args[1:]  # noqa: SLF001
@@ -87,7 +85,7 @@ class StyleAdapter(logging.LoggerAdapter):
         )
 
 
-_log_config: dict[str, logging.LoggerAdapter[logging.Logger]] = {}
+_log_config: dict[str, LoggerAdapterWithTrace[logging.Logger]] = {}
 _default_config = LoggingConfig()
 
 
@@ -148,7 +146,7 @@ def __build_logger(
     *,
     include_app_name: bool,
     use_app_logger_default: bool,
-) -> logging.LoggerAdapter[logging.Logger]:
+) -> LoggerAdapterWithTrace[logging.Logger]:
     config = __get_log_config(logger_name, use_app_logger_default=use_app_logger_default)
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
@@ -210,7 +208,7 @@ def get_logger(
     *,
     include_app_name: bool = False,
     use_app_logger_default: bool = False,
-) -> logging.LoggerAdapter[logging.Logger]:
+) -> LoggerAdapterWithTrace[logging.Logger]:
     if logger_name not in _log_config:
         return __build_logger(
             logger_name,
@@ -221,7 +219,7 @@ def get_logger(
     return _log_config[logger_name]
 
 
-def get_context_logger() -> logging.LoggerAdapter[logging.Logger]:
+def get_context_logger() -> LoggerAdapterWithTrace[logging.Logger]:
     logger = context_logger.get(None)
 
     if logger is None:
@@ -246,14 +244,14 @@ def get_context_logger() -> logging.LoggerAdapter[logging.Logger]:
 def get_logger_for_app(
     logger_name: str,
     app_name: str,
-) -> logging.LoggerAdapter[logging.Logger | logging.LoggerAdapter]:
+) -> LoggerAdapterWithTrace[logging.Logger | LoggerAdapterWithTrace]:
     _logcore.debug(
         "Loading Logger with AppName: logger_name: {logger_name} - app_name: {app_name}",
         logger_name=logger_name,
         app_name=app_name,
     )
 
-    return logging.LoggerAdapter(
+    return LoggerAdapterWithTrace(
         get_logger(
             logger_name,
             include_app_name=True,
