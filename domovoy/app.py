@@ -32,13 +32,13 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
     try:
         _logcore.info("Starting Domovoy")
 
-        _logcore.debug("Inserting App path into Python PATH")
+        _logcore.trace("Inserting App path into Python PATH")
         app_path = get_main_config().app_path
         app_path = Path(app_path).resolve()
 
         parent_app_path = (app_path / os.pardir).resolve()
 
-        _logcore.debug(
+        _logcore.trace(
             "Inserting Parent Path: `{parent_app_path}` of App Path: `{app_path}` to PYTHON_PATH",
             parent_app_path=parent_app_path,
             app_path=app_path,
@@ -47,13 +47,13 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
 
         install_requirements()
 
-        _logcore.debug("Initializing App Engine")
+        _logcore.trace("Initializing App Engine")
         app_engine = AppEngine()
         set_active_engine_for_app_registration(app_engine)
 
         await app_engine.start()
 
-        _logcore.debug("Initializing Dependency Tracker")
+        _logcore.trace("Initializing Dependency Tracker")
         dependency_tracker = DependencyTracker(str(app_path), app_engine)
 
         dependency_tracker.start()
@@ -80,7 +80,7 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
             )
 
             for t in pending_tasks:
-                _logcore.debug(t)
+                _logcore.trace(t)
                 t.cancel()
 
             await asyncio.gather(*pending_tasks, return_exceptions=True)
@@ -94,7 +94,7 @@ async def loop_until_exit() -> None:
             try:
                 await asyncio.sleep(5)
             except asyncio.CancelledError:
-                _logcore.debug("Async Loop was Cancelled")
+                _logcore.trace("Async Loop was Cancelled")
                 raise
 
     except (KeyboardInterrupt, SystemExit, asyncio.CancelledError):

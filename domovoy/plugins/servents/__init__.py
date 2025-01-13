@@ -304,7 +304,7 @@ class ServentsPlugin(AppPlugin):
     ) -> ServEntButton:
         final_event = f"{self.__meta.get_app_name()}.{event_name_to_fire}"
 
-        self._wrapper.logger.debug(
+        self._wrapper.logger.trace(
             "Creating Button with final_event name `{final_event}`. Length: ``",
             final_event=final_event,
         )
@@ -313,7 +313,7 @@ class ServentsPlugin(AppPlugin):
         target_event_data = event_data
 
         if len(final_event) > 50:
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Using Extended Button Press functionality for `{final_event}`",
                 final_event=final_event,
             )
@@ -337,7 +337,7 @@ class ServentsPlugin(AppPlugin):
         )
 
         if target_event == self._SERVENT_EXTENDED_BUTTON_PRESS_EVENT:
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Configuring Callback using Extended Button Press functionality for `{final_event}`",
                 final_event=final_event,
             )
@@ -345,7 +345,7 @@ class ServentsPlugin(AppPlugin):
             async def extended_callback(
                 data: dict[str, Any],
             ) -> None:
-                self._wrapper.logger.debug(
+                self._wrapper.logger.trace(
                     "Received Extended Button Press with event: `{final_event}`",
                     final_event=final_event,
                 )
@@ -372,7 +372,7 @@ class ServentsPlugin(AppPlugin):
             )
 
         else:
-            self._wrapper.logger.debug(
+            self._wrapper.logger.trace(
                 "Adding simple button press listener for {target_event}",
                 target_event=target_event,
             )

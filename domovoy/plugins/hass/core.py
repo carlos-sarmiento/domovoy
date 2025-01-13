@@ -255,7 +255,7 @@ class HassCore(DomovoyService):
         entity_id = get_type_instance_for_entity_id(str(event_data["entity_id"]))
 
         if event_data.get("new_state") is None:
-            _logcore.debug(
+            _logcore.trace(
                 "No New State received for `state_changed` event for {entity_id}, event_data {event_data}",
                 entity_id=entity_id,
                 event_data=event_data,
