@@ -82,7 +82,7 @@ class EventListener(DomovoyService):
         callback: Callable[[str, str, dict[str, Any]], Awaitable[None]],
         listener_id: str | None = None,
     ) -> str:
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Adding a listener for event(s): {events}",
             events=events,
         )
@@ -105,7 +105,7 @@ class EventListener(DomovoyService):
         return listener_id
 
     def remove_listener(self, listener_id: str) -> None:
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Removing listener with id: {listener_id}",
             listener_id=listener_id,
         )

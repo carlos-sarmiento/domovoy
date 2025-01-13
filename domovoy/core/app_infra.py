@@ -135,7 +135,7 @@ class AppWrapper:
 
     def register_plugin(self, plugin: AppPlugin, name: str) -> None:
         plugin_type = type(plugin)
-        _logcore.debug(
+        _logcore.trace(  # type: ignore
             "Registering plugin of type {plugin_type} with name {name}",
             plugin_type=plugin_type,
             name=name,
@@ -144,7 +144,6 @@ class AppWrapper:
             self.plugins[plugin_type] = {}
 
         self.plugins[plugin_type][name] = plugin
-        _logcore.debug(f"{self.plugins}")
 
     def prepare_all_plugins(self) -> None:
         for plugin_group in self.plugins.values():
