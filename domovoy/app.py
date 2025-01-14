@@ -86,9 +86,17 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
 
             await asyncio.gather(*pending_tasks, return_exceptions=True)
 
-        _logcore.info("Stopping Auxiliary ThreadPool")
-        executor.shutdown(cancel_futures=True)
+        pending_job_count = executor._work_queue.qsize()  # noqa: SLF001
 
+        if pending_job_count > 0:
+            _logcore.warning(
+                "Stopping Auxiliary ThreadPool. {pending_job_count} jobs remaining. This might take a while to resolve",
+                pending_job_count=pending_job_count,
+            )
+        else:
+            _logcore.info("Stopping Auxiliary ThreadPool")
+
+        executor.shutdown()
         _logcore.info("Domovoy Terminated")
 
 

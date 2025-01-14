@@ -30,7 +30,7 @@ class AstralConfig:
 class LoggingHandlerConfig:
     formatter: str | None = None
     formatter_with_app_name: str | None = None
-    log_level: str | None = None
+    log_level: Literal["critical", "error", "warning", "info", "debug", "trace"] | None = None
 
     def get_numeric_log_level(self) -> int | None:  # noqa: PLR0911
         if self.log_level == "critical":
