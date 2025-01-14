@@ -21,31 +21,31 @@ exception_count: int = 0
 
 
 def actual_emit(self: JsonHtttpHandler, record: logging.LogRecord) -> None:
-    raw = record.__dict__
+    try:
+        raw = record.__dict__
 
-    args = raw.get("_additionalArgs", {})
+        args = raw.get("_additionalArgs", {})
 
-    data = {
-        "logger_name": record.name,
-        "args": args,
-        "level": record.levelname,
-        "time": raw.get("asctime", raw.get("created", None)),
-        "message": raw.get("message", raw.get("msg", "")),
-    }
-
-    if "app_name" in args:
-        data["app_name"] = args["app_name"]
-
-    if record.exc_info:
-        tp, obj, trace = record.exc_info
-        data["exception"] = {
-            "message": str(obj),
-            "type": tp.__name__ if tp else None,
-            "trace": record.exc_text,
+        data = {
+            "logger_name": record.name,
+            "args": args,
+            "level": record.levelname,
+            "time": raw.get("asctime", raw.get("created", None)),
+            "message": raw.get("message", raw.get("msg", "")),
         }
 
-    data = json.dumps([data], default=default)
-    try:
+        if "app_name" in args:
+            data["app_name"] = args["app_name"]
+
+        if record.exc_info:
+            tp, obj, trace = record.exc_info
+            data["exception"] = {
+                "message": str(obj),
+                "type": tp.__name__ if tp else None,
+                "trace": record.exc_text,
+            }
+
+        data = json.dumps([data], default=default)
         self.session.post(self.url, data=data)
     except requests.exceptions.ConnectionError as e:
         global last_exception
@@ -105,5 +105,7 @@ class JsonHtttpHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         try:
             executor.submit(actual_emit, self, record)
-        except RuntimeError:
+        except Exception as e:
+            print(e, record.__dict__)
+
             actual_emit(self, record)
