@@ -49,7 +49,7 @@ class EventListener(DomovoyService):
         )
 
         if not self.__is_running:
-            _logcore.error(
+            _logcore.trace(
                 "Attempted to publish an event, but the EventListener is not running",
             )
             return

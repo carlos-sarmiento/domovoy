@@ -12,7 +12,6 @@ dependencies = [
     "coloredlogs>=15.0.1",
     "apscheduler>=3.10.1",
     "websockets>=12.0",
-    "dataclass-wizard>=0.22.2",
     "pyyaml>=6.0",
     "python-dateutil>=2.8.2",
     "astral>=3.2",
@@ -23,6 +22,7 @@ dependencies = [
     "idna>=3.7",
     "pytz~=2024.2",
     "requests>=2.32.3,<3",
+    "pyserde[yaml]>=0.23.0",
 ]
 
 [dependency-groups]

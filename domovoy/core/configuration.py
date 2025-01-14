@@ -3,19 +3,104 @@ from __future__ import annotations
 import logging
 import sys
 from dataclasses import dataclass, field
-from typing import TextIO
+from typing import Literal, TextIO
 
 import pytz
 from astral import LocationInfo
 from astral.location import Location
-from dataclass_wizard import YAMLWizard
 from pytz import BaseTzInfo
+from serde import deserialize
+from serde.yaml import from_yaml
 
 from domovoy.core.errors import DomovoyError
 
 
-@dataclass(frozen=True)
-class MainConfig(YAMLWizard):
+@deserialize
+@dataclass(kw_only=True, eq=True, frozen=True)
+class AstralConfig:
+    name: str
+    region: str
+    timezone: str
+    latitude: float
+    longitude: float
+
+
+@deserialize
+@dataclass(kw_only=True, eq=True, frozen=True)
+class LoggingHandlerConfig:
+    formatter: str | None = None
+    formatter_with_app_name: str | None = None
+    log_level: str | None = None
+
+    def get_numeric_log_level(self) -> int | None:  # noqa: PLR0911
+        if self.log_level == "critical":
+            return logging.CRITICAL
+
+        if self.log_level == "error":
+            return logging.ERROR
+
+        if self.log_level == "warning":
+            return logging.WARNING
+
+        if self.log_level == "info":
+            return logging.INFO
+
+        if self.log_level == "debug":
+            return logging.DEBUG
+
+        if self.log_level == "trace":
+            return logging.TRACE  # type: ignore
+
+        return None
+
+
+@deserialize
+@dataclass(kw_only=True, eq=True, frozen=True)  # type: ignore
+class StreamLoggingHandler(LoggingHandlerConfig):
+    stream: Literal["stdout", "stderr"] = "stdout"
+
+    def get_actual_output_stream(self) -> TextIO | None:
+        if self.stream == "stdout":
+            return sys.stdout
+
+        if self.stream == "stderr":
+            return sys.stderr
+
+        return None
+
+
+@deserialize
+@dataclass(kw_only=True, eq=True, frozen=True)  # type: ignore
+class FileLoggingHandler(LoggingHandlerConfig):
+    filename: str  # type: ignore
+
+
+@deserialize
+@dataclass(kw_only=True, eq=True, frozen=True)  # type: ignore
+class OpenObserveLoggingHandler(LoggingHandlerConfig):
+    username: str  # type: ignore
+    password: str  # type: ignore
+    url: str  # type: ignore
+
+
+@deserialize
+@dataclass(kw_only=True, eq=True, frozen=True)  # type: ignore
+class LoggingConfig(LoggingHandlerConfig):
+    handlers: set[StreamLoggingHandler | FileLoggingHandler | OpenObserveLoggingHandler] = field(default_factory=set)
+
+    def __add__(self, b: LoggingConfig) -> LoggingConfig:
+        return LoggingConfig(
+            handlers=self.handlers | b.handlers,
+            formatter=b.formatter if b.formatter is not None else self.formatter,
+            formatter_with_app_name=b.formatter_with_app_name
+            if b.formatter_with_app_name is not None
+            else self.formatter_with_app_name,
+            log_level=b.log_level if b.log_level is not None else self.log_level,
+        )
+
+
+@deserialize(kw_only=True, frozen=True)
+class MainConfig:
     app_suffix: str
     timezone: str
     hass_access_token: str
@@ -44,90 +129,6 @@ class MainConfig(YAMLWizard):
         )
 
 
-@dataclass
-class AstralConfig:
-    name: str
-    region: str
-    timezone: str
-    latitude: float
-    longitude: float
-
-
-@dataclass
-class HttpLoggingConfig:
-    username: str
-    password: str
-    url: str
-
-
-@dataclass
-class LoggingConfig:
-    log_level: str | None = "info"
-    output_filename: str | None = None
-    write_to_stdout: bool | None = True
-    formatter: str | None = "[%(asctime)s][%(levelname)s][%(name)s]  %(message)s"
-    formatter_with_app_name: str | None = "[%(asctime)s][%(levelname)s][%(name)s][%(app_name)s]  %(message)s"
-    http_sink: HttpLoggingConfig | None = None
-
-    def get_actual_output_stream(self) -> TextIO | None:
-        if self.write_to_stdout is None or self.write_to_stdout is True:
-            return sys.stdout
-
-        if self.write_to_stdout is False:
-            return None
-
-        msg = f"Invalid value for output_stream: {self.write_to_stdout}"
-        raise ValueError(msg)
-
-    def get_numeric_log_level(self) -> int:
-        if self.log_level == "critical":
-            return logging.CRITICAL
-
-        if self.log_level == "error":
-            return logging.ERROR
-
-        if self.log_level == "warning":
-            return logging.WARNING
-
-        if self.log_level == "info":
-            return logging.INFO
-
-        if self.log_level == "debug":
-            return logging.DEBUG
-
-        return 0
-
-    def __add__(self, b: LoggingConfig) -> LoggingConfig:
-        result = LoggingConfig(
-            log_level=self.log_level,
-            output_filename=self.output_filename,
-            write_to_stdout=self.write_to_stdout,
-            formatter=self.formatter,
-            formatter_with_app_name=self.formatter_with_app_name,
-            http_sink=self.http_sink,
-        )
-
-        if b.log_level is not None:
-            result.log_level = b.log_level
-
-        if b.output_filename is not None:
-            result.output_filename = b.output_filename
-
-        if b.write_to_stdout is not None:
-            result.write_to_stdout = b.write_to_stdout
-
-        if b.formatter is not None:
-            result.formatter = b.formatter
-
-        if b.formatter_with_app_name is not None:
-            result.formatter_with_app_name = b.formatter_with_app_name
-
-        if b.http_sink is not None:
-            result.http_sink = b.http_sink
-
-        return result
-
-
 def load_main_config_from_yaml(config: str, source: str) -> None:
     from domovoy.core.logging import get_logger
 
@@ -136,7 +137,7 @@ def load_main_config_from_yaml(config: str, source: str) -> None:
         source=source,
     )
 
-    main_config = MainConfig.from_yaml(config)
+    main_config = from_yaml(MainConfig, config)
 
     if isinstance(main_config, MainConfig):
         pass

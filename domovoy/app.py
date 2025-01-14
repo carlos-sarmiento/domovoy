@@ -11,6 +11,7 @@ from domovoy.core.engine.active_engine import set_active_engine_for_app_registra
 from domovoy.core.engine.engine import AppEngine
 from domovoy.core.logging import get_logger
 from domovoy.core.services.pip_dependencies import install_requirements
+from domovoy.core.thread_pool import executor
 
 _logcore = get_logger(__name__)
 
@@ -84,6 +85,9 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
                 t.cancel()
 
             await asyncio.gather(*pending_tasks, return_exceptions=True)
+
+        _logcore.info("Stopping Auxiliary ThreadPool")
+        executor.shutdown(cancel_futures=True)
 
         _logcore.info("Domovoy Terminated")
 

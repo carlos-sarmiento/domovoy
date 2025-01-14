@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import base64
-import concurrent.futures
+import datetime
 import logging
 
 import orjson as json
@@ -9,11 +9,15 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+from domovoy.core.thread_pool import executor
 
 
 def default(obj: object) -> str:
     return str(obj)
+
+
+last_exception: datetime.datetime | None = None
+exception_count: int = 0
 
 
 def actual_emit(self: JsonHtttpHandler, record: logging.LogRecord) -> None:
@@ -41,7 +45,20 @@ def actual_emit(self: JsonHtttpHandler, record: logging.LogRecord) -> None:
         }
 
     data = json.dumps([data], default=default)
-    self.session.post(self.url, data=data)
+    try:
+        self.session.post(self.url, data=data)
+    except requests.exceptions.ConnectionError as e:
+        global last_exception
+        global exception_count
+        now = datetime.datetime.now(datetime.UTC)
+        if last_exception is None or now - last_exception >= datetime.timedelta(minutes=1):
+            logging.warning(
+                f"We failed to submit logs to: {self.url}. There have been {exception_count} additional failures since the last message",
+            )
+            last_exception = now
+            exception_count = 0
+        else:
+            exception_count += 1
 
 
 class JsonHtttpHandler(logging.Handler):
@@ -57,7 +74,13 @@ class JsonHtttpHandler(logging.Handler):
         self.session.mount(
             "https://",
             HTTPAdapter(
-                max_retries=Retry(total=5, backoff_factor=0.5, status_forcelist=[403, 500]),
+                max_retries=Retry(
+                    total=5,
+                    backoff_factor=0.5,
+                    status_forcelist=[403, 500],
+                    connect=0,
+                    raise_on_status=True,
+                ),
                 pool_connections=self.MAX_POOLSIZE,
                 pool_maxsize=self.MAX_POOLSIZE,
             ),
@@ -66,7 +89,13 @@ class JsonHtttpHandler(logging.Handler):
         self.session.mount(
             "http://",
             HTTPAdapter(
-                max_retries=Retry(total=5, backoff_factor=0.5, status_forcelist=[403, 500]),
+                max_retries=Retry(
+                    total=5,
+                    backoff_factor=0.5,
+                    status_forcelist=[403, 500],
+                    connect=0,
+                    raise_on_status=True,
+                ),
                 pool_connections=self.MAX_POOLSIZE,
                 pool_maxsize=self.MAX_POOLSIZE,
             ),
@@ -74,4 +103,7 @@ class JsonHtttpHandler(logging.Handler):
         super().__init__()
 
     def emit(self, record: logging.LogRecord) -> None:
-        executor.submit(actual_emit, self, record)
+        try:
+            executor.submit(actual_emit, self, record)
+        except RuntimeError:
+            actual_emit(self, record)
