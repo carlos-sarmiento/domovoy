@@ -10,8 +10,8 @@ from domovoy.core.dependency_tracking.dependency_tracker import DependencyTracke
 from domovoy.core.engine.active_engine import set_active_engine_for_app_registration
 from domovoy.core.engine.engine import AppEngine
 from domovoy.core.logging import get_logger
+from domovoy.core.logging.http_json import JsonHtttpHandler
 from domovoy.core.services.pip_dependencies import install_requirements
-from domovoy.core.thread_pool import executor
 
 _logcore = get_logger(__name__)
 
@@ -86,17 +86,9 @@ async def start(*, wait_for_all_tasks_before_exit: bool = True) -> None:
 
             await asyncio.gather(*pending_tasks, return_exceptions=True)
 
-        pending_job_count = executor._work_queue.qsize()  # noqa: SLF001
+        _logcore.info("Stopping HttpLoggers")
+        JsonHtttpHandler.shutdown()
 
-        if pending_job_count > 0:
-            _logcore.warning(
-                "Stopping Auxiliary ThreadPool. {pending_job_count} jobs remaining. This might take a while to resolve",
-                pending_job_count=pending_job_count,
-            )
-        else:
-            _logcore.info("Stopping Auxiliary ThreadPool")
-
-        executor.shutdown()
         _logcore.info("Domovoy Terminated")
 
 
