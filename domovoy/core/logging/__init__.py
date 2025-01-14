@@ -9,9 +9,15 @@ from pathlib import Path
 import coloredlogs
 import pytz
 
-from domovoy.core.configuration import LoggingConfig, get_main_config
+from domovoy.core.configuration import (
+    FileLoggingHandler,
+    LoggingConfig,
+    OpenObserveLoggingHandler,
+    StreamLoggingHandler,
+    get_main_config,
+)
 from domovoy.core.context import context_logger
-from domovoy.core.errors import DomovoyError
+from domovoy.core.errors import DomovoyConfigurationError, DomovoyError
 from domovoy.core.logging.http_json import JsonHtttpHandler
 from domovoy.core.logging.logger_adapter_with_trace import LoggerAdapterWithTrace
 
@@ -27,8 +33,8 @@ def __add_trace_logging_level(level_num: int) -> None:
     def _log_to_root(*args, **kwargs) -> None:  # noqa:   ANN002, ANN003
         logging.log(level_num, *args, **kwargs)
 
-    logging.addLevelName(level_num, "trace")
-    setattr(logging, "trace", level_num)  # noqa: B010
+    logging.addLevelName(level_num, "TRACE")
+    setattr(logging, "TRACE", level_num)  # noqa: B010
     setattr(logging.getLoggerClass(), "trace", _log_for_level)  # noqa: B010
     setattr(logging, "trace", _log_to_root)  # noqa: B010
 
@@ -58,14 +64,14 @@ class BraceMessage:
 
 
 class StyleAdapter(LoggerAdapterWithTrace):
-    def __init__(self, logger: logging.Logger) -> None:
+    def __init__(self, logger: logging.Logger | logging.LoggerAdapter) -> None:
         super().__init__(logger, {}, merge_extra=True)
 
     def log(self, level: int, msg: object, *args: object, **kwargs: object) -> None:
-        if self.isEnabledFor(level):
-            msg, log_kwargs = self.process(str(msg), kwargs)
-            self.logger._log(level, BraceMessage(msg, args, kwargs), (), **log_kwargs)  # noqa: SLF001
-            log_kwargs["extra"] = {}
+        # if self.isEnabledFor(level):
+        msg, log_kwargs = self.process(str(msg), kwargs)
+        self.logger._log(level, BraceMessage(msg, args, kwargs), (), **log_kwargs)  # noqa: SLF001
+        log_kwargs["extra"] = {}
 
     def process(self, msg: str, kwargs: MutableMapping[str, object]) -> tuple[str, dict[str, object]]:
         log_kwargs = getfullargspec(self.logger._log).args[1:]  # noqa: SLF001
@@ -87,11 +93,6 @@ class StyleAdapter(LoggerAdapterWithTrace):
 
 _log_config: dict[str, LoggerAdapterWithTrace[logging.Logger]] = {}
 _default_config = LoggingConfig()
-
-
-def _dummy_logger_function(*_args: object, **_kwargs: object) -> None:
-    # do nothing
-    ...
 
 
 def __get_log_config(name: str, *, use_app_logger_default: bool) -> LoggingConfig:
@@ -147,53 +148,90 @@ def __build_logger(
     include_app_name: bool,
     use_app_logger_default: bool,
 ) -> LoggerAdapterWithTrace[logging.Logger]:
-    config = __get_log_config(logger_name, use_app_logger_default=use_app_logger_default)
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-
-    configured_log_level = config.get_numeric_log_level()
-
-    formatter = (
-        config.formatter
-        if not include_app_name or config.formatter_with_app_name is None
-        else config.formatter_with_app_name
+    config: LoggingConfig = __get_log_config(logger_name, use_app_logger_default=use_app_logger_default)
+    return __build_logger_with_config(
+        config=config,
+        logger_name=logger_name,
+        include_app_name=include_app_name,
     )
 
-    if config.http_sink:
-        handler = JsonHtttpHandler(
-            url=config.http_sink.url,
-            username=config.http_sink.username,
-            password=config.http_sink.password,
-        )
-        handler.setLevel(logging.DEBUG)
+
+def __build_logger_with_config(
+    *,
+    config: LoggingConfig,
+    logger_name: str,
+    include_app_name: bool,
+) -> LoggerAdapterWithTrace[logging.Logger]:
+    logger = logging.getLogger(logger_name)
+
+    config_log_level = config.get_numeric_log_level()
+    min_log_level = min([x.get_numeric_log_level() or logging.INFO for x in config.handlers] or [logging.INFO])
+
+    if config_log_level:
+        logger.setLevel(config_log_level)
+
+    if not config_log_level:
+        logger.setLevel(min_log_level)
+
+    logger.propagate = False
+
+    config_formatter = config.formatter
+    if config_formatter is None:
+        config_formatter = "[%(asctime)s][%(levelname)s][%(name)s]  %(message)s"
+
+    config_formatter_with_app_name = config.formatter_with_app_name
+    if config_formatter_with_app_name is None:
+        config_formatter_with_app_name = "[%(asctime)s][%(levelname)s][%(name)s][%(app_name)s]  %(message)s"
+
+    for handler_config in config.handlers:
+        if include_app_name:
+            formatter = (
+                handler_config.formatter_with_app_name
+                if handler_config.formatter_with_app_name
+                else config_formatter_with_app_name
+            )
+        else:
+            formatter = handler_config.formatter if handler_config.formatter else config_formatter
+
+        if isinstance(handler_config, OpenObserveLoggingHandler):
+            handler = JsonHtttpHandler(
+                url=handler_config.url,
+                username=handler_config.username,
+                password=handler_config.password,
+            )
+            handler.setFormatter(__get_extended_formatter(logging.Formatter)(formatter))
+
+        elif isinstance(handler_config, FileLoggingHandler):
+            output_filename = handler_config.filename.replace("{logger_name}", logger_name)
+
+            Path(output_filename).parent.mkdir(parents=True, exist_ok=True)
+            handler = RotatingFileHandler(
+                output_filename,
+                backupCount=5,
+                maxBytes=5_000_000,
+            )
+            handler.setFormatter(__get_extended_formatter(logging.Formatter)(formatter))
+
+        elif isinstance(handler_config, StreamLoggingHandler):
+            handler = logging.StreamHandler(handler_config.get_actual_output_stream())
+            handler.setFormatter(
+                __get_extended_formatter(coloredlogs.ColoredFormatter)(formatter),
+            )
+        else:
+            raise DomovoyConfigurationError("Unsupported LoggerConfig Handler")
+
+        log_level = handler_config.get_numeric_log_level()
+
+        if log_level:
+            handler.setLevel(log_level)
+        elif config_log_level:
+            handler.setLevel(config_log_level)
+        else:
+            handler.setLevel(logging.INFO)
+
         logger.addHandler(handler)
 
-    if config.output_filename:
-        output_filename = config.output_filename.replace("{logger_name}", logger_name)
-
-        Path(output_filename).parent.mkdir(parents=True, exist_ok=True)
-        handler = RotatingFileHandler(
-            output_filename,
-            backupCount=5,
-            maxBytes=5_000_000,
-        )
-        handler.setFormatter(__get_extended_formatter(logging.Formatter)(formatter))
-        handler.setLevel(configured_log_level)
-
-        logger.addHandler(handler)
-
-    if config.write_to_stdout:
-        handler = logging.StreamHandler(config.get_actual_output_stream())
-        handler.setFormatter(
-            __get_extended_formatter(coloredlogs.ColoredFormatter)(formatter),
-        )
-        handler.setLevel(configured_log_level)
-        logger.addHandler(handler)
-
-    _log_config[logger_name] = StyleAdapter(logger)
-
-    return _log_config[logger_name]
+    return StyleAdapter(logger)
 
 
 _logcore = __build_logger(
@@ -210,7 +248,7 @@ def get_logger(
     use_app_logger_default: bool = False,
 ) -> LoggerAdapterWithTrace[logging.Logger]:
     if logger_name not in _log_config:
-        return __build_logger(
+        _log_config[logger_name] = __build_logger(
             logger_name,
             include_app_name=include_app_name,
             use_app_logger_default=use_app_logger_default,
