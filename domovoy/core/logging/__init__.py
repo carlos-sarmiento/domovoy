@@ -297,3 +297,13 @@ def get_logger_for_app(
         ),
         {"app_name": app_name},
     )
+
+
+logging_infra_logger = __build_logger_with_config(
+    config=LoggingConfig(
+        log_level="trace",
+        handlers={StreamLoggingHandler()},  # type: ignore
+    ),
+    logger_name="logging_infra",
+    include_app_name=False,
+)

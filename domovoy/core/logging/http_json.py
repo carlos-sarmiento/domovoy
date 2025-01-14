@@ -52,8 +52,12 @@ def actual_emit(self: JsonHtttpHandler, record: logging.LogRecord) -> None:
         global exception_count
         now = datetime.datetime.now(datetime.UTC)
         if last_exception is None or now - last_exception >= datetime.timedelta(minutes=1):
-            logging.warning(
-                f"We failed to submit logs to: {self.url}. There have been {exception_count} additional failures since the last message",
+            from domovoy.core.logging import logging_infra_logger
+
+            logging_infra_logger.critical(
+                "Failed to submit logs to: {destination}. There have been {additional_failures} additional failures since the last message",
+                destination=self.url,
+                additional_failures=exception_count,
             )
             last_exception = now
             exception_count = 0
@@ -78,8 +82,6 @@ class JsonHtttpHandler(logging.Handler):
                     total=5,
                     backoff_factor=0.5,
                     status_forcelist=[403, 500],
-                    connect=0,
-                    raise_on_status=True,
                 ),
                 pool_connections=self.MAX_POOLSIZE,
                 pool_maxsize=self.MAX_POOLSIZE,
@@ -93,8 +95,6 @@ class JsonHtttpHandler(logging.Handler):
                     total=5,
                     backoff_factor=0.5,
                     status_forcelist=[403, 500],
-                    connect=0,
-                    raise_on_status=True,
                 ),
                 pool_connections=self.MAX_POOLSIZE,
                 pool_maxsize=self.MAX_POOLSIZE,
