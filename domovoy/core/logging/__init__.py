@@ -27,11 +27,16 @@ def __add_trace_logging_level(level_num: int) -> None:
         return
 
     def _log_for_level(self, *args, **kwargs) -> None:  # noqa: ANN001, ANN002, ANN003
-        if self.isEnabledFor(level_num):
-            self._log(level_num, args, **kwargs)
+        try:
+            self.log(level_num, args, **kwargs)
+        except Exception as e:
+            print(e, args, kwargs)
 
     def _log_to_root(*args, **kwargs) -> None:  # noqa:   ANN002, ANN003
-        logging.log(level_num, *args, **kwargs)
+        try:
+            logging.log(level_num, *args, **kwargs)
+        except Exception as e:
+            print(e, args, kwargs)
 
     logging.addLevelName(level_num, "TRACE")
     setattr(logging, "TRACE", level_num)  # noqa: B010
