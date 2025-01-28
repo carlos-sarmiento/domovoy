@@ -55,15 +55,17 @@ class EntityState:
         self,
         target_states: PrimitiveHassValue | Sequence[PrimitiveHassValue],
         interval: Interval,
-        *,
-        log_calculations: bool = False,
     ) -> bool:
         if not interval.is_valid():
             raise ValueError("Hours, minutes and seconds cannot be all zero")
 
         entity_state = self.state
 
-        target_states = list(target_states) if isinstance(target_states, Sequence) else [target_states]
+        target_states = (
+            list(target_states)
+            if isinstance(target_states, Sequence) and not isinstance(target_states, str)
+            else [target_states]
+        )
 
         if entity_state not in target_states:
             return False
@@ -72,19 +74,18 @@ class EntityState:
         now = datetime.datetime.now(tz=datetime.UTC)
         minimum_time = self.last_changed + duration
 
-        if log_calculations:
-            _logcore.info(
-                "hass_been_in_state_calculation {vals}",
-                vals={
-                    "entity_id": self.entity_id,
-                    "target_states": target_states,
-                    "duration": duration,
-                    "now": now.isoformat(),
-                    "last_changed": self.last_changed.isoformat(),
-                    "minimum_time": minimum_time.isoformat(),
-                    "return_value": now >= minimum_time,
-                },
-            )
+        _logcore.trace(
+            "hass_been_in_state_calculation {vals}",
+            vals={
+                "entity_id": self.entity_id,
+                "target_states": target_states,
+                "duration": duration,
+                "now": now.isoformat(),
+                "last_changed": self.last_changed.isoformat(),
+                "minimum_time": minimum_time.isoformat(),
+                "return_value": now >= minimum_time,
+            },
+        )
 
         return now >= minimum_time
 
