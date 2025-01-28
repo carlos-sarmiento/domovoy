@@ -292,6 +292,11 @@ class AppEngine:
                 "Tried to terminate {app_name} but it is not running",
                 app_name=app_name_for_logs,
             )
+            _logcore.debug(
+                "Tried to terminate {app_name} but it is not running. Apps Running: {active_apps_by_name}",
+                app_name=app_name_for_logs,
+                active_apps_by_name=list(self.__active_app_by_name.keys()),
+            )
             return
 
         wrapper = self.__active_app_by_name[app_name]
