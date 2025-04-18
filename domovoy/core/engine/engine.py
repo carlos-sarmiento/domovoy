@@ -48,14 +48,17 @@ class AppRegistration:
     app_path: str
     config: AppConfigBase
     logging_config_name: str
+    active_instance: AppWrapper | None
 
     def get_app_name_for_logs(self) -> str:
         return f"{self.app_class.__name__}.{self.app_name}"
 
+    def __hash__(self) -> int:
+        return self.app_name.__hash__()
+
 
 class AppEngine:
-    __active_apps: dict[str, list[AppWrapper]]
-    __active_app_by_name: dict[str, AppWrapper]
+    __apps_by_path: dict[str, set[AppRegistration]]
     __app_registrations: dict[str, AppRegistration]
 
     __event_listener: EventListener
@@ -63,8 +66,7 @@ class AppEngine:
     __webapi: DomovoyWebApi
 
     def __init__(self) -> None:
-        self.__active_apps = {}
-        self.__active_app_by_name = {}
+        self.__apps_by_path = {}
         self.__app_registrations = {}
 
         self.__event_listener = EventListener(
@@ -121,7 +123,11 @@ class AppEngine:
         await self.__hass_core.stop()
 
     async def __get_all_apps_by_name(self) -> dict[str, AppWrapper]:
-        return self.__active_app_by_name
+        return {
+            name: registration.active_instance
+            for name, registration in self.__app_registrations.items()
+            if registration.active_instance is not None
+        }
 
     async def register_app(
         self,
@@ -134,12 +140,19 @@ class AppEngine:
         app_name_for_log = f"{app_class.__name__}.{app_name}"
         _logcore.info("Registering app: {app_name} in AppEngine", app_name=app_name_for_log)
 
-        if app_name in self.__active_app_by_name:
-            _logcore.error(
-                "{app_name} is already registered. Choose a different name.",
+        if app_name in self.__app_registrations:
+            registration = self.__app_registrations[app_name]
+            if registration.active_instance is not None:
+                _logcore.error(
+                    "{app_name} is already registered and running. Choose a different name.",
+                    app_name=app_name_for_log,
+                )
+                return
+
+            _logcore.warning(
+                "{app_name} is already registered but not running. Registration will be replaced.",
                 app_name=app_name_for_log,
             )
-            return
 
         if config is None:
             config = EmptyAppConfig()
@@ -150,14 +163,19 @@ class AppEngine:
             app_path=app_path,
             config=config,
             logging_config_name=logging_config_name or "apps",
+            active_instance=None,
         )
 
-        self.__app_registrations[app_name] = app_registration
-        await self.__start_app(app_name)
+        if app_registration.app_path not in self.__apps_by_path:
+            self.__apps_by_path[app_registration.app_path] = set()
 
-    async def __start_app(self, app_name: str) -> None:
+        self.__apps_by_path[app_registration.app_path].add(app_registration)
+        self.__app_registrations[app_name] = app_registration
+
+        await self.__start_app(app_registration)
+
+    async def __start_app(self, app_registration: AppRegistration) -> None:
         # Needs Validation
-        app_registration = self.__app_registrations[app_name]
         try:
             wrapper = self.__build_app_instance(app_registration)
             await self.__initialize_app(wrapper)
@@ -169,9 +187,6 @@ class AppEngine:
             )
 
     def __build_app_instance(self, app_registration: AppRegistration) -> AppWrapper:
-        if app_registration.app_path not in self.__active_apps:
-            self.__active_apps[app_registration.app_path] = []
-
         _logcore.trace(
             "Initializing AppWrapper for {app_name}",
             app_name=app_registration.get_app_name_for_logs(),
@@ -200,7 +215,7 @@ class AppEngine:
         meta = MetaPlugin(
             "meta",
             wrapper,
-            lambda: self.__reload_app(app_registration.app_name),
+            lambda: self.__reload_app(app_registration),
         )
         wrapper.register_plugin(meta, meta.name)
 
@@ -245,8 +260,7 @@ class AppEngine:
             time,
         )
 
-        self.__active_apps[app_registration.app_path].append(wrapper)
-        self.__active_app_by_name[app_registration.app_name] = wrapper
+        self.__app_registrations[app_registration.app_name].active_instance = wrapper
 
         return wrapper
 
@@ -266,7 +280,16 @@ class AppEngine:
             app_name=wrapper.get_app_name_for_logs(),
         )
 
-    async def __finalize_app(self, wrapper: AppWrapper) -> None:
+    async def __finalize_app(self, app_registration: AppRegistration) -> None:
+        wrapper = app_registration.active_instance
+
+        if wrapper is None:
+            _logcore.error(
+                "Tried to finalize app {app_name} which is not running",
+                app_name=app_registration.get_app_name_for_logs(),
+            )
+            return
+
         _logcore.info(
             "Calling finalize() for {app_name}",
             app_name=wrapper.get_app_name_for_logs(),
@@ -280,57 +303,53 @@ class AppEngine:
                 app_name=wrapper.get_app_name_for_logs(),
             )
 
-    async def __terminate_app(self, app_name: str, app_name_for_logs: str) -> None:
+    async def __terminate_app(self, app_registration: AppRegistration) -> None:
         # Needs Validation
+        app_name_for_logs = app_registration.get_app_name_for_logs()
+
         _logcore.trace(
             "Terminating {app_name}",
             app_name=app_name_for_logs,
         )
 
-        if app_name not in self.__active_app_by_name:
+        wrapper: AppWrapper | None = app_registration.active_instance
+
+        if wrapper is None:
             _logcore.warning(
                 "Tried to terminate {app_name} but it is not running",
                 app_name=app_name_for_logs,
             )
-            _logcore.debug(
-                "Tried to terminate {app_name} but it is not running. Apps Running: {active_apps_by_name}",
-                app_name=app_name_for_logs,
-                active_apps_by_name=list(self.__active_app_by_name.keys()),
-            )
             return
 
-        wrapper = self.__active_app_by_name[app_name]
         context_logger.set(wrapper.logger)
 
         wrapper.status = AppStatus.FINALIZING
         self.__callback_register.cancel_all_callbacks(wrapper)
-        await self.__finalize_app(wrapper)
+        await self.__finalize_app(app_registration)
         wrapper.status = AppStatus.TERMINATED
         app_name_for_logs = wrapper.get_app_name_for_logs()
-        self.__clear_app_instance(wrapper)
+        self.__clear_app_instance(app_registration)
         _logcore.trace(
             "Terminated {app_name}",
             app_name=app_name_for_logs,
         )
 
-    async def __reload_app(self, app_name: str) -> None:
-        wrapper = self.__active_app_by_name.get(app_name, None)
-        app_name_for_logs = wrapper.get_app_name_for_logs() if wrapper else f"Unknown.{app_name}"
+    async def __reload_app(self, registration: AppRegistration) -> None:
+        app_name_for_logs = registration.get_app_name_for_logs()
 
         _logcore.info(
             "Reloading app: {app_name}",
             app_name=app_name_for_logs,
         )
-        await self.__terminate_app(app_name, app_name_for_logs)
-        await self.__start_app(app_name)
+        await self.__terminate_app(registration)
+        await self.__start_app(registration)
 
-    def __clear_app_instance(self, wrapper: AppWrapper) -> None:
+    def __clear_app_instance(self, registration: AppRegistration) -> None:
         _logcore.trace(
-            "Clearing registrations for {app_name}",
-            app_name=wrapper.get_app_name_for_logs(),
+            "Clearing active instance for {app_name}",
+            app_name=registration.get_app_name_for_logs(),
         )
-        self.__active_app_by_name.pop(wrapper.app_name)
-        self.__active_apps[wrapper.filepath].remove(wrapper)
+        self.__app_registrations[registration.app_name].active_instance = None
 
     async def terminate_app_from_files(
         self,
@@ -343,12 +362,12 @@ class AppEngine:
             paths=paths,
         )
 
-        app_names_to_terminate: list[str] = []
+        app_names_to_terminate: list[AppRegistration] = []
         for path in paths:
-            if path not in self.__active_apps:
+            if path not in self.__apps_by_path:
                 continue
 
-            app_names_to_terminate += [x.app_name for x in self.__active_apps[path]]
+            app_names_to_terminate += self.__apps_by_path[path]
 
         await self.__terminate_multiple_apps(
             app_names_to_terminate,
@@ -357,7 +376,7 @@ class AppEngine:
 
     async def terminate_all_apps_before_engine_stop(self) -> None:
         await self.__terminate_multiple_apps(
-            list(self.__active_app_by_name.keys()),
+            list(self.__app_registrations.values()),
             remove_from_app_registry=True,
         )
 
@@ -366,7 +385,9 @@ class AppEngine:
     ) -> Callable[[], Awaitable[None]]:
         async def app_termination_callback() -> None:
             apps_to_terminate = [
-                app_name for app_name in self.__app_registrations if app_name in self.__active_app_by_name
+                registration
+                for registration in self.__app_registrations.values()
+                if registration.active_instance is not None
             ]
 
             _logcore.log(
@@ -375,7 +396,7 @@ class AppEngine:
                 apps_to_terminate=len(apps_to_terminate),
             )
 
-            app_terminations = [self.__terminate_app(app_name, app_name) for app_name in apps_to_terminate]
+            app_terminations = [self.__terminate_app(app_name) for app_name in apps_to_terminate]
             await asyncio.gather(*app_terminations)
 
         return app_termination_callback
@@ -385,43 +406,39 @@ class AppEngine:
     ) -> Callable[[], Awaitable[None]]:
         async def app_start_callback() -> None:
             apps_to_start = [
-                app_name for app_name in self.__app_registrations if app_name not in self.__active_app_by_name
+                registration
+                for registration in self.__app_registrations.values()
+                if registration.active_instance is None
             ]
 
             _logcore.warning(
                 "Starting {reload_app_count} Apps",
                 reload_app_count=len(apps_to_start),
             )
-            app_reloads = [self.__start_app(app_name) for app_name in apps_to_start]
+            app_reloads = [self.__start_app(app_registration) for app_registration in apps_to_start]
             await asyncio.gather(*app_reloads)
 
         return app_start_callback
 
     async def __terminate_multiple_apps(
         self,
-        app_names_to_terminate: list[str],
+        app_names_to_terminate: list[AppRegistration],
         *,
         remove_from_app_registry: bool,
     ) -> None:
         if not app_names_to_terminate:
             _logcore.warning("Called termination on an empty app list")
 
-        for app_name in app_names_to_terminate:
-            wrapper = self.__active_app_by_name.get(app_name, None)
-            app_name_for_logs = wrapper.get_app_name_for_logs() if wrapper else f"Unknown.{app_name}"
+        for app_registration in app_names_to_terminate:
+            app_name_for_logs = app_registration.get_app_name_for_logs()
 
-            await self.__terminate_app(app_name, app_name_for_logs)
+            await self.__terminate_app(app_registration)
 
             if remove_from_app_registry:
                 _logcore.trace(
                     "Removing app {app_name} from registrations",
                     app_name=app_name_for_logs,
                 )
-                if app_name not in self.__app_registrations:
-                    _logcore.warning(
-                        "Attempted to remove non-existing app registration for `{app_name}`",
-                        app_name=app_name_for_logs,
-                    )
-                    continue
 
-                self.__app_registrations.pop(app_name)
+                self.__app_registrations.pop(app_registration.app_name)
+                self.__apps_by_path[app_registration.app_path].remove(app_registration)
