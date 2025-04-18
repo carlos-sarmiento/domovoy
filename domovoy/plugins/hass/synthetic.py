@@ -74,10 +74,11 @@ class HassSyntheticDomainsServiceCalls:
 def __generate_type_for_target(entity_details: list | dict) -> str:
     if isinstance(entity_details, list):
         entity_details = entity_details[0] if entity_details else {}
+
     elif not isinstance(entity_details, dict):
         entity_details = {}
 
-    domains: list[str] = entity_details.get("domain", None)
+    domains: list[str] = entity_details.get("domain", None)  # type: ignore
 
     final_type = "EntityID"
 
@@ -195,7 +196,7 @@ def generate_stub_file_for_synthetic_services(
                                 typing += " | datetime"
                             if "entity" in field_params["selector"]:
                                 typing += (
-                                    f" | {__generate_type_for_entity_selector( field_params["selector"]["entity"])}"
+                                    f" | {__generate_type_for_entity_selector(field_params['selector']['entity'])}"
                                 )
 
                             if "select" in field_params["selector"]:
