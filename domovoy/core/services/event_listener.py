@@ -104,12 +104,12 @@ class EventListener(DomovoyService):
 
         return listener_id
 
-    def remove_listener(self, listener_id: str) -> None:
+    def remove_listener(self, listener_id: str, *, is_app_failed: bool) -> None:
         _logcore.trace(
             "Removing listener with id: {listener_id}",
             listener_id=listener_id,
         )
-        if listener_id not in self.__registered_callbacks_by_id:
+        if listener_id not in self.__registered_callbacks_by_id and not is_app_failed:
             _logcore.error(
                 "There was no listener with id: {listener_id} registered",
                 listener_id=listener_id,

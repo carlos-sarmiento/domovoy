@@ -239,7 +239,7 @@ class CallbackRegister(DomovoyService):
             )
             return
 
-        self.__event_listener.remove_listener(callback_id)
+        self.__event_listener.remove_listener(callback_id, is_app_failed=app_wrapper.status == AppStatus.FAILED)
         registration.is_registered = False
 
     def cancel_all_callbacks(
