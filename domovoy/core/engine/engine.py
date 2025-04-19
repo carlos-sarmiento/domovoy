@@ -185,6 +185,7 @@ class AppEngine:
                 e,
                 app_name=app_registration.get_app_name_for_logs(),
             )
+            await self.__terminate_app(app_registration)
 
     def __build_app_instance(self, app_registration: AppRegistration) -> AppWrapper:
         _logcore.trace(
@@ -271,8 +272,12 @@ class AppEngine:
             app_name=wrapper.get_app_name_for_logs(),
         )
         wrapper.status = AppStatus.INITIALIZING
-        await super(wrapper.app.__class__, wrapper.app).initialize()
-        await wrapper.app.initialize()
+        try:
+            await super(wrapper.app.__class__, wrapper.app).initialize()
+            await wrapper.app.initialize()
+        except:
+            wrapper.status = AppStatus.FAILED
+            raise
         wrapper.status = AppStatus.RUNNING
         self.__callback_register.register_all_callbacks(wrapper)
         _logcore.trace(
@@ -323,8 +328,8 @@ class AppEngine:
 
         context_logger.set(wrapper.logger)
 
-        wrapper.status = AppStatus.FINALIZING
         self.__callback_register.cancel_all_callbacks(wrapper)
+        wrapper.status = AppStatus.FINALIZING
         await self.__finalize_app(app_registration)
         wrapper.status = AppStatus.TERMINATED
         app_name_for_logs = wrapper.get_app_name_for_logs()

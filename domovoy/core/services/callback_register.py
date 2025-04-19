@@ -188,8 +188,8 @@ class CallbackRegister(DomovoyService):
 
         registration = app_wrapper.scheduler_callbacks[callback_id]
 
-        if not registration.is_registered:
-            c_logger().debug(
+        if not registration.is_registered and app_wrapper.status != AppStatus.FAILED:
+            c_logger().error(
                 "Tried to cancel callback with ID {callback_id} for app {app_name}, but"
                 " the callback was never registered",
                 callback_id=callback_id,
@@ -230,8 +230,8 @@ class CallbackRegister(DomovoyService):
 
         registration = app_wrapper.event_callbacks[callback_id]
 
-        if not registration.is_registered:
-            c_logger().debug(
+        if not registration.is_registered and app_wrapper.status != AppStatus.FAILED:
+            c_logger().error(
                 "Tried to cancel callback with ID {callback_id} for app {app_name}, but"
                 " the callback was never registered",
                 callback_id=callback_id,

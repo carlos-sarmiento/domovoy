@@ -73,6 +73,7 @@ class AppStatus(StrEnum):
     CREATED = "created"
     INITIALIZING = "initializing"
     RUNNING = "running"
+    FAILED = "failed"
     FINALIZING = "finalizing"
     TERMINATED = "terminated"
 
