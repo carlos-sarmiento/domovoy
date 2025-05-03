@@ -30,13 +30,13 @@ def __add_trace_logging_level(level_num: int) -> None:
         try:
             self.log(level_num, args, **kwargs)
         except Exception as e:
-            print(e, args, kwargs)
+            print(e, args, kwargs)  # noqa: T201
 
     def _log_to_root(*args, **kwargs) -> None:  # noqa:   ANN002, ANN003
         try:
             logging.log(level_num, *args, **kwargs)
         except Exception as e:
-            print(e, args, kwargs)
+            print(e, args, kwargs)  # noqa: T201
 
     logging.addLevelName(level_num, "TRACE")
     setattr(logging, "TRACE", level_num)  # noqa: B010
@@ -287,6 +287,7 @@ def get_context_logger() -> LoggerAdapterWithTrace[logging.Logger]:
 def get_logger_for_app(
     logger_name: str,
     app_name: str,
+    app_id: str,
 ) -> LoggerAdapterWithTrace[logging.Logger | LoggerAdapterWithTrace]:
     _logcore.trace(
         "Loading Logger with AppName: logger_name: {logger_name} - app_name: {app_name}",
@@ -300,7 +301,7 @@ def get_logger_for_app(
             include_app_name=True,
             use_app_logger_default=True,
         ),
-        {"app_name": app_name},
+        {"app_name": app_name, "app_id": app_id},
     )
 
 

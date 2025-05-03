@@ -17,10 +17,7 @@ from domovoy.core.app_infra import (
 )
 from domovoy.core.configuration import get_main_config
 from domovoy.core.context import context_logger
-from domovoy.core.logging import (
-    get_logger,
-    get_logger_for_app,
-)
+from domovoy.core.logging import get_logger
 from domovoy.core.services.callback_register import CallbackRegister
 from domovoy.core.services.event_listener import EventListener
 from domovoy.core.services.service import DomovoyServiceResources
@@ -199,10 +196,7 @@ class AppEngine:
             module_name=app_registration.app_class.__module__,
             filepath=app_registration.app_path,
             status=AppStatus.CREATED,
-            logger=get_logger_for_app(
-                app_registration.logging_config_name,
-                app_registration.get_app_name_for_logs(),
-            ),
+            logging_config_name=app_registration.logging_config_name,
         )
 
         _logcore.trace(

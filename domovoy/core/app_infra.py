@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import datetime
 import inspect
-import logging
 from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -24,7 +23,7 @@ from domovoy.core.errors import (
     DomovoyLogOnlyOnDebugWhenUncaughtError,
     DomovoyUnknownPluginError,
 )
-from domovoy.core.logging import LoggerAdapterWithTrace, get_logger
+from domovoy.core.logging import LoggerAdapterWithTrace, get_logger, get_logger_for_app
 from domovoy.core.utils import get_callback_name, set_callback_true_information
 from domovoy.plugins.plugins import AppPlugin
 
@@ -86,13 +85,21 @@ class AppWrapper:
     module_name: str
     class_name: str
     status: AppStatus
-    logger: LoggerAdapterWithTrace[Any]
+    logging_config_name: str
+    logger: LoggerAdapterWithTrace[Any] = field(init=False)
     app: AppBase[Any] = field(default_factory=lambda: EmptyAppBase())
     scheduler_callbacks: dict[str, SchedulerCallbackRegistration] = field(
         default_factory=dict,
     )
     event_callbacks: dict[str, EventCallbackRegistration] = field(default_factory=dict)
     plugins: dict[type, dict[str, AppPlugin]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.logger = get_logger_for_app(
+            self.logging_config_name,
+            self.get_app_name_for_logs(),
+            str(id(self)),
+        )
 
     def get_app_name_for_logs(self) -> str:
         return f"{type(self.app).__name__}.{self.app_name}"
@@ -263,6 +270,9 @@ class AppWrapper:
         ) -> None:
             try:
                 self.__callback_called(callback_id)
+                if self.status != AppStatus.RUNNING:
+                    self.logger.critical("Executing a callback for an app that isn't RUNNING")
+
                 result = callback(*args, **kwargs)
 
                 if inspect.isawaitable(result):
