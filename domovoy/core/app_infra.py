@@ -86,6 +86,7 @@ class AppWrapper:
     class_name: str
     status: AppStatus
     logging_config_name: str
+    app_name_for_logs: str
     logger: LoggerAdapterWithTrace[Any] = field(init=False)
     app: AppBase[Any] = field(default_factory=lambda: EmptyAppBase())
     scheduler_callbacks: dict[str, SchedulerCallbackRegistration] = field(
@@ -97,12 +98,12 @@ class AppWrapper:
     def __post_init__(self) -> None:
         self.logger = get_logger_for_app(
             self.logging_config_name,
-            self.get_app_name_for_logs(),
+            self.app_name_for_logs,
             str(id(self)),
         )
 
     def get_app_name_for_logs(self) -> str:
-        return f"{type(self.app).__name__}.{self.app_name}"
+        return self.app_name_for_logs
 
     def get_pluginx(self, plugin_type: type[T], name: str | None = None) -> T:
         plugin = self.get_plugin(plugin_type, name)
@@ -191,6 +192,7 @@ class AppWrapper:
                     )
                     return
 
+                logger.extra
                 context_logger.set(logger)
                 context_callback_id.set(callback_id)
 

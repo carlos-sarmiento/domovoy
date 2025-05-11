@@ -197,6 +197,7 @@ class AppEngine:
             filepath=app_registration.app_path,
             status=AppStatus.CREATED,
             logging_config_name=app_registration.logging_config_name,
+            app_name_for_logs=app_registration.get_app_name_for_logs(),
         )
 
         _logcore.trace(
