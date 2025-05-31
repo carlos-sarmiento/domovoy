@@ -440,5 +440,12 @@ class AppEngine:
                     app_name=app_name_for_logs,
                 )
 
-                self.__app_registrations.pop(app_registration.app_name)
+                if app_registration.app_name in self.__app_registrations:
+                    self.__app_registrations.pop(app_registration.app_name)
+                else:
+                    _logcore.warning(
+                        "Tried to remove app {app_name} from registrations, but it was not found",
+                        app_name=app_name_for_logs,
+                    )
+
                 self.__apps_by_path[app_registration.app_path].remove(app_registration)
