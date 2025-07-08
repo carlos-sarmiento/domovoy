@@ -3,14 +3,14 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Concatenate, ParamSpec
+from typing import Any, Concatenate, Literal, ParamSpec, overload
 
 from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppWrapper
 from domovoy.core.context import context_callback_id, context_logger
 from domovoy.core.logging import get_logger
 from domovoy.plugins import callbacks
-from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
+from domovoy.plugins.hass.domains import BinaryEntityStates, BinarySensorEntity, LightEntity, SwitchEntity, get_type_instance_for_entity_id
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
 
@@ -49,9 +49,6 @@ class HassPlugin(AppPlugin):
         super().prepare()
         self.__callbacks = self._wrapper.get_pluginx(callbacks.CallbacksPlugin)
 
-    def get_state(self, entity_id: EntityID) -> PrimitiveHassValue:
-        full_state = self.get_full_state(entity_id)
-        return full_state.state
 
     def get_full_state(self, entity_id: EntityID) -> EntityState:
         if isinstance(entity_id, str):
@@ -305,6 +302,25 @@ class HassPlugin(AppPlugin):
 
     async def send_raw_command(self, command_type: str, command_args: HassData) -> HassData | list[HassData]:
         return await self.__hass.send_raw_command(command_type, command_args)
+
+
+    # get_state overloads
+
+    @overload
+    def get_state(self, entity_id: BinarySensorEntity) -> BinaryEntityStates : ...
+
+    @overload
+    def get_state(self, entity_id: LightEntity) ->BinaryEntityStates :...
+
+    @overload
+    def get_state(self, entity_id: SwitchEntity)->BinaryEntityStates :...
+
+    @overload
+    def get_state(self, entity_id: EntityID) -> PrimitiveHassValue : ...
+
+    def get_state(self, entity_id: EntityID) -> PrimitiveHassValue :
+        full_state = self.get_full_state(entity_id)
+        return entity_id.parse_state(full_state.state)
 
 
 def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> list[EntityID]:
