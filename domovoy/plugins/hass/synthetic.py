@@ -94,7 +94,16 @@ def __generate_type_for_entity_selector(selector_details: dict | None) -> str:
 
     if selector_details:
         multiple: bool = selector_details.get("multiple", False)
-        domains = {get_typestr_for_domain( x["domain"] if isinstance(x, dict) else x) for x in selector_details.get("filter", []) if "domain" in x}
+        domains = set()
+
+        for x in selector_details.get("filter", []):
+            if isinstance(x, dict):
+                domain_list_or_str = x.get("domain")
+                if isinstance(domain_list_or_str, str):
+                    domains.add( get_typestr_for_domain(domain_list_or_str))
+                elif isinstance(domain_list_or_str, list):
+                    for d in domain_list_or_str:
+                        domains.add(get_typestr_for_domain(d))
 
         if domains:
             internal_type = " | ".join(domains)
