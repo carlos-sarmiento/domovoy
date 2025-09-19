@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import inspect
 import sys
-from typing import override, Literal
+from typing import Literal
 
 from .entity_id import EntityID
 
-
-BinaryEntityStates =  Literal["on", "off", "unknown"]
+BinaryEntityStates = Literal["on", "off", "unknown"]
 
 
 class AutomationEntity(EntityID): ...
