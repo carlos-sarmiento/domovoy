@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import datetime
 from typing import Union
 
-from .entity_id import PrimitiveHassValue, EntityID
-
+from .entity_id import EntityID, PrimitiveHassValue
 
 HassApiValue = PrimitiveHassValue | EntityID | list["HassApiValue"] | dict[str, Union["HassApiValue", None]]
 
