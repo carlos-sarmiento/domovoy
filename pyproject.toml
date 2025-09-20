@@ -3,7 +3,7 @@ name = "domovoy"
 version = "0.1.0"
 description = ""
 authors = [{ name = "cargsl" }]
-requires-python = "~=3.13"
+requires-python = ">=3.13"
 readme = "README.md"
 
 dependencies = [
