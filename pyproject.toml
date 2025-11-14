@@ -3,7 +3,7 @@ name = "domovoy"
 version = "0.1.0"
 description = ""
 authors = [{ name = "cargsl" }]
-requires-python = ">=3.13"
+requires-python = ">=3.13.2"
 readme = "README.md"
 
 dependencies = [
@@ -23,6 +23,7 @@ dependencies = [
     "pytz~=2024.2",
     "requests>=2.32.3,<3",
     "pyserde[yaml]>=0.23.0",
+    "servents-data-model>=0.5.0",
 ]
 
 [dependency-groups]

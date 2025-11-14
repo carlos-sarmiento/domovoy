@@ -1,6 +1,6 @@
 version = 1
 revision = 3
-requires-python = ">=3.13"
+requires-python = ">=3.13.2"
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -179,6 +179,7 @@ dependencies = [
     { name = "pytz" },
     { name = "pyyaml" },
     { name = "requests" },
+    { name = "servents-data-model" },
     { name = "strawberry-graphql" },
     { name = "watchdog" },
     { name = "websockets" },
@@ -206,6 +207,7 @@ requires-dist = [
     { name = "pytz", specifier = "~=2024.2" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.32.3,<3" },
+    { name = "servents-data-model", specifier = ">=0.2.0" },
     { name = "strawberry-graphql", specifier = ">=0.241.0" },
     { name = "watchdog", specifier = ">=5.0.2" },
     { name = "websockets", specifier = ">=12.0" },
@@ -594,6 +596,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/39/c6/fe45f3eb27e3948b41a305d8b768e949bf6a39310e9df73f6c576d7f1d9f/ruff-0.9.1-py3-none-win32.whl", hash = "sha256:46ebf5cc106cf7e7378ca3c28ce4293b61b449cd121b98699be727d40b79ba72", size = 8819750, upload-time = "2025-01-10T18:57:41.93Z" },
     { url = "https://files.pythonhosted.org/packages/38/8d/580db77c3b9d5c3d9479e55b0b832d279c30c8f00ab0190d4cd8fc67831c/ruff-0.9.1-py3-none-win_amd64.whl", hash = "sha256:342a824b46ddbcdddd3abfbb332fa7fcaac5488bf18073e841236aadf4ad5c19", size = 9701331, upload-time = "2025-01-10T18:57:46.334Z" },
     { url = "https://files.pythonhosted.org/packages/b2/94/0498cdb7316ed67a1928300dd87d659c933479f44dec51b4f62bfd1f8028/ruff-0.9.1-py3-none-win_arm64.whl", hash = "sha256:1cd76c7f9c679e6e8f2af8f778367dca82b95009bc7b1a85a47f1521ae524fa7", size = 9145708, upload-time = "2025-01-10T18:57:51.308Z" },
+]
+
+[[package]]
+name = "servents-data-model"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyserde" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/67/47/15d6f124e9d4e91a96d805d0de6defb14d5a6827aed6274f2b580fefaf73/servents_data_model-0.2.0.tar.gz", hash = "sha256:2368c50ffcb9123bffe627ec202a863c0dfbacf25637b4e3b4d2fdd38100aeb7", size = 2962, upload-time = "2025-11-12T23:02:52.191Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/35/9a/11479ffde5932bd45e510cfaab650ca8f8994e563af9fae34dfc7e4555fd/servents_data_model-0.2.0-py3-none-any.whl", hash = "sha256:a385c977b77fb78b631dccac0497977b8c23b6590acb7ff0a4a0fa55d0b5fd11", size = 3775, upload-time = "2025-11-12T23:02:51.183Z" },
 ]
 
 [[package]]
