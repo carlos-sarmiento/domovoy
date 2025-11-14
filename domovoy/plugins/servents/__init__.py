@@ -3,6 +3,19 @@ import inspect
 from dataclasses import asdict
 from typing import Any, ParamSpec
 
+from servents.data_model.derived_consts import ButtonDeviceClass, EntityCategory
+from servents.data_model.entity_configs import (
+    BinarySensorConfig,
+    ButtonConfig,
+    DeviceConfig,
+    EntityConfig,
+    NumberConfig,
+    SelectConfig,
+    SensorConfig,
+    SwitchConfig,
+    ThresholdBinarySensorConfig,
+)
+
 from domovoy.core.app_infra import AppWrapper
 from domovoy.core.utils import strip_none_and_enums_from_containers
 from domovoy.plugins import callbacks, hass, meta
@@ -18,18 +31,6 @@ from .entities import (
     ServEntSwitch,
     ServEntThresholdBinarySensor,
 )
-from .entity_configs import (
-    ServEntBinarySensorConfig,
-    ServEntButtonConfig,
-    ServEntDeviceConfig,
-    ServEntEntityConfig,
-    ServEntNumberConfig,
-    ServEntSelectConfig,
-    ServEntSensorConfig,
-    ServEntSwitchConfig,
-    ServEntThresholdBinarySensorConfig,
-)
-from .enums import ButtonDeviceClass, EntityCategory
 from .exceptions import ServentInvalidConfigurationError
 
 P = ParamSpec("P")
@@ -54,7 +55,7 @@ class ServentsPlugin(AppPlugin):
         self.__meta = self._wrapper.get_pluginx(meta.MetaPlugin)
 
     def post_prepare(self) -> None:
-        self.__default_device_for_app = ServEntDeviceConfig(
+        self.__default_device_for_app = DeviceConfig(
             device_id=self.__meta.get_app_name(),
             name=self.__meta.get_app_name(),
             model=self.__meta.get_app_name(),
@@ -62,10 +63,10 @@ class ServentsPlugin(AppPlugin):
             version="Domovoy",
         )
 
-    def get_default_device_for_app(self) -> ServEntDeviceConfig:
+    def get_default_device_for_app(self) -> DeviceConfig:
         return self.__default_device_for_app
 
-    def set_default_device_for_app(self, device_config: ServEntDeviceConfig) -> None:
+    def set_default_device_for_app(self, device_config: DeviceConfig) -> None:
         self.__default_device_for_app = device_config
 
     def update_default_device_name_for_app(
@@ -79,8 +80,8 @@ class ServentsPlugin(AppPlugin):
             self.__reload_callback,
             button_name="Restart App",
             event_name_to_fire="AppRestartRequested",
-            device_class=ButtonDeviceClass.RESTART,
-            entity_category=EntityCategory.DIAGNOSTIC,
+            device_class="restart",
+            entity_category="diagnostic",
             disabled_by_default=True,
         )
 
@@ -90,8 +91,8 @@ class ServentsPlugin(AppPlugin):
 
     async def _create_entity(
         self,
-        entity_config: ServEntEntityConfig,
-        device_config: ServEntDeviceConfig | None,
+        entity_config: EntityConfig,
+        device_config: DeviceConfig | None,
         *,
         wait_for_creation: bool,
     ) -> None:
@@ -142,8 +143,8 @@ class ServentsPlugin(AppPlugin):
 
     async def create_sensor(
         self,
-        entity_config: ServEntSensorConfig,
-        device_config: ServEntDeviceConfig | None = None,
+        entity_config: SensorConfig,
+        device_config: DeviceConfig | None = None,
         *,
         wait_for_creation: bool = True,
     ) -> ServEntSensor:
@@ -163,8 +164,8 @@ class ServentsPlugin(AppPlugin):
 
     async def create_threshold_binary_sensor(
         self,
-        entity_config: ServEntThresholdBinarySensorConfig,
-        device_config: ServEntDeviceConfig | None = None,
+        entity_config: ThresholdBinarySensorConfig,
+        device_config: DeviceConfig | None = None,
         *,
         wait_for_creation: bool = True,
     ) -> ServEntThresholdBinarySensor:
@@ -184,8 +185,8 @@ class ServentsPlugin(AppPlugin):
 
     async def create_binary_sensor(
         self,
-        entity_config: ServEntBinarySensorConfig,
-        device_config: ServEntDeviceConfig | None = None,
+        entity_config: BinarySensorConfig,
+        device_config: DeviceConfig | None = None,
         *,
         wait_for_creation: bool = True,
     ) -> ServEntBinarySensor:
@@ -205,8 +206,8 @@ class ServentsPlugin(AppPlugin):
 
     async def create_number(
         self,
-        entity_config: ServEntNumberConfig,
-        device_config: ServEntDeviceConfig | None = None,
+        entity_config: NumberConfig,
+        device_config: DeviceConfig | None = None,
         *,
         wait_for_creation: bool = True,
     ) -> ServEntNumber:
@@ -226,8 +227,8 @@ class ServentsPlugin(AppPlugin):
 
     async def create_select(
         self,
-        entity_config: ServEntSelectConfig,
-        device_config: ServEntDeviceConfig | None = None,
+        entity_config: SelectConfig,
+        device_config: DeviceConfig | None = None,
         *,
         wait_for_creation: bool = True,
     ) -> ServEntSelect:
@@ -247,8 +248,8 @@ class ServentsPlugin(AppPlugin):
 
     async def create_button(
         self,
-        entity_config: ServEntButtonConfig,
-        device_config: ServEntDeviceConfig | None = None,
+        entity_config: ButtonConfig,
+        device_config: DeviceConfig | None = None,
         *,
         wait_for_creation: bool = True,
     ) -> ServEntButton:
@@ -268,8 +269,8 @@ class ServentsPlugin(AppPlugin):
 
     async def create_switch(
         self,
-        entity_config: ServEntSwitchConfig,
-        device_config: ServEntDeviceConfig | None = None,
+        entity_config: SwitchConfig,
+        device_config: DeviceConfig | None = None,
         *,
         wait_for_creation: bool = True,
     ) -> ServEntSwitch:
@@ -297,7 +298,7 @@ class ServentsPlugin(AppPlugin):
         event_data: dict[str, Any] | None = None,
         device_class: ButtonDeviceClass | None = None,
         entity_category: EntityCategory | None = None,
-        device_config: ServEntDeviceConfig | None = None,
+        device_config: DeviceConfig | None = None,
         *,
         disabled_by_default: bool = False,
         wait_for_creation: bool = True,
@@ -323,7 +324,7 @@ class ServentsPlugin(AppPlugin):
             }
 
         button = await self.create_button(
-            ServEntButtonConfig(
+            ButtonConfig(
                 servent_id=final_event,
                 name=button_name,
                 event=target_event,

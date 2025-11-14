@@ -1,6 +1,18 @@
 import datetime
-from abc import ABC
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
+
+from servents.data_model.entity_configs import (
+    BinarySensorConfig,
+    ButtonConfig,
+    DeviceConfig,
+    EntityConfig,
+    NumberConfig,
+    SelectConfig,
+    SensorConfig,
+    SwitchConfig,
+    ThresholdBinarySensorConfig,
+)
+from servents.data_model.entity_types import EntityType
 
 from domovoy.core.errors import DomovoyError
 from domovoy.core.utils import parse_state
@@ -17,31 +29,19 @@ from domovoy.plugins.hass.domains import (
 from domovoy.plugins.hass.exceptions import HassApiInvalidValueError
 from domovoy.plugins.hass.types import EntityID, HassData, HassValue, PrimitiveHassValue
 
-from .entity_configs import (
-    ServEntBinarySensorConfig,
-    ServEntButtonConfig,
-    ServEntDeviceConfig,
-    ServEntEntityConfig,
-    ServEntNumberConfig,
-    ServEntSelectConfig,
-    ServEntSensorConfig,
-    ServEntSwitchConfig,
-    ServEntThresholdBinarySensorConfig,
-)
-from .enums import EntityType
 from .exceptions import ServentMissingRegistrationError
 
 T = TypeVar("T", bound=EntityID)
 
 
-class ServEntEntity(ABC, Generic[T]):
+class ServEntEntity[T: EntityID]:
     def __init__(
         self,
         hass: HassPlugin,
         entity_type: EntityType,
         servent_id: str,
-        config: ServEntEntityConfig,
-        device_config: ServEntDeviceConfig,
+        config: EntityConfig,
+        device_config: DeviceConfig,
         entity_id_type: type[T],
     ) -> None:
         self.name = "ServEntEntity"
@@ -108,8 +108,8 @@ class ServEntSensor(ServEntEntity[SensorEntity]):
         self,
         hass: HassPlugin,
         servent_id: str,
-        config: ServEntSensorConfig,
-        device_config: ServEntDeviceConfig,
+        config: SensorConfig,
+        device_config: DeviceConfig,
     ) -> None:
         super().__init__(hass, EntityType.SENSOR, servent_id, config, device_config, SensorEntity)
 
@@ -141,8 +141,8 @@ class ServEntThresholdBinarySensor(ServEntEntity[BinarySensorEntity]):
         self,
         hass: HassPlugin,
         servent_id: str,
-        config: ServEntThresholdBinarySensorConfig,
-        device_config: ServEntDeviceConfig,
+        config: ThresholdBinarySensorConfig,
+        device_config: DeviceConfig,
     ) -> None:
         super().__init__(
             hass,
@@ -172,8 +172,8 @@ class ServEntBinarySensor(ServEntEntity[BinarySensorEntity]):
         self,
         hass: HassPlugin,
         servent_id: str,
-        config: ServEntBinarySensorConfig,
-        device_config: ServEntDeviceConfig,
+        config: BinarySensorConfig,
+        device_config: DeviceConfig,
     ) -> None:
         super().__init__(
             hass,
@@ -209,8 +209,8 @@ class ServEntSwitch(ServEntEntity[SwitchEntity]):
         self,
         hass: HassPlugin,
         servent_id: str,
-        config: ServEntSwitchConfig,
-        device_config: ServEntDeviceConfig,
+        config: SwitchConfig,
+        device_config: DeviceConfig,
     ) -> None:
         super().__init__(hass, EntityType.SWITCH, servent_id, config, device_config, SwitchEntity)
 
@@ -244,8 +244,8 @@ class ServEntNumber(ServEntEntity[NumberEntity]):
         self,
         hass: HassPlugin,
         servent_id: str,
-        config: ServEntNumberConfig,
-        device_config: ServEntDeviceConfig,
+        config: NumberConfig,
+        device_config: DeviceConfig,
     ) -> None:
         super().__init__(hass, EntityType.NUMBER, servent_id, config, device_config, NumberEntity)
 
@@ -269,8 +269,8 @@ class ServEntSelect(ServEntEntity[SelectEntity]):
         self,
         hass: HassPlugin,
         servent_id: str,
-        config: ServEntSelectConfig,
-        device_config: ServEntDeviceConfig,
+        config: SelectConfig,
+        device_config: DeviceConfig,
     ) -> None:
         super().__init__(hass, EntityType.SELECT, servent_id, config, device_config, SelectEntity)
 
@@ -287,7 +287,7 @@ class ServEntButton(ServEntEntity[ButtonEntity]):
         self,
         hass: HassPlugin,
         servent_id: str,
-        config: ServEntButtonConfig,
-        device_config: ServEntDeviceConfig,
+        config: ButtonConfig,
+        device_config: DeviceConfig,
     ) -> None:
         super().__init__(hass, EntityType.BUTTON, servent_id, config, device_config, ButtonEntity)
