@@ -9,4 +9,4 @@ class LoggerAdapterWithTrace(logging.LoggerAdapter[T]):
         try:
             self.log(5, *args, **kwargs)  # type: ignore
         except Exception as e:
-            print(e, args, kwargs)
+            print(e, args, kwargs)  # noqa: T201

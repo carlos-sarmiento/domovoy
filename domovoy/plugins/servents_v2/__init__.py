@@ -1,9 +1,19 @@
 import asyncio
 import inspect
+from dataclasses import dataclass
 from typing import Any, ParamSpec
 
 from serde import to_dict
-from servents.data_model.derived_consts import ButtonDeviceClass, EntityCategory
+from servents.data_model.derived_consts import (
+    BinarySensorDeviceClass,
+    ButtonDeviceClass,
+    EntityCategory,
+    NumberDeviceClass,
+    NumberMode,
+    SensorDeviceClass,
+    SensorStateClass,
+    SwitchDeviceClass,
+)
 from servents.data_model.entity_configs import (
     BinarySensorConfig,
     ButtonConfig,
@@ -23,7 +33,7 @@ from domovoy.plugins import callbacks, hass, meta
 from domovoy.plugins.callbacks.event_listener_callbacks import EventListenerCallback
 from domovoy.plugins.plugins import AppPlugin
 
-from .entities import (
+from ..servents.entities import (
     ServEntBinarySensor,
     ServEntButton,
     ServEntNumber,
@@ -32,13 +42,19 @@ from .entities import (
     ServEntSwitch,
     ServEntThresholdBinarySensor,
 )
-from .exceptions import ServentInvalidConfigurationError
+from ..servents.exceptions import ServentInvalidConfigurationError
 
 _logger = get_logger("servents")
 P = ParamSpec("P")
 
 
-class ServentsPlugin(AppPlugin):
+@dataclass(kw_only=True)
+class ExtraConfig:
+    device_config: DeviceConfig | None = None
+    wait_for_creation: bool = True
+
+
+class ServentsPluginV2(AppPlugin):
     __hass: hass.HassPlugin
     __callbacks: callbacks.CallbacksPlugin
     __meta: meta.MetaPlugin
@@ -126,7 +142,7 @@ class ServentsPlugin(AppPlugin):
 
         await self.__hass.services.servents.create_entity(
             entities=[entity_config_dict],
-        )  # type: ignore
+        )
 
         if wait_for_creation:
             entities = self.__hass.get_entity_id_by_attribute(
@@ -143,14 +159,44 @@ class ServentsPlugin(AppPlugin):
                 )
                 count += 1
 
+    def _breakout_creation_config(self, creation_config: ExtraConfig | None) -> tuple[DeviceConfig, bool]:
+        device_config = creation_config.device_config if creation_config else None
+        wait_for_creation = creation_config.wait_for_creation if creation_config else True
+        device_config = device_config or self.__default_device_for_app
+
+        return device_config, wait_for_creation
+
     async def create_sensor(
         self,
-        entity_config: SensorConfig,
-        device_config: DeviceConfig | None = None,
+        servent_id: str,
+        name: str,
         *,
-        wait_for_creation: bool = True,
+        default_state: str | bool | float | None = None,
+        fixed_attributes: dict[str, str | bool | float] | None = None,
+        entity_category: EntityCategory | None = None,
+        disabled_by_default: bool = False,
+        app_name: str | None = None,
+        device_class: SensorDeviceClass | None = None,
+        unit_of_measurement: str | None = None,
+        state_class: SensorStateClass | None = None,
+        options: list[str] | None = None,
+        creation_config: ExtraConfig | None = None,
     ) -> ServEntSensor:
-        device_config = device_config or self.__default_device_for_app
+        device_config, wait_for_creation = self._breakout_creation_config(creation_config)
+
+        entity_config = SensorConfig(
+            servent_id=servent_id,
+            name=name,
+            default_state=default_state,
+            fixed_attributes=fixed_attributes or {},
+            entity_category=entity_category,
+            disabled_by_default=disabled_by_default,
+            app_name=app_name,
+            device_class=device_class,
+            unit_of_measurement=unit_of_measurement,
+            state_class=state_class,
+            options=options,
+        )
 
         await self._create_entity(
             entity_config,
@@ -166,12 +212,37 @@ class ServentsPlugin(AppPlugin):
 
     async def create_threshold_binary_sensor(
         self,
-        entity_config: ThresholdBinarySensorConfig,
-        device_config: DeviceConfig | None = None,
+        servent_id: str,
+        name: str,
+        entity_id: str,
         *,
-        wait_for_creation: bool = True,
+        lower: float | None = None,
+        upper: float | None = None,
+        hysteresis: float = 0.0,
+        default_state: bool | None = None,
+        fixed_attributes: dict[str, str | bool | float] | None = None,
+        entity_category: EntityCategory | None = None,
+        disabled_by_default: bool = False,
+        app_name: str | None = None,
+        device_class: BinarySensorDeviceClass | None = None,
+        creation_config: ExtraConfig | None = None,
     ) -> ServEntThresholdBinarySensor:
-        device_config = device_config or self.__default_device_for_app
+        device_config, wait_for_creation = self._breakout_creation_config(creation_config)
+
+        entity_config = ThresholdBinarySensorConfig(
+            servent_id=servent_id,
+            name=name,
+            entity_id=entity_id,
+            lower=lower,
+            upper=upper,
+            hysteresis=hysteresis,
+            default_state=default_state,
+            fixed_attributes=fixed_attributes or {},
+            entity_category=entity_category,
+            disabled_by_default=disabled_by_default,
+            app_name=app_name,
+            device_class=device_class,
+        )
 
         await self._create_entity(
             entity_config,
@@ -187,12 +258,29 @@ class ServentsPlugin(AppPlugin):
 
     async def create_binary_sensor(
         self,
-        entity_config: BinarySensorConfig,
-        device_config: DeviceConfig | None = None,
+        servent_id: str,
+        name: str,
         *,
-        wait_for_creation: bool = True,
+        default_state: bool | None = None,
+        fixed_attributes: dict[str, str | bool | float] | None = None,
+        entity_category: EntityCategory | None = None,
+        disabled_by_default: bool = False,
+        app_name: str | None = None,
+        device_class: BinarySensorDeviceClass | None = None,
+        creation_config: ExtraConfig | None = None,
     ) -> ServEntBinarySensor:
-        device_config = device_config or self.__default_device_for_app
+        device_config, wait_for_creation = self._breakout_creation_config(creation_config)
+
+        entity_config = BinarySensorConfig(
+            servent_id=servent_id,
+            name=name,
+            default_state=default_state,
+            fixed_attributes=fixed_attributes or {},
+            entity_category=entity_category,
+            disabled_by_default=disabled_by_default,
+            app_name=app_name,
+            device_class=device_class,
+        )
 
         await self._create_entity(
             entity_config,
@@ -208,12 +296,39 @@ class ServentsPlugin(AppPlugin):
 
     async def create_number(
         self,
-        entity_config: NumberConfig,
-        device_config: DeviceConfig | None = None,
+        servent_id: str,
+        name: str,
+        mode: NumberMode,
         *,
-        wait_for_creation: bool = True,
+        default_state: float | None = None,
+        fixed_attributes: dict[str, str | bool | float] | None = None,
+        entity_category: EntityCategory | None = None,
+        disabled_by_default: bool = False,
+        app_name: str | None = None,
+        device_class: NumberDeviceClass | None = None,
+        unit_of_measurement: str | None = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
+        step: float | None = None,
+        creation_config: ExtraConfig | None = None,
     ) -> ServEntNumber:
-        device_config = device_config or self.__default_device_for_app
+        device_config, wait_for_creation = self._breakout_creation_config(creation_config)
+
+        entity_config = NumberConfig(
+            servent_id=servent_id,
+            name=name,
+            default_state=default_state,
+            fixed_attributes=fixed_attributes or {},
+            entity_category=entity_category,
+            disabled_by_default=disabled_by_default,
+            app_name=app_name,
+            device_class=device_class,
+            unit_of_measurement=unit_of_measurement,
+            mode=mode,
+            min_value=min_value,
+            max_value=max_value,
+            step=step,
+        )
 
         await self._create_entity(
             entity_config,
@@ -229,12 +344,29 @@ class ServentsPlugin(AppPlugin):
 
     async def create_select(
         self,
-        entity_config: SelectConfig,
-        device_config: DeviceConfig | None = None,
+        servent_id: str,
+        name: str,
+        options: list[str],
         *,
-        wait_for_creation: bool = True,
+        default_state: str | None = None,
+        fixed_attributes: dict[str, str | bool | float] | None = None,
+        entity_category: EntityCategory | None = None,
+        disabled_by_default: bool = False,
+        app_name: str | None = None,
+        creation_config: ExtraConfig | None = None,
     ) -> ServEntSelect:
-        device_config = device_config or self.__default_device_for_app
+        device_config, wait_for_creation = self._breakout_creation_config(creation_config)
+
+        entity_config = SelectConfig(
+            servent_id=servent_id,
+            name=name,
+            options=options,
+            default_state=default_state,
+            fixed_attributes=fixed_attributes or {},
+            entity_category=entity_category,
+            disabled_by_default=disabled_by_default,
+            app_name=app_name,
+        )
 
         await self._create_entity(
             entity_config,
@@ -248,14 +380,35 @@ class ServentsPlugin(AppPlugin):
             device_config,
         )
 
-    async def create_button(
+    async def _create_button(
         self,
-        entity_config: ButtonConfig,
-        device_config: DeviceConfig | None = None,
+        servent_id: str,
+        name: str,
+        event: str,
         *,
-        wait_for_creation: bool = True,
+        event_data: dict[str, Any] | None = None,
+        default_state: str | None = None,
+        fixed_attributes: dict[str, str | bool | float] | None = None,
+        entity_category: EntityCategory | None = None,
+        disabled_by_default: bool = False,
+        app_name: str | None = None,
+        device_class: ButtonDeviceClass | None = None,
+        creation_config: ExtraConfig | None = None,
     ) -> ServEntButton:
-        device_config = device_config or self.__default_device_for_app
+        device_config, wait_for_creation = self._breakout_creation_config(creation_config)
+
+        entity_config = ButtonConfig(
+            servent_id=servent_id,
+            name=name,
+            event=event,
+            event_data=event_data or {},
+            default_state=default_state,
+            fixed_attributes=fixed_attributes or {},
+            entity_category=entity_category,
+            disabled_by_default=disabled_by_default,
+            app_name=app_name,
+            device_class=device_class,
+        )
 
         await self._create_entity(
             entity_config,
@@ -271,12 +424,29 @@ class ServentsPlugin(AppPlugin):
 
     async def create_switch(
         self,
-        entity_config: SwitchConfig,
-        device_config: DeviceConfig | None = None,
+        servent_id: str,
+        name: str,
         *,
-        wait_for_creation: bool = True,
+        default_state: bool | None = None,
+        fixed_attributes: dict[str, str | bool | float] | None = None,
+        entity_category: EntityCategory | None = None,
+        disabled_by_default: bool = False,
+        app_name: str | None = None,
+        device_class: SwitchDeviceClass | None = None,
+        creation_config: ExtraConfig | None = None,
     ) -> ServEntSwitch:
-        device_config = device_config or self.__default_device_for_app
+        device_config, wait_for_creation = self._breakout_creation_config(creation_config)
+
+        entity_config = SwitchConfig(
+            servent_id=servent_id,
+            name=name,
+            default_state=default_state,
+            fixed_attributes=fixed_attributes or {},
+            entity_category=entity_category,
+            disabled_by_default=disabled_by_default,
+            app_name=app_name,
+            device_class=device_class,
+        )
 
         await self._create_entity(
             entity_config,
@@ -297,13 +467,12 @@ class ServentsPlugin(AppPlugin):
         callback: EventListenerCallback,
         button_name: str,
         event_name_to_fire: str,
+        *,
         event_data: dict[str, Any] | None = None,
         device_class: ButtonDeviceClass | None = None,
         entity_category: EntityCategory | None = None,
-        device_config: DeviceConfig | None = None,
-        *,
         disabled_by_default: bool = False,
-        wait_for_creation: bool = True,
+        creation_config: ExtraConfig | None = None,
     ) -> ServEntButton:
         final_event = f"{self.__meta.get_app_name()}.{event_name_to_fire}"
 
@@ -325,18 +494,15 @@ class ServentsPlugin(AppPlugin):
                 "true_event": final_event,
             }
 
-        button = await self.create_button(
-            ButtonConfig(
-                servent_id=final_event,
-                name=button_name,
-                event=target_event,
-                event_data=target_event_data or {},
-                device_class=device_class,
-                entity_category=entity_category,
-                disabled_by_default=disabled_by_default,
-            ),
-            device_config=device_config,
-            wait_for_creation=wait_for_creation,
+        button = await self._create_button(
+            servent_id=final_event,
+            name=button_name,
+            event=target_event,
+            event_data=target_event_data or {},
+            device_class=device_class,
+            entity_category=entity_category,
+            disabled_by_default=disabled_by_default,
+            creation_config=creation_config,
         )
 
         if target_event == self._SERVENT_EXTENDED_BUTTON_PRESS_EVENT:

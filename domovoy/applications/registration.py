@@ -15,7 +15,7 @@ _logcore = get_logger(__name__)
 TConfig = TypeVar("TConfig", bound=AppConfigBase)
 
 
-def __actual_registration(
+def __actual_registration[TConfig: AppConfigBase](
     *,
     app_class: type[AppBase[TConfig]],
     app_name: str,

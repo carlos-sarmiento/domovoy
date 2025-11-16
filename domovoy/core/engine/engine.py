@@ -30,6 +30,7 @@ from domovoy.plugins.hass.core import HassCore
 from domovoy.plugins.logger import LoggerPlugin
 from domovoy.plugins.meta import MetaPlugin
 from domovoy.plugins.servents import ServentsPlugin
+from domovoy.plugins.servents_v2 import ServentsPluginV2
 from domovoy.plugins.time import TimePlugin
 from domovoy.plugins.utils import UtilsPlugin
 
@@ -100,7 +101,7 @@ class AppEngine:
                 start_dependent_apps_callback=self.__build_start_apps_using_service_callback(),
                 stop_dependent_apps_callback=self.__build_terminate_apps_using_service_callback(),
                 get_all_apps_by_name=self.__get_all_apps_by_name,
-                config={"address": "0.0.0.0", "port": 8080},  # noqa: S104 We bind to all interfaces because Domovoy is intended to run inside a docker container
+                config={"address": "0.0.0.0", "port": 8081},  # noqa: S104 We bind to all interfaces because Domovoy is intended to run inside a docker container
             ),
         )
 
@@ -228,6 +229,9 @@ class AppEngine:
         servents = ServentsPlugin("servents", wrapper)
         wrapper.register_plugin(servents, servents.name)
 
+        servents_v2 = ServentsPluginV2("servents_v2", wrapper)
+        wrapper.register_plugin(servents_v2, servents_v2.name)
+
         utils = UtilsPlugin("utils", wrapper)
         wrapper.register_plugin(utils, utils.name)
 
@@ -252,6 +256,7 @@ class AppEngine:
             callbacks,
             hass,
             servents,
+            servents_v2,
             utils,
             time,
         )

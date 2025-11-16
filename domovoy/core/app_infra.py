@@ -192,7 +192,6 @@ class AppWrapper:
                     )
                     return
 
-                logger.extra
                 context_logger.set(logger)
                 context_callback_id.set(callback_id)
 
