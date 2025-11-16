@@ -262,7 +262,7 @@ requires-dist = [
     { name = "pytz", specifier = "~=2024.2" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.32.3,<3" },
-    { name = "servents-data-model", specifier = ">=0.5.2" },
+    { name = "servents-data-model", specifier = ">=0.6.0" },
     { name = "strawberry-graphql", specifier = ">=0.241.0" },
     { name = "watchdog", specifier = ">=5.0.2" },
     { name = "websockets", specifier = ">=12.0" },
@@ -879,14 +879,14 @@ wheels = [
 
 [[package]]
 name = "servents-data-model"
-version = "0.5.3"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyserde" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/83/03/c489d73200253beebbdb8986710cb8fe44fd660b2a882ab8f67458ab6153/servents_data_model-0.5.3.tar.gz", hash = "sha256:8584b442aa395d2994dba233f4492f58b205ed3c0da94e5300249f2ad6606e84", size = 6072, upload-time = "2025-11-16T17:00:17.852Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/91/8b/2f9a25be5d64bc0fbd3245c092511dbbbc43bd1154dee688a2f0acaee960/servents_data_model-0.6.0.tar.gz", hash = "sha256:8de40792c1221dbbc23b49b3fef0ce5bc4cf28f7a8b3d59f2e4d1862b59bb306", size = 6070, upload-time = "2025-11-16T20:36:59.175Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/2a/db521c6024a10b528eab205f42f6381bb2ca5edd3f20999b27e33a9da710/servents_data_model-0.5.3-py3-none-any.whl", hash = "sha256:0525b536903ebf873e127a212c296c277ec21567202109a19d8c9e81162cb429", size = 4220, upload-time = "2025-11-16T17:00:16.78Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/76/9049367184326dd7b3e5adde1a6447e19be599ea7d6a504f8ccc4b01bbbc/servents_data_model-0.6.0-py3-none-any.whl", hash = "sha256:731682269c3340c01c12afa9c2440fc4081342015ebe83a35182e4f0b330f420", size = 4206, upload-time = "2025-11-16T20:36:58.117Z" },
 ]
 
 [[package]]

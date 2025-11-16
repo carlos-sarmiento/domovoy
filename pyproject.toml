@@ -23,7 +23,7 @@ dependencies = [
     "pytz~=2024.2",
     "requests>=2.32.3,<3",
     "pyserde[yaml]>=0.23.0",
-    "servents-data-model>=0.5.2",
+    "servents-data-model>=0.6.0",
 ]
 
 [dependency-groups]

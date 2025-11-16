@@ -181,7 +181,6 @@ class ServentsPluginV2(AppPlugin):
         unit_of_measurement: str | None = None,
         state_class: SensorStateClass | None = None,
         options: list[str] | None = None,
-        entity_ids: list[EntityID] | None = None,
         creation_config: ExtraConfig | None = None,
     ) -> ServEntSensor:
         device_config, wait_for_creation = self._breakout_creation_config(creation_config)
@@ -198,7 +197,6 @@ class ServentsPluginV2(AppPlugin):
             unit_of_measurement=unit_of_measurement,
             state_class=state_class,
             options=options,
-            entity_ids=entity_ids,
         )
 
         await self._create_entity(
@@ -235,7 +233,7 @@ class ServentsPluginV2(AppPlugin):
         entity_config = ThresholdBinarySensorConfig(
             servent_id=servent_id,
             name=name,
-            entity_id=entity_id,
+            entity_id=str(entity_id),
             lower=lower,
             upper=upper,
             hysteresis=hysteresis,
