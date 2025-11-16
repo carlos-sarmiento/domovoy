@@ -31,6 +31,7 @@ from domovoy.core.logging import get_logger
 from domovoy.core.utils import strip_none_and_enums_from_containers
 from domovoy.plugins import callbacks, hass, meta
 from domovoy.plugins.callbacks.event_listener_callbacks import EventListenerCallback
+from domovoy.plugins.hass.entity_id import EntityID
 from domovoy.plugins.plugins import AppPlugin
 
 from ..servents.entities import (
@@ -180,6 +181,7 @@ class ServentsPluginV2(AppPlugin):
         unit_of_measurement: str | None = None,
         state_class: SensorStateClass | None = None,
         options: list[str] | None = None,
+        entity_ids: list[EntityID] | None = None,
         creation_config: ExtraConfig | None = None,
     ) -> ServEntSensor:
         device_config, wait_for_creation = self._breakout_creation_config(creation_config)
@@ -196,6 +198,7 @@ class ServentsPluginV2(AppPlugin):
             unit_of_measurement=unit_of_measurement,
             state_class=state_class,
             options=options,
+            entity_ids=entity_ids,
         )
 
         await self._create_entity(
@@ -214,7 +217,7 @@ class ServentsPluginV2(AppPlugin):
         self,
         servent_id: str,
         name: str,
-        entity_id: str,
+        entity_id: EntityID,
         *,
         lower: float | None = None,
         upper: float | None = None,
