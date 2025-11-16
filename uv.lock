@@ -879,14 +879,14 @@ wheels = [
 
 [[package]]
 name = "servents-data-model"
-version = "0.5.2"
+version = "0.5.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyserde" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2e/63/f8925c5a4896dae593dd21c09b56b97384c502f5663e654d504b006a30e6/servents_data_model-0.5.2.tar.gz", hash = "sha256:d9de7015466096eeb0fb33aba56c8f36755b094fb40ee4abdb3641c3e17920f1", size = 6143, upload-time = "2025-11-16T16:43:54.837Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/03/c489d73200253beebbdb8986710cb8fe44fd660b2a882ab8f67458ab6153/servents_data_model-0.5.3.tar.gz", hash = "sha256:8584b442aa395d2994dba233f4492f58b205ed3c0da94e5300249f2ad6606e84", size = 6072, upload-time = "2025-11-16T17:00:17.852Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/d8/720eab33074b79c53d02f29588343978bfd8c42c5ce5b18211f5925b330a/servents_data_model-0.5.2-py3-none-any.whl", hash = "sha256:68315e0fa33fac2979f557abd58bf77acd38228c6bb7f96e0a27a04de056ed2e", size = 4304, upload-time = "2025-11-16T16:43:53.789Z" },
+    { url = "https://files.pythonhosted.org/packages/12/2a/db521c6024a10b528eab205f42f6381bb2ca5edd3f20999b27e33a9da710/servents_data_model-0.5.3-py3-none-any.whl", hash = "sha256:0525b536903ebf873e127a212c296c277ec21567202109a19d8c9e81162cb429", size = 4220, upload-time = "2025-11-16T17:00:16.78Z" },
 ]
 
 [[package]]
