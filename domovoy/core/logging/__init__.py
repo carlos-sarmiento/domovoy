@@ -34,7 +34,7 @@ def __add_trace_logging_level(level_num: int) -> None:
 
     def _log_to_root(*args, **kwargs) -> None:  # noqa:   ANN002, ANN003
         try:
-            logging.log(level_num, *args, **kwargs)
+            logging.log(level_num, *args, **kwargs)  # noqa: LOG015
         except Exception as e:
             print(e, args, kwargs)  # noqa: T201
 

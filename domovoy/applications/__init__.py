@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from domovoy.plugins.callbacks import CallbacksPlugin
@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from domovoy.plugins.logger import LoggerPlugin
     from domovoy.plugins.meta import MetaPlugin
     from domovoy.plugins.servents import ServentsPlugin
+    from domovoy.plugins.servents_v2 import ServentsPluginV2
     from domovoy.plugins.time import TimePlugin
     from domovoy.plugins.utils import UtilsPlugin
 
@@ -28,6 +29,7 @@ class AppBaseWithoutConfig:
     hass: HassPlugin
     callbacks: CallbacksPlugin
     servents: ServentsPlugin
+    servents_v2: ServentsPluginV2
     log: LoggerPlugin
     utils: UtilsPlugin
     time: TimePlugin
@@ -39,12 +41,14 @@ class AppBaseWithoutConfig:
         scheduler: CallbacksPlugin,
         hass: HassPlugin,
         servents: ServentsPlugin,
+        servents_v2: ServentsPluginV2,
         utils: UtilsPlugin,
         time: TimePlugin,
     ) -> None:
         self.hass = hass
         self.callbacks = scheduler
         self.servents = servents
+        self.servents_v2 = servents_v2
         self.meta = meta
         self.log = log
         self.utils = utils
@@ -65,7 +69,7 @@ class AppBaseWithoutConfig:
         """
 
 
-class AppBase(Generic[TConfig], AppBaseWithoutConfig):
+class AppBase[TConfig: AppConfigBase](AppBaseWithoutConfig):
     config: TConfig
 
     def __init__(
@@ -76,10 +80,11 @@ class AppBase(Generic[TConfig], AppBaseWithoutConfig):
         scheduler: CallbacksPlugin,
         hass: HassPlugin,
         servents: ServentsPlugin,
+        servents_v2: ServentsPluginV2,
         utils: UtilsPlugin,
         time: TimePlugin,
     ) -> None:
-        super().__init__(meta, log, scheduler, hass, servents, utils, time)
+        super().__init__(meta, log, scheduler, hass, servents, servents_v2, utils, time)
         self.config = config
 
     async def initialize(self) -> None:

@@ -7,7 +7,6 @@ from domovoy.applications import AppBase, AppConfigBase, EmptyAppConfig
 from domovoy.applications.types import Interval
 from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
 from domovoy.plugins.hass.types import EntityID
-from domovoy.plugins.servents.enums import ButtonDeviceClass, EntityCategory
 
 from .entities import generate_stub_file_for_synthetic_entities  # type: ignore
 from .synthetic import (
@@ -106,8 +105,8 @@ class HassTerminateDomovoy(AppBase[EmptyAppConfig]):
             self.homeassistant_started_event_handler,
             button_name="Terminate Domovoy",
             event_name_to_fire="dangerous_terminate_domovoy_signal",
-            device_class=ButtonDeviceClass.RESTART,
-            entity_category=EntityCategory.DIAGNOSTIC,
+            device_class="restart",
+            entity_category="diagnostic",
         )
 
     async def homeassistant_started_event_handler(
