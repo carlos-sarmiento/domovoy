@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 from typing import Any, ParamSpec
+from warnings import deprecated
 
 from serde import to_dict
 from servents.data_model.derived_consts import ButtonDeviceClass, EntityCategory
@@ -143,6 +144,7 @@ class ServentsPlugin(AppPlugin):
                 )
                 count += 1
 
+    @deprecated("Use Servents V2")
     async def create_sensor(
         self,
         entity_config: SensorConfig,
@@ -164,6 +166,7 @@ class ServentsPlugin(AppPlugin):
             device_config,
         )
 
+    @deprecated("Use Servents V2")
     async def create_threshold_binary_sensor(
         self,
         entity_config: ThresholdBinarySensorConfig,
@@ -185,6 +188,7 @@ class ServentsPlugin(AppPlugin):
             device_config,
         )
 
+    @deprecated("Use Servents V2")
     async def create_binary_sensor(
         self,
         entity_config: BinarySensorConfig,
@@ -206,6 +210,7 @@ class ServentsPlugin(AppPlugin):
             device_config,
         )
 
+    @deprecated("Use Servents V2")
     async def create_number(
         self,
         entity_config: NumberConfig,
@@ -227,6 +232,7 @@ class ServentsPlugin(AppPlugin):
             device_config,
         )
 
+    @deprecated("Use Servents V2")
     async def create_select(
         self,
         entity_config: SelectConfig,
@@ -248,6 +254,7 @@ class ServentsPlugin(AppPlugin):
             device_config,
         )
 
+    @deprecated("Use Servents V2")
     async def create_button(
         self,
         entity_config: ButtonConfig,
@@ -269,6 +276,7 @@ class ServentsPlugin(AppPlugin):
             device_config,
         )
 
+    @deprecated("Use Servents V2")
     async def create_switch(
         self,
         entity_config: SwitchConfig,
@@ -292,6 +300,7 @@ class ServentsPlugin(AppPlugin):
 
     _SERVENT_EXTENDED_BUTTON_PRESS_EVENT = "servent_extended_button_press"
 
+    @deprecated("Use Servents V2")
     async def listen_button_press(
         self,
         callback: EventListenerCallback,
