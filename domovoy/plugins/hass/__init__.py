@@ -19,10 +19,10 @@ from domovoy.plugins.hass.domains import (
 )
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
+from synthetic.services import HassSyntheticDomainsServiceCalls
 
 from .core import EntityState, HassCore
 from .exceptions import HassApiCommandError
-from .synthetic import HassSyntheticDomainsServiceCalls
 from .types import EntityID, HassData, HassValue, PrimitiveHassValue
 
 P = ParamSpec("P")
