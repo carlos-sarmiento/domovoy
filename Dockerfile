@@ -7,6 +7,7 @@ COPY pyproject.toml uv.lock README.md  ./
 RUN uv pip install --system -r pyproject.toml
 
 COPY domovoy ./domovoy
+COPY synthetic ./synthetic
 
 RUN uv pip install --system -e .
 

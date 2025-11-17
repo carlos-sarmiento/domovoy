@@ -78,7 +78,7 @@ def __generate_type_for_target(entity_details: list | dict) -> str:
     elif not isinstance(entity_details, dict):
         entity_details = {}
 
-    domains: list[str] = entity_details.get("domain", None)  # type: ignore
+    domains: list[str] = entity_details.get("domain")  # type: ignore
 
     final_type = "EntityID"
 
@@ -100,7 +100,7 @@ def __generate_type_for_entity_selector(selector_details: dict | None) -> str:
             if isinstance(x, dict):
                 domain_list_or_str = x.get("domain")
                 if isinstance(domain_list_or_str, str):
-                    domains.add( get_typestr_for_domain(domain_list_or_str))
+                    domains.add(get_typestr_for_domain(domain_list_or_str))
                 elif isinstance(domain_list_or_str, list):
                     for d in domain_list_or_str:
                         domains.add(get_typestr_for_domain(d))

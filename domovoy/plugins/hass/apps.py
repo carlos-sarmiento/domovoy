@@ -7,10 +7,9 @@ from domovoy.applications import AppBase, AppConfigBase, EmptyAppConfig
 from domovoy.applications.types import Interval
 from domovoy.plugins.hass.domains import get_type_instance_for_entity_id
 from domovoy.plugins.hass.types import EntityID
-
-from .entities import generate_stub_file_for_synthetic_entities  # type: ignore
-from .synthetic import (
-    generate_stub_file_for_synthetic_services,  # type: ignore
+from synthetic.entities import generate_stub_file_for_synthetic_entities
+from synthetic.services import (
+    generate_stub_file_for_synthetic_services,
 )
 
 
