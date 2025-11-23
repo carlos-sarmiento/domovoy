@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Concatenate, ParamSpec, overload
 
 from domovoy.applications.types import Interval
-from domovoy.core.app_infra import AppWrapper
+from domovoy.core.app_infra import AppStatus, AppWrapper
 from domovoy.core.context import context_callback_id, context_logger
 from domovoy.core.logging import get_logger
 from domovoy.plugins import callbacks
@@ -206,7 +206,7 @@ class HassPlugin(AppPlugin):
                 return_response=return_response,
             )
         except HassApiCommandError as e:
-            if throw_on_error:
+            if throw_on_error or self._wrapper.status == AppStatus.INITIALIZING:
                 raise
 
             if e.message == "Service call requires responses but caller did not ask for responses":

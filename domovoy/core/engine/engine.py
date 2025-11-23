@@ -55,6 +55,12 @@ class AppRegistration:
         return self.app_name.__hash__()
 
 
+@dataclass
+class AppEngineStats:
+    total_apps: int
+    apps_per_status: dict[AppStatus, list[str]]
+
+
 class AppEngine:
     __apps_by_path: dict[str, set[AppRegistration]]
     __app_registrations: dict[str, AppRegistration]
@@ -454,3 +460,20 @@ class AppEngine:
                     )
 
                 self.__apps_by_path[app_registration.app_path].remove(app_registration)
+
+    def get_stats(self) -> AppEngineStats:
+        total_apps = len(self.__app_registrations.values())
+        apps_per_status = {
+            status: [
+                r.app_name
+                for r in self.__app_registrations.values()
+                if (r.active_instance is not None and r.active_instance.status == status)
+                or (r.active_instance is None and status == AppStatus.TERMINATED)
+            ]
+            for status in AppStatus
+        }
+
+        return AppEngineStats(
+            total_apps=total_apps,
+            apps_per_status=apps_per_status,
+        )
