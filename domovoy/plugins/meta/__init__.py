@@ -7,6 +7,7 @@ from domovoy.core.configuration import get_main_config
 
 if TYPE_CHECKING:
     from domovoy.core.app_infra import AppStatus, AppWrapper
+    from domovoy.core.engine.engine import AppEngineStats
 
 T = TypeVar("T", bound=AppPlugin)
 
@@ -47,3 +48,9 @@ class MetaPlugin(AppPlugin):
 
     def get_plugin(self, plugin_type: type[T], name: str | None = None) -> T | None:
         self._wrapper.get_plugin(plugin_type, name)
+
+    def get_app_engine_stats(self) -> "AppEngineStats":
+        from domovoy.core.engine.active_engine import get_active_engine
+
+        engine = get_active_engine()
+        return engine.get_stats()
