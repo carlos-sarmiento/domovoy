@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Concatenate, ParamSpec, overload
+from typing import Any, Concatenate, ParamSpec
 
 from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppStatus, AppWrapper
@@ -11,10 +11,6 @@ from domovoy.core.context import context_callback_id, context_logger
 from domovoy.core.logging import get_logger
 from domovoy.plugins import callbacks
 from domovoy.plugins.hass.domains import (
-    BinaryEntityStates,
-    BinarySensorEntity,
-    LightEntity,
-    SwitchEntity,
     get_type_instance_for_entity_id,
 )
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
@@ -56,6 +52,18 @@ class HassPlugin(AppPlugin):
         self.__callbacks = self._wrapper.get_pluginx(callbacks.CallbacksPlugin)
 
     def get_full_state(self, entity_id: EntityID) -> EntityState:
+        """Get the complete state object for a Home Assistant entity.
+
+        Args:
+            entity_id: The EntityID to retrieve state for. Can also accept string for backwards compatibility.
+
+        Returns:
+            EntityState object containing state, attributes, last_changed, and last_updated.
+
+        Raises:
+            HassUnknownEntityError: If the entity does not exist in the state cache.
+
+        """
         if isinstance(entity_id, str):
             entity_id = get_type_instance_for_entity_id(entity_id)
 
@@ -66,7 +74,15 @@ class HassPlugin(AppPlugin):
 
         return entity_state
 
-    def warn_if_entity_doesnt_exists(self, entity_id: EntityID | Sequence[EntityID] | None) -> None:
+    def __warn_if_entity_doesnt_exists(self, entity_id: EntityID | Sequence[EntityID] | None) -> None:
+        """Log a warning if the specified entity or entities don't exist in the Home Assistant cache.
+
+        Useful for debugging typos in entity IDs during development.
+
+        Args:
+            entity_id: Single EntityID, sequence of EntityIDs, or None. If None, no action is taken.
+
+        """
         if entity_id is None:
             return
 
@@ -85,12 +101,34 @@ class HassPlugin(AppPlugin):
         attribute: str,
         value: str | None,
     ) -> list[EntityID]:
+        """Find all entities that have a specific attribute with the given value.
+
+        Args:
+            attribute: The name of the attribute to search for.
+            value: The value to match. If None, returns entities that have the attribute regardless of value.
+
+        Returns:
+            List of EntityIDs that match the criteria.
+
+        """
         return self.__hass.get_entity_id_by_attribute(attribute, value)
 
     def get_all_entities(self) -> list[EntityState]:
+        """Get the complete state objects for all entities in the Home Assistant cache.
+
+        Returns:
+            List of EntityState objects for every entity known to Home Assistant.
+
+        """
         return self.__hass.get_all_entities()
 
     def get_all_entity_ids(self) -> frozenset[EntityID]:
+        """Get all entity IDs currently in the Home Assistant cache.
+
+        Returns:
+            Frozen set of EntityID objects representing all known entities.
+
+        """
         return self.__hass.get_all_entity_ids()
 
     async def fire_event(
@@ -98,9 +136,22 @@ class HassPlugin(AppPlugin):
         event_type: str,
         event_data: HassData | None = None,
     ) -> None:
+        """Fire a custom event on the Home Assistant event bus.
+
+        Args:
+            event_type: The type/name of the event to fire.
+            event_data: Optional dictionary of data to include with the event.
+
+        """
         await self.__hass.fire_event(event_type, event_data)
 
     async def get_service_definitions(self) -> HassData:
+        """Retrieve service definitions from Home Assistant.
+
+        Returns:
+            Dictionary containing all available services and their schemas.
+
+        """
         return await self.__hass.get_service_definitions()
 
     async def listen_trigger(
@@ -111,6 +162,21 @@ class HassPlugin(AppPlugin):
         *callback_args: P.args,
         **callback_kwargs: P.kwargs,
     ) -> str:
+        """Subscribe to a Home Assistant trigger configuration.
+
+        Triggers are HA's automation system primitives (state, numeric_state, time, etc.).
+
+        Args:
+            trigger: Dictionary containing the trigger configuration (e.g., {"platform": "state", "entity_id": "..."}).
+            callback: Function to call when trigger fires. Receives trigger variables as first argument.
+            oneshot: If True, unsubscribe after the first trigger event.
+            *callback_args: Additional positional arguments to pass to callback.
+            **callback_kwargs: Additional keyword arguments to pass to callback.
+
+        Returns:
+            Subscription ID string that can be used to cancel the trigger subscription.
+
+        """
         context_logger.set(self._wrapper.logger)
 
         instrumented_callback = self._wrapper.instrument_app_callback(callback)
@@ -152,6 +218,23 @@ class HassPlugin(AppPlugin):
         throw_on_error: bool = False,
         **kwargs: HassValue,
     ) -> HassData | None:
+        """Call a Home Assistant service.
+
+        Prefer using the typed service stubs (self.services.domain.service_name) over this method.
+
+        Args:
+            service_name: Service to call in format "domain.service" (e.g., "light.turn_on").
+            return_response: If True, wait for and return the service response data.
+            throw_on_error: If True, raise exceptions on errors. If False, log errors without raising.
+            **kwargs: Service data parameters. entity_id can be EntityID or list[EntityID].
+
+        Returns:
+            Service response data if return_response is True and service returns data, otherwise None.
+
+        Raises:
+            HassApiCommandError: If throw_on_error is True and service call fails.
+
+        """
         service_name_segments = service_name.split(".")
 
         if len(service_name_segments) != 2:
@@ -192,10 +275,10 @@ class HassPlugin(AppPlugin):
         if "service_data_entity_id" in kwargs:
             val = get_type_instance_for_entity_id(str(kwargs["service_data_entity_id"]))
             kwargs.pop("service_data_entity_id")
-            self.warn_if_entity_doesnt_exists(val if val else None)
+            self.__warn_if_entity_doesnt_exists(val if val else None)
             kwargs["entity_id"] = val
 
-        self.warn_if_entity_doesnt_exists(entity_id)
+        self.__warn_if_entity_doesnt_exists(entity_id)
 
         try:
             return await self.__hass.call_service(
@@ -230,6 +313,20 @@ class HassPlugin(AppPlugin):
         duration: Interval | None = None,
         timeout: Interval | None = None,  # noqa: ASYNC109
     ) -> None:
+        """Asynchronously wait for an entity to reach one of the specified states.
+
+        This is an awaitable method that blocks until the condition is met or timeout occurs.
+
+        Args:
+            entity_id: The entity to monitor.
+            states: Single state string or list of state strings to wait for.
+            duration: If specified, entity must stay in the target state for this duration.
+            timeout: Optional timeout interval. Raises asyncio.TimeoutError if exceeded.
+
+        Raises:
+            asyncio.TimeoutError: If timeout is specified and exceeded before condition is met.
+
+        """
         if timeout is None:
             await self.__wait_for_state_to_be_implementation(
                 entity_id,
@@ -303,31 +400,75 @@ class HassPlugin(AppPlugin):
         item_type: str,
         item_id: str,
     ) -> HassData:
+        """Search for entities and items related to a specific Home Assistant item.
+
+        Args:
+            item_type: Type of item to search for (e.g., "entity", "device", "area").
+            item_id: The ID of the item to find relations for.
+
+        Returns:
+            Dictionary containing related items organized by type.
+
+        """
         return await self.__hass.search_related(item_type, item_id)
 
     async def send_raw_command(self, command_type: str, command_args: HassData) -> HassData | list[HassData]:
+        """Send a raw WebSocket command directly to Home Assistant.
+
+        This is a low-level method for advanced use cases not covered by other plugin methods.
+
+        Args:
+            command_type: The WebSocket command type to send.
+            command_args: Dictionary of arguments for the command.
+
+        Returns:
+            The response from Home Assistant, either a single data dict or list of dicts.
+
+        """
         return await self.__hass.send_raw_command(command_type, command_args)
 
-    # get_state overloads
+    def get_state_casted[T](self, entity_id: EntityID[T]) -> T | None:
+        """Get the state of an entity, cast to the entity's native type.
 
-    @overload
-    def get_state(self, entity_id: BinarySensorEntity) -> BinaryEntityStates: ...
+        Uses the EntityID's type information to parse and cast the state value.
 
-    @overload
-    def get_state(self, entity_id: LightEntity) -> BinaryEntityStates: ...
+        Args:
+            entity_id: Typed EntityID that includes parsing logic for its domain.
 
-    @overload
-    def get_state(self, entity_id: SwitchEntity) -> BinaryEntityStates: ...
+        Returns:
+            State value cast to the appropriate type, or None if parsing fails.
 
-    @overload
-    def get_state(self, entity_id: EntityID) -> PrimitiveHassValue: ...
+        """
+        full_state: EntityState = self.get_full_state(entity_id)
+        return entity_id.parse_state_casted(full_state.state)
 
     def get_state(self, entity_id: EntityID) -> PrimitiveHassValue:
-        full_state = self.get_full_state(entity_id)
-        return entity_id.parse_state(full_state.state)
+        """Get the current state value of an entity.
+
+        Returns only the state value, not the full EntityState object.
+
+        Args:
+            entity_id: The entity to get state for.
+
+        Returns:
+            The entity's current state as a primitive value (str, int, float, or bool).
+
+        """
+        return self.get_full_state(entity_id).state
 
 
 def wrap_entity_id_as_list(val: EntityID | Sequence[EntityID]) -> list[EntityID]:
+    """Convert a single EntityID or sequence of EntityIDs into a list.
+
+    Utility function to normalize entity ID arguments that can be either single or multiple values.
+
+    Args:
+        val: Single EntityID or sequence of EntityIDs.
+
+    Returns:
+        List containing the EntityID(s).
+
+    """
     if isinstance(val, Sequence):
         return list(val)
 
