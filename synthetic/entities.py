@@ -6,6 +6,8 @@ from domovoy.core.configuration import get_main_config
 from domovoy.plugins.hass.domains import get_type_for_domain, get_type_instance_for_entity_id, get_typestr_for_domain
 from domovoy.plugins.hass.types import EntityID
 
+SensorInfo = dict[str, tuple[str, list[str] | None]]
+
 
 class HassSyntheticDomain:
     __domain: str
@@ -46,27 +48,26 @@ def __to_camel_case(snake_str: str) -> str:
 
 
 def generate_stub_file_for_synthetic_entities(
-    domains: dict[str, set[str]],
-    destination: str,
+    domains: dict[str, set[str]], destination: str, sensor_info: SensorInfo
 ) -> None:
     with Path(destination).open("w") as text_file:
         now = datetime.datetime.now(get_main_config().get_timezone())
         text_file.write(f"# Generated on {now.isoformat()}\n\n")
         text_file.write("# ruff: noqa\n\n")
 
+        text_file.write("import datetime\n\n")
+        text_file.write("from typing import Literal\n\n")
         text_file.write("from domovoy.plugins.hass.types import EntityID\n")
         text_file.write("from domovoy.plugins.hass.domains import *\n\n")
 
-        text_file.write(__build_class_hierarchy(domains))
+        text_file.write(__build_class_hierarchy(domains, sensor_info))
 
         text_file.write(
             "entities: HassSyntheticDomains = ...\n\n",
         )
 
 
-def __build_class_hierarchy(
-    domains: dict[str, set[str]],
-) -> str:
+def __build_class_hierarchy(domains: dict[str, set[str]], sensor_info: SensorInfo) -> str:
     return_type = "EntityID"
 
     text_file = StringIO()
@@ -99,6 +100,10 @@ def __build_class_hierarchy(
             if field_name[0] in "0123456789":
                 field_name = "_" + entity_base
 
+            if domain == "sensor":
+                device_class, options = sensor_info.get(entity_base, (None, None))
+                return_type_for_domain = get_typestr_for_sensor_domain(device_class, options)
+
             text_file.write(
                 f"    {field_name} : {return_type_for_domain} = ...\n",
             )
@@ -106,3 +111,25 @@ def __build_class_hierarchy(
         text_file.write("\n\n")
 
     return text_file.getvalue()
+
+
+def get_typestr_for_sensor_domain(device_class: str | None, options: list[str] | None) -> str:
+    sensor_type = "float | int"
+
+    if device_class is None:
+        sensor_type = "str"
+
+    if device_class == "enum":
+        if options:
+            values = ", ".join(f'"{option}"' for option in options)
+            sensor_type = f"Literal[{values}]"
+        else:
+            sensor_type = "str"
+
+    if device_class == "date":
+        sensor_type = "datetime.date"
+
+    if device_class == "timestamp":
+        sensor_type = "datetime.datetime"
+
+    return f"SensorEntity[{sensor_type}]"

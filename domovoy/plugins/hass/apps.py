@@ -64,6 +64,7 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
 
     async def update_stubs(self) -> None:
         entity_ids = self.hass.get_all_entity_ids()
+        entity_states = self.hass.get_all_entities()
 
         if entity_ids == self.__registered_entities:
             self.log.trace("No updates to registered entities")
@@ -92,15 +93,30 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
 
         self.__registered_entities = entity_ids
 
-        generate_stub_file_for_synthetic_entities(
-            domains,
-            self.config.stub_path,
-        )
+        sensor_info: dict[str, tuple[str, list[str] | None]] = {}
+
+        for entity_state in entity_states:
+            if entity_state.entity_id.get_domain() != "sensor":
+                continue
+
+            state_class = entity_state.attributes.get("state_class")
+            device_class = entity_state.attributes.get("device_class")
+            options = None
+
+            if device_class is None and state_class is not None:
+                device_class = "domovoy_number"
+
+            if device_class == "enum":
+                options = [str(x) for x in entity_state.attributes.get("options", [])]  # type: ignore
+
+            sensor_info[entity_state.entity_id.get_entity_name()] = (str(device_class), options)
+
+        generate_stub_file_for_synthetic_entities(domains, self.config.stub_path, sensor_info)
 
 
 class HassTerminateDomovoy(AppBase[EmptyAppConfig]):
     async def initialize(self) -> None:
-        await self.servents.listen_button_press(
+        await self.servents_v2.listen_button_press(
             self.homeassistant_started_event_handler,
             button_name="Terminate Domovoy",
             event_name_to_fire="dangerous_terminate_domovoy_signal",

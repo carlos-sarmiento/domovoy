@@ -74,7 +74,7 @@ class HassPlugin(AppPlugin):
 
         return entity_state
 
-    def __warn_if_entity_doesnt_exists(self, entity_id: EntityID | Sequence[EntityID] | None) -> None:
+    def warn_if_entity_doesnt_exists(self, entity_id: EntityID | Sequence[EntityID] | None) -> None:
         """Log a warning if the specified entity or entities don't exist in the Home Assistant cache.
 
         Useful for debugging typos in entity IDs during development.
@@ -275,10 +275,10 @@ class HassPlugin(AppPlugin):
         if "service_data_entity_id" in kwargs:
             val = get_type_instance_for_entity_id(str(kwargs["service_data_entity_id"]))
             kwargs.pop("service_data_entity_id")
-            self.__warn_if_entity_doesnt_exists(val if val else None)
+            self.warn_if_entity_doesnt_exists(val if val else None)
             kwargs["entity_id"] = val
 
-        self.__warn_if_entity_doesnt_exists(entity_id)
+        self.warn_if_entity_doesnt_exists(entity_id)
 
         try:
             return await self.__hass.call_service(
@@ -427,7 +427,7 @@ class HassPlugin(AppPlugin):
         """
         return await self.__hass.send_raw_command(command_type, command_args)
 
-    def get_state_casted[T](self, entity_id: EntityID[T]) -> T | None:
+    def get_typed_state[T](self, entity_id: EntityID[T]) -> T | None:
         """Get the state of an entity, cast to the entity's native type.
 
         Uses the EntityID's type information to parse and cast the state value.
@@ -440,7 +440,7 @@ class HassPlugin(AppPlugin):
 
         """
         full_state: EntityState = self.get_full_state(entity_id)
-        return entity_id.parse_state_casted(full_state.state)
+        return entity_id.parse_state_typed(full_state)
 
     def get_state(self, entity_id: EntityID) -> PrimitiveHassValue:
         """Get the current state value of an entity.
