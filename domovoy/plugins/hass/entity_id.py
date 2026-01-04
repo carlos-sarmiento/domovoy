@@ -134,7 +134,7 @@ class EntityID[T]:
             return type_args[0]
         except Exception as e:
             _logcore.error(e)
-            return int | float | str | bool | datetime.datetime
+            return int | float | str | bool | datetime.datetime  # type: ignore
 
 
 PrimitiveHassValue = int | float | str | bool | datetime.datetime | EntityID

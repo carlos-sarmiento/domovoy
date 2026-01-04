@@ -132,4 +132,4 @@ def get_typestr_for_sensor_domain(device_class: str | None, options: list[str] |
     if device_class == "timestamp":
         sensor_type = "datetime.datetime"
 
-    return f"SensorEntity[{sensor_type}]"
+    return f"SensorEntity[{sensor_type}] # device_class: {device_class or 'None'}"
