@@ -116,7 +116,7 @@ def __build_class_hierarchy(domains: dict[str, set[str]], sensor_info: SensorInf
 def get_typestr_for_sensor_domain(device_class: str | None, options: list[str] | None) -> str:
     sensor_type = "float | int"
 
-    if device_class is None:
+    if device_class is None or device_class == "None":
         sensor_type = "str"
 
     if device_class == "enum":
@@ -132,4 +132,4 @@ def get_typestr_for_sensor_domain(device_class: str | None, options: list[str] |
     if device_class == "timestamp":
         sensor_type = "datetime.datetime"
 
-    return f"SensorEntity[{sensor_type}] # device_class: {device_class or 'None'}"
+    return f"SensorEntity[{sensor_type}] # device_class: {device_class or 'null'}"
