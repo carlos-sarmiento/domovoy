@@ -8,6 +8,8 @@ from domovoy.plugins.hass.types import EntityID
 
 SensorInfo = dict[str, tuple[str, list[str] | None]]
 
+SelectInfo = dict[str, list[str]]
+
 
 class HassSyntheticDomain:
     __domain: str
@@ -48,7 +50,10 @@ def __to_camel_case(snake_str: str) -> str:
 
 
 def generate_stub_file_for_synthetic_entities(
-    domains: dict[str, set[str]], destination: str, sensor_info: SensorInfo
+    domains: dict[str, set[str]],
+    destination: str,
+    sensor_info: SensorInfo,
+    select_info: SelectInfo,
 ) -> None:
     with Path(destination).open("w") as text_file:
         now = datetime.datetime.now(get_main_config().get_timezone())
@@ -60,14 +65,14 @@ def generate_stub_file_for_synthetic_entities(
         text_file.write("from domovoy.plugins.hass.types import EntityID\n")
         text_file.write("from domovoy.plugins.hass.domains import *\n\n")
 
-        text_file.write(__build_class_hierarchy(domains, sensor_info))
+        text_file.write(__build_class_hierarchy(domains, sensor_info, select_info))
 
         text_file.write(
             "entities: HassSyntheticDomains = ...\n\n",
         )
 
 
-def __build_class_hierarchy(domains: dict[str, set[str]], sensor_info: SensorInfo) -> str:
+def __build_class_hierarchy(domains: dict[str, set[str]], sensor_info: SensorInfo, select_info: SelectInfo) -> str:
     return_type = "EntityID"
 
     text_file = StringIO()
@@ -104,6 +109,10 @@ def __build_class_hierarchy(domains: dict[str, set[str]], sensor_info: SensorInf
                 device_class, options = sensor_info.get(entity_base, (None, None))
                 return_type_for_domain = get_typestr_for_sensor_domain(device_class, options)
 
+            if domain == "select":
+                options = select_info.get(entity_base, [])
+                return_type_for_domain = get_typestr_for_select_domain(options)
+
             text_file.write(
                 f"    {field_name} : {return_type_for_domain} = ...\n",
             )
@@ -132,4 +141,14 @@ def get_typestr_for_sensor_domain(device_class: str | None, options: list[str] |
     if device_class == "timestamp":
         sensor_type = "datetime.datetime"
 
-    return f"SensorEntity[{sensor_type}] # device_class: {device_class or 'null'}"
+    return f"SensorEntity[{sensor_type}]"
+
+
+def get_typestr_for_select_domain(options: list[str] | None) -> str:
+    if options:
+        values = ", ".join(f'"{option}"' for option in options)
+        sensor_type = f"Literal[{values}]"
+    else:
+        sensor_type = "str"
+
+    return f"SelectEntity[{sensor_type}]"

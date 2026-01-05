@@ -3,9 +3,13 @@ from __future__ import annotations
 import datetime
 import inspect
 import sys
-from typing import Literal
+from typing import Literal, TypeVar
 
 from .entity_id import EntityID
+
+TSelectOptions = TypeVar(name="TSelectOptions", default=str)
+
+TSensor = TypeVar(name="TSensor", default=str)
 
 
 class AutomationEntity(EntityID): ...
@@ -89,40 +93,69 @@ class ScheduleEntity(EntityID): ...
 class ScriptEntity(EntityID): ...
 
 
-class SelectEntity(EntityID[str]): ...
+class SelectEntity[TSelectOptions](EntityID[TSelectOptions]): ...
 
 
 class SensorEntity[TSensor](EntityID[TSensor]): ...
 
 
-class SirenEntity(EntityID): ...
+class SirenEntity(EntityID[bool]): ...
 
 
 class SttEntity(EntityID): ...
 
 
-class SunEntity(EntityID): ...
+class SunEntity(EntityID[Literal["above_horizon", "below_horizon"]]): ...
 
 
 class SwitchEntity(EntityID[bool]): ...
 
 
-class TodoEntity(EntityID): ...
+class TodoEntity(EntityID[int]): ...
+
+
+class TextEntity(EntityID[str]): ...
+
+
+class TimeEntity(EntityID[datetime.time]): ...
 
 
 class TtsEntity(EntityID): ...
 
 
-class UpdateEntity(EntityID): ...
+class UpdateEntity(EntityID[bool]): ...
 
 
-class VacuumEntity(EntityID): ...
+class VacuumEntity(EntityID[Literal["cleaning", "docked", "idle", "paused", "returning", "error"]]): ...
+
+
+class ValveEntity(EntityID[Literal["opening", "open", "closing", "closed"]]): ...
 
 
 class WakeWordEntity(EntityID): ...
 
 
-class WeatherEntity(EntityID): ...
+class WeatherEntity(
+    EntityID[
+        Literal[
+            "clear-night",
+            "cloudy",
+            "exceptional",
+            "fog",
+            "hail",
+            "lightning",
+            "lightning-rainy",
+            "partlycloudy",
+            "pouring",
+            "rainy",
+            "snowy",
+            "snowy-rainy",
+            "sunny",
+            "windy",
+            "windy-variant",
+        ]
+    ],
+): ...
 
 
 class ZoneEntity(EntityID): ...
