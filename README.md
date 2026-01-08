@@ -6,6 +6,8 @@ Domovoy is a powerful application framework designed to drive automations for Ho
 
 Inspired by AppDaemon, Domovoy is a completely new codebase built from the ground up with Python's async/await throughout, resulting in significantly improved resource efficiency and performance.
 
+> **Beta Status**: This project is currently in beta. While I've been successfully running my home with Domovoy since 2023, you may still encounter bugs or rough edges. Feedback and contributions are welcome!
+
 ## Key Features
 
 - **ServEnts Integration**: When paired with ServEnts (a Home Assistant custom component), Domovoy can create devices and entities directly from Python code, eliminating the need for manually configuring helpers in HA.
