@@ -1,5 +1,7 @@
 # Domovoy
 
+[![Documentation Status](https://readthedocs.org/projects/domovoy/badge/?version=latest)](https://domovoy.readthedocs.io/en/latest/?badge=latest)
+
 Domovoy is a powerful application framework designed to drive automations for Home Assistant using Python. If you prefer writing your automations in pure Python rather than YAML, Node Red, or n8n, Domovoy provides a more flexible and developer-friendly approach to home automation.
 
 Inspired by AppDaemon, Domovoy is a completely new codebase built from the ground up with Python's async/await throughout, resulting in significantly improved resource efficiency and performance.
@@ -87,14 +89,14 @@ register_app(
 
 ## Documentation
 
-For comprehensive documentation, guides, and examples:
+Full documentation is available at **[domovoy.readthedocs.io](https://domovoy.readthedocs.io/)**
 
-- [Getting Started Guide](docs/source/getting-started/index.md) - Installation and first steps
-- [Configuration Reference](docs/source/getting-started/configuration.md) - Detailed configuration options
-- [Writing Your First App](docs/source/getting-started/first-app.md) - Step-by-step tutorial
-- [Guides](docs/source/guides/index.md) - In-depth guides on callbacks, state management, ServEnts, and more
-- [Examples](docs/source/examples/index.md) - Real-world automation examples
-- [API Reference](docs/source/api/index.md) - Complete API documentation
+- [Getting Started Guide](https://domovoy.readthedocs.io/en/latest/getting-started/) - Installation and first steps
+- [Configuration Reference](https://domovoy.readthedocs.io/en/latest/getting-started/configuration/) - Detailed configuration options
+- [Writing Your First App](https://domovoy.readthedocs.io/en/latest/getting-started/first-app/) - Step-by-step tutorial
+- [Guides](https://domovoy.readthedocs.io/en/latest/guides/) - In-depth guides on callbacks, state management, ServEnts, and more
+- [Examples](https://domovoy.readthedocs.io/en/latest/examples/) - Real-world automation examples
+- [API Reference](https://domovoy.readthedocs.io/en/latest/api/) - Complete API documentation
 
 ## License
 
