@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from typing import Union
-
 from .entity_id import EntityID, PrimitiveHassValue
 
-HassApiValue = PrimitiveHassValue | EntityID | list["HassApiValue"] | dict[str, Union["HassApiValue", None]]
+__PrimitiveHassValueWithEntityID = PrimitiveHassValue | EntityID
 
-HassData = dict[str, HassApiValue | None]
 
-HassValue = HassApiValue | None
+__HassApiValue = (
+    __PrimitiveHassValueWithEntityID
+    | list[__PrimitiveHassValueWithEntityID | dict[str, __PrimitiveHassValueWithEntityID | None]]
+    | dict[str, __PrimitiveHassValueWithEntityID | list[__PrimitiveHassValueWithEntityID] | None]
+)
 
-HassValueStrict = HassApiValue
+HassData = dict[str, __HassApiValue | None]
+
+HassValue = __HassApiValue | None
+
+HassValueStrict = __HassApiValue

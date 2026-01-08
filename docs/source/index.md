@@ -18,9 +18,47 @@ Domovoy is designed for users who prefer writing home automations in pure Python
 
 ```{toctree}
 :maxdepth: 2
+:caption: Getting Started
+
+getting-started/index
+getting-started/first-app
+getting-started/configuration
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Guides
+
+guides/index
+guides/callbacks
+guides/hass
+guides/servents
+guides/state-management
+guides/hot-reload
+guides/mixins
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Examples
+
+examples/index
+examples/simple-toggle
+examples/state-listeners
+examples/scheduling
+examples/entity-creation
+examples/climate-control
+examples/advanced
+```
+
+```{toctree}
+:maxdepth: 2
 :caption: API Reference
 
 api/index
+api/plugins
+api/applications
+api/types
 ```
 
 ## Indices and tables

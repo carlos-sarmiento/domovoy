@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import contextvars
 import logging
+from typing import TYPE_CHECKING
 
-from domovoy.core.logging.logger_adapter_with_trace import LoggerAdapterWithTrace
+if TYPE_CHECKING:
+    from domovoy.core.logging.logger_adapter_with_trace import LoggerAdapterWithTrace
 
 context_logger: contextvars.ContextVar[LoggerAdapterWithTrace[logging.Logger]] = contextvars.ContextVar(
     "context_logger",
