@@ -45,6 +45,19 @@ uv run ruff format .
 uv run pyright
 ```
 
+### Documentation
+
+```bash
+# Install docs dependencies
+uv sync --group docs
+
+# Build HTML documentation
+uv run --group docs sphinx-build -b html docs/source docs/build/html
+
+# View documentation locally
+python -m http.server -d docs/build/html 8000
+```
+
 ### Configuration
 
 The `config.yml` file requires:
