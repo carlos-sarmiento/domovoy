@@ -30,7 +30,6 @@ from domovoy.plugins.hass.core import HassCore
 from domovoy.plugins.logger import LoggerPlugin
 from domovoy.plugins.meta import MetaPlugin
 from domovoy.plugins.servents import ServentsPlugin
-from domovoy.plugins.servents_v2 import ServentsPluginV2
 from domovoy.plugins.time import TimePlugin
 from domovoy.plugins.utils import UtilsPlugin
 
@@ -235,9 +234,6 @@ class AppEngine:
         servents = ServentsPlugin("servents", wrapper)
         wrapper.register_plugin(servents, servents.name)
 
-        servents_v2 = ServentsPluginV2("servents_v2", wrapper)
-        wrapper.register_plugin(servents_v2, servents_v2.name)
-
         utils = UtilsPlugin("utils", wrapper)
         wrapper.register_plugin(utils, utils.name)
 
@@ -262,7 +258,7 @@ class AppEngine:
             callbacks,
             hass,
             servents,
-            servents_v2,
+            servents,
             utils,
             time,
         )

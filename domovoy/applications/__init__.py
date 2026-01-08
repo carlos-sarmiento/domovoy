@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from domovoy.plugins.logger import LoggerPlugin
     from domovoy.plugins.meta import MetaPlugin
     from domovoy.plugins.servents import ServentsPlugin
-    from domovoy.plugins.servents_v2 import ServentsPluginV2
     from domovoy.plugins.time import TimePlugin
     from domovoy.plugins.utils import UtilsPlugin
 
@@ -29,7 +28,7 @@ class AppBaseWithoutConfig:
     hass: HassPlugin
     callbacks: CallbacksPlugin
     servents: ServentsPlugin
-    servents_v2: ServentsPluginV2
+    servents_v2: ServentsPlugin
     log: LoggerPlugin
     utils: UtilsPlugin
     time: TimePlugin
@@ -41,7 +40,7 @@ class AppBaseWithoutConfig:
         scheduler: CallbacksPlugin,
         hass: HassPlugin,
         servents: ServentsPlugin,
-        servents_v2: ServentsPluginV2,
+        servents_v2: ServentsPlugin,
         utils: UtilsPlugin,
         time: TimePlugin,
     ) -> None:
@@ -80,7 +79,7 @@ class AppBase[TConfig: AppConfigBase](AppBaseWithoutConfig):
         scheduler: CallbacksPlugin,
         hass: HassPlugin,
         servents: ServentsPlugin,
-        servents_v2: ServentsPluginV2,
+        servents_v2: ServentsPlugin,
         utils: UtilsPlugin,
         time: TimePlugin,
     ) -> None:

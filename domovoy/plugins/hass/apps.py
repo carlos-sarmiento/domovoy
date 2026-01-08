@@ -119,7 +119,7 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
 
 class HassTerminateDomovoy(AppBase[EmptyAppConfig]):
     async def initialize(self) -> None:
-        await self.servents_v2.listen_button_press(
+        await self.servents.listen_button_press(
             self.homeassistant_started_event_handler,
             button_name="Terminate Domovoy",
             event_name_to_fire="dangerous_terminate_domovoy_signal",
