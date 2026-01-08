@@ -14,7 +14,7 @@ The API is organized into three main sections:
 
 - `hass` - Home Assistant integration (state access, service calls, triggers)
 - `callbacks` - Event listening and scheduling
-- `servents_v2` - Create Home Assistant entities from Python
+- `servents` - Create Home Assistant entities from Python
 - `log` - Logging functionality
 
 ### Core Classes
