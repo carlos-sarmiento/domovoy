@@ -56,7 +56,7 @@ docker run -d \
   --name domovoy \
   --restart unless-stopped \
   -v ~/domovoy:/config \
-  ghcr.io/YOUR_REGISTRY/domovoy:latest
+  ghcr.io/carlos-sarmiento/domovoy:latest
 ```
 
 ### 4. Create your first app
