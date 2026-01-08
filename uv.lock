@@ -258,7 +258,7 @@ wheels = [
 
 [[package]]
 name = "domovoy"
-version = "0.9.0"
+version = "0.9.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -266,6 +266,7 @@ dependencies = [
     { name = "astral" },
     { name = "coloredlogs" },
     { name = "cron-converter" },
+    { name = "domovoy-typing" },
     { name = "idna" },
     { name = "importlab" },
     { name = "orjson" },
@@ -301,6 +302,7 @@ requires-dist = [
     { name = "astral", specifier = ">=3.2" },
     { name = "coloredlogs", specifier = ">=15.0.1" },
     { name = "cron-converter", specifier = ">=1.2.1" },
+    { name = "domovoy-typing", specifier = ">=0.9.0" },
     { name = "idna", specifier = ">=3.7" },
     { name = "importlab", specifier = ">=0.8" },
     { name = "orjson", specifier = ">=3.10.6" },
@@ -327,6 +329,18 @@ docs = [
     { name = "sphinx", specifier = ">=8.0" },
     { name = "sphinx-autodoc-typehints", specifier = ">=2.0" },
     { name = "sphinx-copybutton", specifier = ">=0.5" },
+]
+
+[[package]]
+name = "domovoy-typing"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "domovoy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4c/52/9cd3eca6322755e4ac621045682fc856b225ef246418785ab78769ef52c9/domovoy_typing-0.9.0.tar.gz", hash = "sha256:3f411a5b5430092de91f53d5b9d217447834d738a28797d6b2f6e2726676de07", size = 4523, upload-time = "2026-01-08T22:22:16.135Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/92/70963b5f6a246c3ebbfc52762def0f2c1a270f7b09cfbe6ea132e6616ac8/domovoy_typing-0.9.0-py3-none-any.whl", hash = "sha256:12bab5735bf36138eeae807c533d1dddaf409db1f5eed3c189562b288b432a80", size = 6077, upload-time = "2026-01-08T22:22:18.014Z" },
 ]
 
 [[package]]

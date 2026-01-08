@@ -5,6 +5,8 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from typing import Any, Concatenate, ParamSpec
 
+from domovoy_typing.services import HassSyntheticDomainsServiceCalls
+
 from domovoy.applications.types import Interval
 from domovoy.core.app_infra import AppStatus, AppWrapper
 from domovoy.core.context import context_callback_id, context_logger
@@ -15,7 +17,6 @@ from domovoy.plugins.hass.domains import (
 )
 from domovoy.plugins.hass.exceptions import HassUnknownEntityError
 from domovoy.plugins.plugins import AppPlugin
-from synthetic.services import HassSyntheticDomainsServiceCalls
 
 from .core import EntityState, HassCore
 from .exceptions import HassApiCommandError
