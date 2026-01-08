@@ -94,24 +94,27 @@ class HassSyntheticEntitiesStubUpdater(AppBase[HassSyntheticEntitiesStubUpdaterC
         self.__registered_entities = entity_ids
 
         sensor_info: dict[str, tuple[str, list[str] | None]] = {}
+        select_info: dict[str, list[str]] = {}
 
         for entity_state in entity_states:
-            if entity_state.entity_id.get_domain() != "sensor":
-                continue
+            if entity_state.entity_id.get_domain() == "sensor":
+                state_class = entity_state.attributes.get("state_class")
+                device_class = entity_state.attributes.get("device_class")
+                options = None
 
-            state_class = entity_state.attributes.get("state_class")
-            device_class = entity_state.attributes.get("device_class")
-            options = None
+                if device_class is None and state_class is not None:
+                    device_class = "domovoy_number"
 
-            if device_class is None and state_class is not None:
-                device_class = "domovoy_number"
+                if device_class == "enum":
+                    options = [str(x) for x in entity_state.attributes.get("options", [])]  # type: ignore
 
-            if device_class == "enum":
+                sensor_info[entity_state.entity_id.get_entity_name()] = (str(device_class), options)
+
+            elif entity_state.entity_id.get_domain() == "select":
                 options = [str(x) for x in entity_state.attributes.get("options", [])]  # type: ignore
+                select_info[entity_state.entity_id.get_entity_name()] = options
 
-            sensor_info[entity_state.entity_id.get_entity_name()] = (str(device_class), options)
-
-        generate_stub_file_for_synthetic_entities(domains, self.config.stub_path, sensor_info)
+        generate_stub_file_for_synthetic_entities(domains, self.config.stub_path, sensor_info, select_info)
 
 
 class HassTerminateDomovoy(AppBase[EmptyAppConfig]):
