@@ -28,7 +28,6 @@ class AppBaseWithoutConfig:
     hass: HassPlugin
     callbacks: CallbacksPlugin
     servents: ServentsPlugin
-    servents_v2: ServentsPlugin
     log: LoggerPlugin
     utils: UtilsPlugin
     time: TimePlugin
@@ -40,14 +39,12 @@ class AppBaseWithoutConfig:
         scheduler: CallbacksPlugin,
         hass: HassPlugin,
         servents: ServentsPlugin,
-        servents_v2: ServentsPlugin,
         utils: UtilsPlugin,
         time: TimePlugin,
     ) -> None:
         self.hass = hass
         self.callbacks = scheduler
         self.servents = servents
-        self.servents_v2 = servents_v2
         self.meta = meta
         self.log = log
         self.utils = utils
@@ -79,11 +76,10 @@ class AppBase[TConfig: AppConfigBase](AppBaseWithoutConfig):
         scheduler: CallbacksPlugin,
         hass: HassPlugin,
         servents: ServentsPlugin,
-        servents_v2: ServentsPlugin,
         utils: UtilsPlugin,
         time: TimePlugin,
     ) -> None:
-        super().__init__(meta, log, scheduler, hass, servents, servents_v2, utils, time)
+        super().__init__(meta, log, scheduler, hass, servents, utils, time)
         self.config = config
 
     async def initialize(self) -> None:
