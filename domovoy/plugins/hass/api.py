@@ -465,7 +465,7 @@ class HassWebsocketApi:
             trigger=trigger,
         )
 
-        cmd: HassData = {"type": "subscribe_trigger", "trigger": trigger}
+        cmd: HassData = {"type": "subscribe_trigger", "trigger": trigger}  # pyright: ignore[reportAssignmentType]
 
         response = await self.__send_command(cmd)
 
@@ -516,7 +516,7 @@ class HassWebsocketApi:
         cmd: HassData = {"type": "fire_event", "event_type": event_type}
 
         if event_data is not None:
-            cmd["event_data"] = event_data
+            cmd["event_data"] = event_data  # pyright: ignore[reportArgumentType]
 
         response = await self.__send_command(cmd)
 
@@ -553,7 +553,7 @@ class HassWebsocketApi:
         }
 
         if service_data is not None:
-            cmd["service_data"] = service_data
+            cmd["service_data"] = service_data  # pyright: ignore[reportArgumentType]
 
         if entity_id is not None:
             cmd["target"] = {"entity_id": entity_id}  # type: ignore
