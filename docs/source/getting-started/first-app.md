@@ -6,7 +6,7 @@ This guide covers the fundamentals of creating Domovoy apps.
 
 Every Domovoy app consists of three parts:
 
-1. **Configuration class** - Defines the app's configurable parameters
+1. **Configuration class** - Defines the app's configurable parameters. It is always accessible inside the app as `self.config`
 2. **App class** - Contains the automation logic
 3. **Registration** - Tells Domovoy to run the app
 
@@ -81,16 +81,16 @@ apps/
 
 Every app has access to these plugins through `self`:
 
-| Plugin | Purpose |
-|--------|---------|
-| `self.hass` | Home Assistant integration (states, services, triggers) |
-| `self.callbacks` | Event listening and scheduling |
-| `self.servents` | Create Home Assistant entities |
-| `self.log` | Logging with trace/debug/info/warning/error levels |
-| `self.meta` | App metadata and control (restart, get name) |
-| `self.time` | Time utilities (now, parse dates, sleep) |
-| `self.utils` | General utilities (parse numbers, run async) |
-| `self.config` | Access to your app's configuration |
+| Plugin           | Purpose                                                 |
+|------------------|---------------------------------------------------------|
+| `self.hass`      | Home Assistant integration (states, services, triggers) |
+| `self.callbacks` | Event listening and scheduling                          |
+| `self.servents`  | Create Home Assistant entities                          |
+| `self.log`       | Logging with trace/debug/info/warning/error levels      |
+| `self.meta`      | App metadata and control (restart, get name)            |
+| `self.time`      | Time utilities (now, parse dates, sleep)                |
+| `self.utils`     | General utilities (parse numbers, run async)            |
+| `self.config`    | Access to your app's configuration                      |
 
 ## A Complete Example
 
@@ -166,7 +166,7 @@ If `initialize()` raises an exception, the app enters the **FAILED** state.
 
 ### Make `initialize()` Idempotent
 
-Since apps can be reloaded (due to hot-reload), your `initialize()` should be safe to call multiple times:
+Since apps can be reloaded (due to hot-reload), your `initialize()` should be safe to call multiple times. Callbacks generated with the callbacks plugin will be automatically cleaned-up during hot reload.
 
 ```python
 async def initialize(self) -> None:

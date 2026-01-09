@@ -4,14 +4,23 @@ The hass plugin provides full integration with Home Assistant.
 
 ## Reading Entity State
 
-### Get State Value
+### Get Raw State Value
 
 ```python
-from domovoy.plugins.hass.types import EntityID
-
 # Get the current state value
 state = self.hass.get_state(entity_id)
 # Returns: "on", "off", "23.5", etc.
+```
+
+### Get Typed State
+
+```python
+# For entities with typed state values
+from domovoy.plugins.hass.domains import SensorEntity
+
+sensor: SensorEntity = entities.sensor.temperature
+typed_value = self.hass.get_typed_state(sensor)
+# Returns appropriate type based on entity
 ```
 
 ### Get Full State Object
@@ -27,22 +36,15 @@ last_changed = entity_state.last_changed  # datetime
 last_updated = entity_state.last_updated  # datetime
 ```
 
-### Get Typed State
-
-```python
-# For entities with typed state values
-from domovoy.plugins.hass.domains import SensorEntity
-
-sensor: SensorEntity = entities.sensor.temperature
-typed_value = self.hass.get_typed_state(sensor)
-# Returns appropriate type based on entity
-```
-
 ## Calling Services
 
 ### Typed Service Calls (Recommended)
 
-Use auto-generated typed service stubs for IDE autocomplete and type checking:
+Use auto-generated typed service stubs for IDE autocomplete and type checking.
+
+:::{note}
+Typed service stubs require configuring the `domovoy-typing` package. See the [Type Stubs Configuration](type-stubs.md) guide for setup instructions.
+:::
 
 ```python
 # Light services
@@ -181,11 +183,15 @@ class MyAppConfig(AppConfigBase):
     generic: EntityID  # Any entity type
 ```
 
-When Domovoy connects to Home Assistant, it generates typed stubs for your specific entities:
+When configured with `domovoy-typing`, Domovoy generates typed stubs for your specific entities.
+
+:::{note}
+Typed entity stubs require configuring the `domovoy-typing` package. See the [Type Stubs Configuration](type-stubs.md) guide for setup instructions. Without this configuration, the imports below will not work.
+:::
 
 ```python
-# Auto-generated entities module (synthetic)
-from synthetic import entities
+# Auto-generated entities module (requires domovoy-typing setup)
+from domovoy_typing.entities import entities
 
 # Access entities with full typing
 light = entities.light.living_room

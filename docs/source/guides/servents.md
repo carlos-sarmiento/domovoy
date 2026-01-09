@@ -277,7 +277,7 @@ await self.servents.create_sensor(
 
 ### Wait for Entity Creation
 
-By default, `wait_for_creation=True` ensures the entity exists in HA before continuing:
+By default, `wait_for_creation=True` ensures the entity exists in HA before continuing. If you don't `await` the code might try to use the entity before Home Assistant has registered it.
 
 ```python
 # Waits for HA to register the entity

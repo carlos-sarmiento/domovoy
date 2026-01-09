@@ -183,12 +183,10 @@ self.hass.warn_if_entity_doesnt_exists([entity_a, entity_b])
 For entities with known types, use typed access:
 
 ```python
-from domovoy.plugins.hass.domains import SensorEntity
-
-sensor: SensorEntity = entities.sensor.temperature
+sensor = entities.sensor.temperature # This will be a SensorEntity[float | int]
 
 # Get typed state value
-value = self.hass.get_typed_state(sensor)
+value = self.hass.get_typed_state(sensor) # This will be typed [float | int | None]
 ```
 
 ## State Patterns

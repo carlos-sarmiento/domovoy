@@ -172,23 +172,14 @@ logs:
           log_level: trace
 ```
 
-## Environment Variables
-
-You can use environment variables in your config:
-
-```yaml
-hass_access_token: ${HASS_TOKEN}
-hass_url: ${HASS_URL}
-```
-
 ## Command Line Options
 
 ```bash
 python domovoy/cli.py --config /path/to/config.yml
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option.    | Description                           |
+|------------|---------------------------------------|
 | `--config` | Path to configuration file (required) |
 
 ## Next Steps

@@ -261,18 +261,6 @@ class KitchenSinkMixin(AppBaseWithoutConfig):
     pass
 ```
 
-### Document Mixin Requirements
-
-```python
-class MyMixin(AppBaseWithoutConfig):
-    """
-    Provides X functionality.
-
-    Requires: hass, callbacks plugins
-    Creates entities: sensor.mixin_status
-    """
-```
-
 ### Order Matters
 
 Mixins are processed left-to-right:
@@ -293,16 +281,3 @@ class AlertsMixin(AppBaseWithoutConfig):
         await super().initialize()
         self.alerts = AlertsMixin.AlertsMixinImpl(...)
 ```
-
-## Common Mixins
-
-Here are examples of useful mixins:
-
-| Mixin               | Purpose                          |
-|---------------------|----------------------------------|
-| `AlertsMixin`       | Fire and manage alerts           |
-| `NotificationMixin` | Send notifications (mobile, TTS) |
-| `PartyModeMixin`    | Check/control party mode state   |
-| `StorageMixin`      | Persist data to disk             |
-| `SwitchMixin`       | Idempotent switch helpers        |
-| `TimingMixin`       | State duration checks            |

@@ -13,10 +13,12 @@ This section provides in-depth guides for using Domovoy's features.
 
 ## Development Guides
 
-| Guide                       | Description                                   |
-|-----------------------------|-----------------------------------------------|
-| [Hot Reload](hot-reload.md) | Development workflow with automatic reloading |
-| [Mixins](mixins.md)         | Sharing code between apps                     |
+| Guide                                      | Description                                   |
+|--------------------------------------------|-----------------------------------------------|
+| [Type Stubs](type-stubs.md)                | Auto-generated types for entities and services |
+| [Hot Reload](hot-reload.md)                | Development workflow with automatic reloading |
+| [Mixins](mixins.md)                        | Sharing code between apps                     |
+| [Installing Dependencies](requirements.md) | Adding Python packages for your apps          |
 
 ## Quick Reference
 

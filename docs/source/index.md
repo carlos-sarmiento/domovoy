@@ -9,7 +9,7 @@ Domovoy is designed for users who prefer writing home automations in pure Python
 ## Key Features
 
 - **ServEnts Integration**: Create Home Assistant devices and entities directly from Python code
-- **Type Safety**: Full typing support including type-checking for Home Assistant entities and services
+- **Type Safety**: Full typing support including [auto-generated type stubs](guides/type-stubs.md) for Home Assistant entities and services
 - **Hot Reload**: Automatic file watching and module reloading during development
 - **High Performance**: Leverages Python's async/await for efficient, non-blocking operations
 - **Plugin Architecture**: Access functionality through well-designed plugins
@@ -34,8 +34,10 @@ guides/callbacks
 guides/hass
 guides/servents
 guides/state-management
+guides/type-stubs
 guides/hot-reload
 guides/mixins
+guides/requirements
 ```
 
 ```{toctree}
