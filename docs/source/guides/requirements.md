@@ -1,6 +1,6 @@
 # Installing Additional Dependencies
 
-Domovoy can automatically install Python packages required by your apps using `requirements.txt` files. This allows each app or group of apps to declare their own dependencies without modifying the core Domovoy installation.
+Domovoy can automatically install Python packages required by your apps using `requirements.txt` files or a `pyproject.toml` file. This allows each app or group of apps to declare their own dependencies without modifying the core Domovoy installation.
 
 ## Enabling Dependency Installation
 
@@ -15,9 +15,30 @@ timezone: America/Chicago
 install_pip_dependencies: true  # Enable this
 ```
 
-When enabled, Domovoy scans your apps directory for `requirements.txt` files at startup and installs all listed packages.
+When enabled, Domovoy scans your apps directory for `requirements.txt` files at startup and installs all listed packages. It also checks for a `pyproject.toml` file at the root of your project directory.
+
+### pyproject.toml File
+
+Domovoy also supports installing dependencies from a `pyproject.toml` file located at the root of your project directory (the same directory as your `config.yml`). This is useful if you prefer the modern Python packaging standard.
+
+When a `pyproject.toml` exists, Domovoy runs `uv sync` to install all dependencies defined in the project.
+
+Example `pyproject.toml`:
+
+```toml
+[project]
+name = "my-domovoy-apps"
+version = "0.1.0"
+dependencies = [
+    "httpx>=0.25.2",
+    "pydantic>=2.5.0",
+    "qrcode>=7.4.2",
+]
+```
 
 ## Creating Requirements Files
+
+### requirements.txt Files
 
 Place a `requirements.txt` file in any directory within your apps folder. Domovoy uses the glob pattern `**/requirements*.txt`, so files can be:
 
@@ -59,10 +80,11 @@ pillow==10.4.0
 
 At startup, when `install_pip_dependencies` is enabled:
 
-1. Domovoy scans the app directory recursively for files matching `**/requirements*.txt`
-2. Each discovered file is processed using `uv pip install --system -r <file>`
-3. Installation output is logged (info level for success, error level for failures)
-4. After all dependencies are installed, apps are loaded and initialized
+1. Domovoy checks for a `pyproject.toml` at the project root and runs `uv pip install -r <file>` if found
+2. Domovoy scans the app directory recursively for files matching `**/requirements*.txt`
+3. Each discovered requirements file is processed using `uv pip install --system -r <file>`
+4. Installation output is logged (info level for success, error level for failures)
+5. After all dependencies are installed, apps are loaded and initialized
 
 ## Best Practices
 
