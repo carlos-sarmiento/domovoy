@@ -20,6 +20,10 @@ Inspired by AppDaemon, Domovoy is a completely new codebase built from the groun
 
 - **Hot Reload**: Automatic file watching and module reloading during development - make changes to your apps and see them take effect immediately without restarting.
 
+## Quickest Start
+
+The fastest way to get started is with the [Domovoy Starter Template](https://github.com/carlos-sarmiento/domovoy-starter). This prebuilt template has most of the pieces already in place—just update the config file with your Home Assistant details and run the included docker command.
+
 ## Quick Start with Docker
 
 The recommended way to run Domovoy is using Docker.
@@ -49,7 +53,11 @@ Replace:
 - `hass_url` with your Home Assistant WebSocket URL
 - `timezone` with your timezone
 
-### 3. Run with Docker
+### 3. Install ServEnts Integration (Optional)
+
+If you want to create Home Assistant entities directly from your Python code, install the [ServEnts custom component](https://github.com/carlos-sarmiento/servents) in Home Assistant. This allows Domovoy to dynamically create sensors, switches, buttons, and other entities.
+
+### 4. Run with Docker
 
 ```bash
 docker run -d \
@@ -59,7 +67,7 @@ docker run -d \
   ghcr.io/carlos-sarmiento/domovoy:latest
 ```
 
-### 4. Create your first app
+### 5. Create your first app
 
 Create `~/domovoy/apps/my_first_apps.py`:
 
