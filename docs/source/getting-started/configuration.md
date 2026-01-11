@@ -12,7 +12,7 @@ app_suffix: _apps
 app_path: ./apps
 
 # Home Assistant WebSocket URL
-hass_url: "wss://your-home-assistant:8123/api/websocket"
+hass_url: "wss://your-home-assistant:8123"
 
 # Home Assistant Long-Lived Access Token
 hass_access_token: "your-token-here"
@@ -136,7 +136,7 @@ From most to least verbose:
 ```yaml
 app_suffix: _apps
 app_path: ./apps
-hass_url: "wss://homeassistant.local:8123/api/websocket"
+hass_url: "wss://homeassistant.local:8123"
 hass_access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 timezone: America/Chicago
 install_pip_dependencies: true

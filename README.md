@@ -41,7 +41,7 @@ Create `~/domovoy/config.yml`:
 ```yaml
 app_suffix: _apps
 hass_access_token: YOUR_LONG_LIVED_ACCESS_TOKEN
-hass_url: ws://homeassistant.local:8123/api/websocket
+hass_url: ws://homeassistant.local:8123
 app_path: /config/apps
 timezone: America/Chicago
 install_pip_dependencies: true

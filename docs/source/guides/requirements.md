@@ -9,7 +9,7 @@ To enable automatic dependency installation, set `install_pip_dependencies: true
 ```yaml
 app_suffix: _apps
 app_path: ./apps
-hass_url: "wss://homeassistant.local:8123/api/websocket"
+hass_url: "wss://homeassistant.local:8123"
 hass_access_token: "your-token-here"
 timezone: America/Chicago
 install_pip_dependencies: true  # Enable this
