@@ -428,7 +428,7 @@ class HassPlugin(AppPlugin):
         """
         return await self.__hass.send_raw_command(command_type, command_args)
 
-    def get_state_typed[T](self, entity_id: EntityID[T]) -> T | None:
+    def get_state[T](self, entity_id: EntityID[T]) -> T | None:
         """Get the state of an entity, cast to the entity's native type.
 
         Uses the EntityID's type information to parse and cast the state value.
@@ -442,20 +442,6 @@ class HassPlugin(AppPlugin):
         """
         full_state: EntityState = self.get_full_state(entity_id)
         return entity_id.parse_state_typed(full_state)
-
-    def get_state(self, entity_id: EntityID) -> PrimitiveHassValue:
-        """Get the current state value of an entity.
-
-        Returns only the state value, not the full EntityState object.
-
-        Args:
-            entity_id: The entity to get state for.
-
-        Returns:
-            The entity's current state as a primitive value (str, int, float, or bool).
-
-        """
-        return self.get_full_state(entity_id).state
 
     def get_state_raw(self, entity_id: EntityID) -> PrimitiveHassValue:
         """Get the current state value of an entity without any parsing.
