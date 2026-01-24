@@ -184,19 +184,6 @@ def get_type_for_domain(domain: str) -> type[EntityID]:
     return __defined_classes.get(entity_class_name, EntityID)
 
 
-__sensor_type_cache: dict[type, type[EntityID]] = {}
-
-
-def get_type_for_sensor_domain(inner_type: type) -> type[EntityID]:
-    if inner_type not in __sensor_type_cache:
-
-        class SensorEntityTyped(SensorEntity[inner_type]): ...
-
-        __sensor_type_cache[inner_type] = SensorEntityTyped
-
-    return __sensor_type_cache[inner_type]
-
-
 def get_type_instance_for_entity_id(entity_id: str | EntityID) -> EntityID:
     if isinstance(entity_id, EntityID):
         domain = entity_id.get_domain()

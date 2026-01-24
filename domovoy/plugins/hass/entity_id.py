@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from types import UnionType
+import typing
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, get_origin
 
 from dateutil.parser import parse
@@ -62,6 +62,7 @@ class EntityID[T]:
         return state
 
     def parse_state_typed(self, full_state: EntityState) -> T | None:
+        _logcore.trace("Calling parse_state_typed() for {entity_id}", entity_id=full_state.entity_id)
         if full_state.entity_id.get_domain() == "sensor":
             return self.__parse_state_for_sensor(full_state)
 
@@ -70,6 +71,7 @@ class EntityID[T]:
         return self.__parse_state_for_type(target_type, full_state.state)
 
     def __parse_state_for_sensor(self, full_state: EntityState) -> Any | None:  # noqa: ANN401
+        _logcore.trace("Calling __parse_state_for_sensor() for {entity_id}", entity_id=full_state.entity_id)
         device_class = full_state.attributes.get("device_class")
         state_class = full_state.attributes.get("state_class")
 
@@ -84,7 +86,12 @@ class EntityID[T]:
 
         return self.__parse_state_for_type(target_type, full_state.state)
 
-    def __parse_state_for_union_type(self, target_type: type[UnionType], state: PrimitiveHassValue) -> T | None:
+    def __parse_state_for_union_type(self, target_type: type, state: PrimitiveHassValue) -> T | None:
+        _logcore.trace(
+            "Calling __parse_state_for_union_type() for typr `{target_type}` with value {value}",
+            target_type=target_type,
+            value=state,
+        )
         types = get_args(target_type)
 
         for t in types:
@@ -94,8 +101,24 @@ class EntityID[T]:
 
         return None
 
-    def __parse_state_for_type(self, target_type: type | UnionType, state: PrimitiveHassValue) -> T | None:  # noqa: PLR0911
-        if target_type is UnionType:
+    def __parse_state_for_type(self, target_type: type, state: PrimitiveHassValue) -> T | None:
+        result = self.__parse_state_for_type_implementation(target_type, state)
+
+        _logcore.trace(
+            "Calling __parse_state_for_type() for typr `{target_type}` with value {value}. Result: {result}",
+            target_type=target_type,
+            value=state,
+            result=result,
+        )
+
+        return result
+
+    def __parse_state_for_type_implementation(  # noqa: PLR0911
+        self,
+        target_type: type,
+        state: PrimitiveHassValue,
+    ) -> T | None:
+        if isinstance(target_type, typing.Union):
             return self.__parse_state_for_union_type(target_type, state)
 
         if state in ["unknown", "unavailable"]:
@@ -127,7 +150,7 @@ class EntityID[T]:
 
         return None
 
-    def get_target_type(self) -> type[T] | UnionType:
+    def get_target_type(self) -> type[T]:
         try:
             orig_base = self.__orig_bases__[0]  # type: ignore
             type_args = get_args(orig_base)
