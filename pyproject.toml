@@ -34,7 +34,7 @@ docs = [
     "myst-parser>=4.0",
     "furo>=2024.8",
     "sphinx-copybutton>=0.5",
-    "sphinx-autodoc-typehints>=2.0",
+    "sphinx-autodoc-typehints>=3.10.0",
 ]
 
 [build-system]
