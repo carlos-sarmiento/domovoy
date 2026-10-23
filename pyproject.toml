@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["ruff>=0.9.1", "types-pytz>=2024.1.0.20240417", "pyright>=1.1.391,<2"]
+dev = ["ruff>=0.9.1", "types-pytz>=2026.1.1.20260408", "pyright>=1.1.391,<2"]
 docs = [
     "sphinx>=8.0",
     "myst-parser>=4.0",
