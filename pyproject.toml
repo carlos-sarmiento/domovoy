@@ -33,7 +33,7 @@ docs = [
     "sphinx>=8.0",
     "myst-parser>=4.0",
     "furo>=2024.8",
-    "sphinx-copybutton>=0.5",
+    "sphinx-copybutton>=0.5.2",
     "sphinx-autodoc-typehints>=2.0",
 ]
 
